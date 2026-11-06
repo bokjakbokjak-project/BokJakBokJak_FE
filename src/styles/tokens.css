@@ -1,0 +1,42 @@
+/*
+ * Design tokens confirmed in Figma (design system section, node 793:5205).
+ * Only add values defined in Figma. Type scale, spacing, radius, and role
+ * tokens are not defined there yet.
+ */
+@theme {
+  /* Remove Tailwind's default palette so only Figma colors generate classes. */
+  --color-*: initial;
+
+  /* Gray Scale */
+  --color-gray-black: #191919;
+  --color-gray-600: #292726;
+  --color-gray-500: #514d4c;
+  --color-gray-400: #706c6a;
+  --color-gray-300: #9e9694;
+  --color-gray-200: #d4cdcc;
+  --color-gray-100: #eeebea;
+  --color-gray-50: #fafafa;
+  --color-white: #ffffff;
+
+  /* Primary */
+  --color-brand-brown1: #614735;
+  --color-brand-brown2: #7f6f56;
+  --color-brand-beige1: #ffefd5;
+  --color-brand-beige2: #fff9e6; /* Actual fill. The Figma label says #FBF3DC; pending designer check. */
+  --color-brand-pink: #f7a4b4;
+  --color-brand-sky: #bce1ef;
+
+  /* Green */
+  --color-brand-green1: #c6da7b;
+  --color-brand-green2: #7d9b5d;
+
+  /* Additional Beige */
+  --color-brand-beige3: #ece1d2; /* Figma style "Beige3". The swatch label says Beige2; pending designer check. */
+  --color-brand-beige4: #f5ebdc; /* Actual fill. The Figma label says #F5EDBC; pending designer check. */
+  --color-brand-beige5: #fffaec;
+
+  /* Font */
+  --font-sans:
+    'Pretendard Variable', -apple-system, BlinkMacSystemFont, system-ui,
+    sans-serif;
+}

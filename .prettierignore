@@ -1,0 +1,9 @@
+dist
+coverage
+package-lock.json
+public/licenses
+
+# Personal files excluded through .git/info/exclude, which Prettier does not read
+.ai-collab
+AGENTS.md
+CLAUDE.local.md
