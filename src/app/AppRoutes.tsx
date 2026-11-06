@@ -13,6 +13,9 @@ import LoginPage from '../pages/onboarding/LoginPage'
 import PriorityPage from '../pages/onboarding/PriorityPage'
 import ProfilePage from '../pages/onboarding/ProfilePage'
 import SchoolInfoPage from '../pages/onboarding/SchoolInfoPage'
+import QuestionPage from '../pages/question/QuestionPage'
+import QuestionProvider from '../pages/question/QuestionProvider'
+import { QUESTION_ROUTES } from '../pages/question/questionData'
 
 export default function AppRoutes() {
   return (
@@ -62,6 +65,9 @@ export default function AppRoutes() {
                 </OnboardingStepGuard>
               }
             />
+            <Route element={<QuestionProvider />}>
+              <Route path={QUESTION_ROUTES.survey} element={<QuestionPage />} />
+            </Route>
             {import.meta.env.DEV && (
               <Route path="/dev/onboarding" element={<DevPreviewPage />} />
             )}

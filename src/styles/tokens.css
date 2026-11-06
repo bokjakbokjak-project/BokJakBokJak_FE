@@ -35,6 +35,13 @@
   --color-brand-beige4: #f5ebdc; /* Actual fill. The Figma label says #F5EDBC; pending designer check. */
   --color-brand-beige5: #fffaec;
 
+  /* Situational survey frames (Figma 787:4924). Not in the design system section. */
+  --color-question-surface: #fff8f0;
+  --color-question-selected: #fff2d0;
+  --color-question-selected-border: #ffe191;
+  --color-question-outline: #6e5149;
+  --color-question-paper: #fffefb;
+
   /* Font */
   --font-sans:
     'Pretendard Variable', -apple-system, BlinkMacSystemFont, system-ui,
