@@ -5,20 +5,24 @@ import PrimaryButton from '../../components/onboarding/PrimaryButton'
 import { CATEGORY_LABELS } from '../../lib/onboarding/categories'
 import { useOnboarding } from '../../lib/onboarding/onboardingState'
 import { ONBOARDING_ROUTES } from '../../lib/onboarding/routes'
-
-// Connection point: go to the situational survey for rank 1 once that screen exists.
-// Nothing is saved yet, because the save API is not agreed (OPEN_QUESTIONS BE-6, BE-7).
-function handleStart() {}
+import { useStepNavigation } from '../../lib/onboarding/useStepNavigation'
+import { QUESTION_ROUTES } from '../question/questionData'
 
 export default function CompletePage() {
   const { data } = useOnboarding()
   const { priorities } = data
+  const go = useStepNavigation()
 
   return (
     <OnboardingScreen
       step={4}
       backTo={ONBOARDING_ROUTES.priority}
-      footer={<PrimaryButton onClick={handleStart}>시작하기</PrimaryButton>}
+      footer={
+        // Nothing is saved yet, because the save API is not agreed (OPEN_QUESTIONS BE-6, BE-7).
+        <PrimaryButton onClick={() => go(QUESTION_ROUTES.survey)}>
+          시작하기
+        </PrimaryButton>
+      }
     >
       <div className="relative top-px -left-[0.5px] flex flex-col items-center gap-[5px] text-center">
         <h1 className="text-[22px] leading-[1.5] font-semibold whitespace-pre-wrap text-gray-black">
