@@ -99,7 +99,7 @@ export default function YearPickerSheet({
       onClick={onClose}
     >
       {/* Lines the sheet up with the MobileLayout frame on PC. Full screen on phones. */}
-      <div className="relative flex h-full w-full justify-center md:h-[min(844px,100dvh)] md:w-[390px] md:overflow-hidden md:rounded-[24px]">
+      <div className="relative flex h-full w-full justify-center md:h-[844px] md:w-[390px] md:overflow-hidden md:rounded-[24px] md:[zoom:var(--frame-scale,1)]">
         <div
           ref={sheetRef}
           role="dialog"
