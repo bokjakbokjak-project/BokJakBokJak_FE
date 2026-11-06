@@ -1,3 +1,4 @@
+import { useEffect, useRef, useState } from 'react'
 import alertCircle from '../../assets/icons/alert-circle.svg'
 import DormitoryField from '../../components/onboarding/DormitoryField'
 import { Field, TextInput } from '../../components/onboarding/Field'
@@ -12,33 +13,69 @@ import {
 import { ONBOARDING_ROUTES } from '../../lib/onboarding/routes'
 import { useStepNavigation } from '../../lib/onboarding/useStepNavigation'
 
-// All options stay selectable: the supported range is undecided (OPEN_QUESTIONS PL-1).
+// Figma note: start on 2인실, and touching 4인실 or 6인실 only shows the notice below.
 const ROOM_OPTIONS: { value: RoomCapacity; label: string }[] = [
   { value: 2, label: '2인실' },
   { value: 4, label: '4인실' },
   { value: 6, label: '6인실' },
 ]
 
+/** Shown for about 3 seconds, and restarted by each press. */
+export const ROOM_NOTICE_MS = 3000
+
 export default function DormitoryPage() {
   const { data, update } = useOnboarding()
   const go = useStepNavigation()
+  const [isNoticeVisible, setIsNoticeVisible] = useState(false)
+  const noticeTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
   const isComplete = isDormitoryStepComplete(data)
+
+  useEffect(() => () => clearTimeout(noticeTimerRef.current), [])
+
+  const handleRoomPress = (isSelected: boolean) => {
+    clearTimeout(noticeTimerRef.current)
+    setIsNoticeVisible(!isSelected)
+    if (!isSelected) {
+      noticeTimerRef.current = setTimeout(
+        () => setIsNoticeVisible(false),
+        ROOM_NOTICE_MS,
+      )
+    }
+  }
 
   return (
     <OnboardingScreen
       step={3}
       backTo={ONBOARDING_ROUTES.profile}
       footer={
-        <PrimaryButton
-          aria-disabled={!isComplete}
-          onClick={() => isComplete && go(ONBOARDING_ROUTES.priority)}
-        >
-          다음으로
-        </PrimaryButton>
+        <div className="relative">
+          {/* Floats above the button, so showing it moves nothing. Taps pass through to the options. */}
+          <div
+            role="status"
+            className="pointer-events-none absolute inset-x-0 bottom-[calc(100%+34px)]"
+          >
+            {isNoticeVisible && (
+              <div className="flex min-h-[39px] items-center justify-center gap-0.5 rounded-[5px] border border-brand-cream3 bg-brand-cream2 px-2.5 py-2">
+                <img src={alertCircle} alt="" className="size-5 shrink-0" />
+                <p className="min-w-0 text-[14px] leading-[1.5] break-keep text-gray-500 min-[390px]:shrink-0 min-[390px]:whitespace-nowrap">
+                  MVP로 아직 4인실과 6인실 매칭을 지원하지 않습니다.
+                </p>
+              </div>
+            )}
+          </div>
+          <PrimaryButton
+            aria-disabled={!isComplete}
+            onClick={() => isComplete && go(ONBOARDING_ROUTES.priority)}
+          >
+            다음으로
+          </PrimaryButton>
+        </div>
       }
     >
       <ScreenTitle>기숙사 정보를 등록해주세요</ScreenTitle>
-      <div className="mt-[50px] flex flex-col gap-5">
+      {/* On short phones this keeps room for the notice above the button, so it never covers
+          the room options and showing it moves nothing. The page scrolls instead. */}
+      <div className="mt-[37px] flex flex-col gap-5 max-md:[@media(max-height:696px)]:pb-[78px]">
         <DormitoryField
           value={data.dormitory}
           onChange={(dormitory) => update({ dormitory })}
@@ -51,7 +88,7 @@ export default function DormitoryPage() {
             onChange={(roomType) => update({ roomType })}
           />
         </Field>
-        <Field label="방 인원" labelClassName="text-brand-brown1">
+        <Field label="방 인원">
           <div className="flex gap-1.5">
             {ROOM_OPTIONS.map(({ value, label }) => {
               const isSelected = data.roomCapacity === value
@@ -60,28 +97,19 @@ export default function DormitoryPage() {
                   key={value}
                   type="button"
                   aria-pressed={isSelected}
-                  className={`flex h-[45px] min-w-0 flex-1 items-center justify-center rounded-[8px] border p-2.5 text-[14px] leading-[1.5] ${
+                  className={`flex h-[45px] min-w-0 flex-1 items-center justify-center rounded-[8px] border text-[14px] leading-[1.5] font-medium ${
                     isSelected
-                      ? 'border-brand-brown1 bg-brand-brown1 font-medium text-white'
-                      : 'border-gray-100 bg-white font-normal text-brand-brown1'
+                      ? 'border-brand-brown1 bg-brand-brown1 text-white'
+                      : 'border-brand-cream3 bg-brand-cream2 text-gray-500'
                   }`}
-                  onClick={() => update({ roomCapacity: value })}
+                  onClick={() => handleRoomPress(isSelected)}
                 >
-                  {label}
+                  <span className="relative top-px">{label}</span>
                 </button>
               )
             })}
           </div>
         </Field>
-        <div
-          role="status"
-          className="flex items-center justify-center gap-[5px] rounded-[5px] bg-gray-400 px-2.5 py-2"
-        >
-          <img src={alertCircle} alt="" className="size-5 shrink-0" />
-          <p className="min-w-0 text-[14px] leading-[1.5] text-white min-[390px]:shrink-0 min-[390px]:whitespace-nowrap">
-            MVP로 아직 4인실과 6인실 매칭을 지원하지 않습니다.
-          </p>
-        </div>
       </div>
     </OnboardingScreen>
   )

@@ -55,6 +55,7 @@ scale = Math.min(창 넓이 / 390, 창 높이 / 844)
 | `src/components/MobileLayout/frameScale.ts`     | 프레임 크기 상수와 배율 계산                    |
 | `src/components/MobileLayout/MobileLayout.tsx`  | 배율 변수 갱신, 프레임과 스크롤 영역 구성       |
 | `src/components/onboarding/YearPickerSheet.tsx` | 프레임 밖에서 같은 크기와 배율 적용             |
+| `src/components/onboarding/MissionNotice.tsx`   | 프레임 밖에서 같은 크기와 배율 적용             |
 | `src/styles/global.css`                         | `scrollbar-none` 유틸리티, 페이지 스크롤바 숨김 |
 
 ### 구조

@@ -20,7 +20,6 @@ export default function SchoolInfoPage() {
       backTo={ONBOARDING_ROUTES.login}
       footer={
         <PrimaryButton
-          radiusClassName="rounded-[100px]"
           aria-disabled={!isComplete}
           onClick={() => isComplete && go(ONBOARDING_ROUTES.profile)}
         >
@@ -29,7 +28,7 @@ export default function SchoolInfoPage() {
       }
     >
       <ScreenTitle>학교 정보를 등록해주세요</ScreenTitle>
-      <div className="mt-12 flex flex-col gap-5">
+      <div className="mt-[35px] flex flex-col gap-5">
         <Field label="학과" htmlFor="department">
           <TextInput
             id="department"
@@ -42,7 +41,7 @@ export default function SchoolInfoPage() {
           <TextInput
             id="student-id"
             value={data.studentId}
-            placeholder="학번을 입력해주세요"
+            placeholder="학번을 입력해주세요  ex ) 20241234"
             onChange={(studentId) => update({ studentId })}
           />
         </Field>

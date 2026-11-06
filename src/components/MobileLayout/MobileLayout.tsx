@@ -2,7 +2,7 @@ import { useLayoutEffect } from 'react'
 import { Outlet } from 'react-router'
 import { getFrameScale } from './frameScale'
 
-// `--frame-scale` is on the root element because YearPickerSheet is portaled out of the frame.
+// `--frame-scale` is on the root element because the modal layers are portaled out of the frame.
 function useFrameScale() {
   useLayoutEffect(() => {
     const update = () => {
@@ -19,7 +19,7 @@ function useFrameScale() {
 // breakpoint, pages sit in a centered 390x844 Figma frame that is zoomed to fill the window
 // height, so the layout stays the same at every window size. Long pages scroll inside the frame.
 // `contain` makes the frame the containing block of fixed overlays, so they line up with it.
-// YearPickerSheet repeats the frame size and zoom to line up with the frame.
+// YearPickerSheet and MissionNotice repeat the frame size and zoom to line up with the frame.
 export default function MobileLayout() {
   useFrameScale()
 

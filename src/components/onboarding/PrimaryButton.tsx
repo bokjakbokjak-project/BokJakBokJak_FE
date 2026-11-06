@@ -1,21 +1,16 @@
 import type { ButtonHTMLAttributes } from 'react'
 
-type PrimaryButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
-  /** Corner radius class. Figma uses 20px except on the school step (100px). */
-  radiusClassName?: string
-}
-
+/** Figma `Button` component (1041:30705). Disabled keeps the brown fill with gray text. */
 export default function PrimaryButton({
-  radiusClassName = 'rounded-[20px]',
   disabled,
   className = '',
   ...props
-}: PrimaryButtonProps) {
+}: ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
     <button
       type="button"
       disabled={disabled}
-      className={`flex h-[65px] w-full items-center justify-center p-2.5 text-[20px] leading-[1.5] font-semibold text-white ${radiusClassName} ${disabled ? 'bg-gray-300' : 'bg-brand-brown1'} ${className}`}
+      className={`flex h-[65px] w-full items-center justify-center rounded-[10px] bg-brand-brown1 p-2.5 text-[20px] leading-[1.5] font-semibold ${disabled ? 'text-gray-300' : 'text-white'} ${className}`}
       {...props}
     />
   )

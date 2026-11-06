@@ -20,19 +20,14 @@ import { useStepNavigation } from '../../lib/onboarding/useStepNavigation'
 
 // Figma draws each icon in one state only, so the icon is used as a mask to recolor it.
 function GenderIcon({ gender }: { gender: Gender }) {
-  const isFemale = gender === 'female'
-  const src = isFemale ? femaleIcon : maleIcon
+  const src = gender === 'female' ? femaleIcon : maleIcon
   const mask = `url("${src}") center / contain no-repeat`
   return (
     <span
       aria-hidden="true"
-      className={`relative shrink-0 ${isFemale ? 'size-[14.32px]' : 'size-5'}`}
-    >
-      <span
-        className={`absolute bg-current ${isFemale ? '-inset-[0.84px]' : 'inset-0'}`}
-        style={{ mask, WebkitMask: mask }}
-      />
-    </span>
+      className="size-5 shrink-0 bg-current"
+      style={{ mask, WebkitMask: mask }}
+    />
   )
 }
 
@@ -62,18 +57,15 @@ export default function ProfilePage() {
       }
     >
       <ScreenTitle>내 정보를 등록해주세요</ScreenTitle>
-      <div className="mt-12">
-        <Field label="이름" htmlFor="name">
+      <div className="mt-[35px] flex flex-col gap-5">
+        <Field label="닉네임" htmlFor="name">
           <TextInput
             id="name"
             value={data.name}
-            placeholder="이름을 입력해주세요"
-            heightClassName="h-[46px]"
+            placeholder="닉네임을 입력해주세요"
             onChange={(name) => update({ name })}
           />
         </Field>
-      </div>
-      <div className="mt-[19px]">
         <Field label="성별">
           <div className="grid grid-cols-2 gap-1.5">
             {GENDER_OPTIONS.map(({ value, label }) => {
@@ -83,22 +75,20 @@ export default function ProfilePage() {
                   key={value}
                   type="button"
                   aria-pressed={isSelected}
-                  className={`flex h-14 items-center justify-center gap-2.5 rounded-[8px] p-2.5 text-[14px] leading-[1.5] font-medium ${
+                  className={`flex h-14 items-center justify-center gap-[5px] rounded-[8px] p-2.5 text-[16px] leading-[1.5] font-medium ${
                     isSelected
                       ? 'bg-brand-brown1 text-white'
-                      : 'border border-gray-100 bg-white text-gray-300'
+                      : 'border border-brand-cream3 bg-brand-cream2 text-brand-brown1'
                   }`}
                   onClick={() => update({ gender: value })}
                 >
                   <GenderIcon gender={value} />
-                  {label}
+                  <span className="relative top-px">{label}</span>
                 </button>
               )
             })}
           </div>
         </Field>
-      </div>
-      <div className="mt-[26px]">
         <Field label="출생년도">
           <button
             ref={birthYearButtonRef}

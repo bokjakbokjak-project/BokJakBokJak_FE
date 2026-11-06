@@ -1,4 +1,5 @@
 import googleLogo from '../../assets/icons/google.svg'
+import logo from '../../assets/onboarding/logo.svg'
 import tooltipTail from '../../assets/icons/tooltip-tail.svg'
 import EmojiText from '../../components/onboarding/EmojiText'
 import { ONBOARDING_ROUTES } from '../../lib/onboarding/routes'
@@ -12,12 +13,16 @@ export default function LoginPage() {
   const handleSignIn = () => go(ONBOARDING_ROUTES.school)
 
   return (
-    <div className="mx-auto flex w-full max-w-[390px] flex-1 flex-col items-center pt-[max(0px,calc(315px-env(safe-area-inset-top)))]">
-      <main className="relative -left-[0.5px] flex flex-col items-center">
-        <h1 className="w-[193px] text-[48.208px] leading-[1.5] font-medium whitespace-nowrap text-brand-brown1">
-          복작복작
+    <div className="mx-auto flex w-full max-w-[390px] flex-1 flex-col items-center pt-[max(0px,calc(277px-env(safe-area-inset-top)))]">
+      <main className="flex flex-col items-center">
+        <h1>
+          <img
+            src={logo}
+            alt="복작복작"
+            className="block h-[145px] w-[220px] max-w-none"
+          />
         </h1>
-        <p className="w-[215px] text-center text-[22px] leading-[1.5] font-semibold text-brand-brown1">
+        <p className="relative -left-[0.5px] mt-[12.08px] text-center text-[20px] leading-[1.5] font-semibold text-brand-brown1">
           상황으로 찾는 룸메이트
         </p>
       </main>
