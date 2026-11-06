@@ -1,19 +1,15 @@
 import googleLogo from '../../assets/icons/google.svg'
 import tooltipTail from '../../assets/icons/tooltip-tail.svg'
 import EmojiText from '../../components/onboarding/EmojiText'
-import { canUseTemporaryFlow } from '../../lib/onboarding/demoMode'
 import { ONBOARDING_ROUTES } from '../../lib/onboarding/routes'
 import { useStepNavigation } from '../../lib/onboarding/useStepNavigation'
 
 export default function LoginPage() {
   const go = useStepNavigation()
 
-  // Replace with the real sign-in once the method is decided (OPEN_QUESTIONS BE-1).
-  // Temporary shortcut for development and demo mode: it creates no token or auth state,
-  // and other builds do nothing here.
-  const handleSignIn = () => {
-    if (canUseTemporaryFlow()) go(ONBOARDING_ROUTES.school)
-  }
+  // Replace with the real sign-in once the method is decided (OPEN_QUESTIONS BE-1). Until then
+  // the button only moves to the next step in every build. It creates no token or auth state.
+  const handleSignIn = () => go(ONBOARDING_ROUTES.school)
 
   return (
     <div className="mx-auto flex w-full max-w-[390px] flex-1 flex-col items-center pt-[max(0px,calc(315px-env(safe-area-inset-top)))]">

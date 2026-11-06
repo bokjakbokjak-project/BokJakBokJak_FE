@@ -1,8 +1,8 @@
 /**
  * Demo mode for team trials on Vercel Preview links. It needs the explicit flag and the
  * environment that Vercel provides, so it stays off by default and in Production even if the
- * flag is set there by mistake. It only opens temporary screens: it creates no sign-in state
- * and does not skip the onboarding input checks.
+ * flag is set there by mistake. It adds the test data notice and sample dormitory results:
+ * it creates no sign-in state and does not skip the onboarding input checks.
  */
 export function isDemoMode() {
   return (

@@ -99,7 +99,7 @@ describe('login shortcut', () => {
     vi.unstubAllEnvs()
   })
 
-  it('moves to the school step in development without storing auth state', () => {
+  it('moves to the school step without storing auth state', () => {
     renderAt(ONBOARDING_ROUTES.login)
 
     click('Sign up with Google')
@@ -112,18 +112,26 @@ describe('login shortcut', () => {
     expect(document.cookie).toBe('')
   })
 
-  it('stays on the login page in production', () => {
+  it('moves to the school step in a production build', () => {
     vi.stubEnv('DEV', false)
     renderAt(ONBOARDING_ROUTES.login)
 
     click('Sign up with Google')
 
-    expect(
-      screen.getByRole('heading', { name: '복작복작' }),
-    ).toBeInTheDocument()
-    expect(
-      screen.queryByRole('heading', { name: '학교 정보를 등록해주세요' }),
-    ).not.toBeInTheDocument()
+    expectHeading('학교 정보를 등록해주세요')
+    expect(localStorage).toHaveLength(0)
+    expect(sessionStorage).toHaveLength(0)
+    expect(document.cookie).toBe('')
+  })
+
+  it('keeps the step checks after the button in a production build', () => {
+    vi.stubEnv('DEV', false)
+    renderAt(ONBOARDING_ROUTES.login)
+    click('Sign up with Google')
+
+    click('다음으로')
+
+    expectHeading('학교 정보를 등록해주세요')
   })
 })
 
@@ -165,11 +173,6 @@ describe('demo mode', () => {
     renderAt(ONBOARDING_ROUTES.login)
 
     expect(screen.queryByRole('note')).not.toBeInTheDocument()
-    click('Sign up with Google')
-
-    expect(
-      screen.getByRole('button', { name: 'Sign up with Google' }),
-    ).toBeInTheDocument()
   })
 
   it('keeps the step checks', () => {
