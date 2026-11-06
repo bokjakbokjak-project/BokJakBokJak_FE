@@ -6,24 +6,25 @@ import RoomBackground from '../../components/onboarding/RoomBackground'
 import { categoryCardClass } from '../../lib/onboarding/categories'
 import { useOnboarding } from '../../lib/onboarding/onboardingState'
 import { ONBOARDING_ROUTES } from '../../lib/onboarding/routes'
-
-// Connection point: go to the situational survey for rank 1 once that screen exists.
-// Nothing is saved yet, because the save API is not agreed (OPEN_QUESTIONS BE-6, BE-7).
-function handleStart() {}
-
-// 314px of the 342px character shows above the cards. See PriorityPage for the short window rule.
-const STAGE_WIDTH = 'clamp(220px, calc((100dvh - 530px) * 302 / 314), 302px)'
+import { useStepNavigation } from '../../lib/onboarding/useStepNavigation'
+import { QUESTION_ROUTES } from '../question/questionData'
 
 export default function CompletePage() {
   const { data } = useOnboarding()
   const { priorities } = data
+  const go = useStepNavigation()
 
   return (
     <OnboardingScreen
       step={4}
       backTo={ONBOARDING_ROUTES.priority}
       fullBleed
-      footer={<PrimaryButton onClick={handleStart}>시작하기!</PrimaryButton>}
+      footer={
+        // Nothing is saved yet, because the save API is not agreed (OPEN_QUESTIONS BE-6, BE-7).
+        <PrimaryButton onClick={() => go(QUESTION_ROUTES.survey)}>
+          시작하기!
+        </PrimaryButton>
+      }
     >
       <RoomBackground className="absolute inset-x-0 bottom-0 h-[439px]" />
       <div className="relative -left-[0.5px] flex flex-col items-center gap-[5px] px-6 text-center">
@@ -35,10 +36,8 @@ export default function CompletePage() {
         </p>
       </div>
       <div className="min-h-[53px] flex-1" />
-      <div
-        className="relative mx-auto aspect-[302/314] min-h-0 shrink-0"
-        style={{ width: STAGE_WIDTH }}
-      >
+      {/* 314px of the 342px character shows above the cards. See PriorityPage for the width. */}
+      <div className="relative mx-auto aspect-[302/314] min-h-0 w-[clamp(220px,calc((100dvh-530px)*302/314),302px)] shrink-0 md:w-[302px]">
         <CharacterPreview priorities={priorities} />
       </div>
       <ul className="relative mx-auto flex w-full max-w-[390px] shrink-0 justify-center gap-3 px-6 pb-[50px]">

@@ -594,6 +594,29 @@ describe('birth year sheet focus', () => {
   })
 })
 
+describe('survey connection', () => {
+  it('moves from the complete screen to the survey and back', () => {
+    renderPriorityStep()
+    click(/잠버릇/)
+    click(/기상알람/)
+    click(/청소,청결/)
+    click('완료하기')
+    expectHeading(/등록완료!/)
+
+    click('시작하기!')
+
+    expect(screen.getByRole('button', { name: '뒤로' })).toBeInTheDocument()
+    expect(
+      screen.queryByRole('heading', { name: /등록완료!/ }),
+    ).not.toBeInTheDocument()
+
+    click('뒤로')
+
+    expectHeading(/등록완료!/)
+    expect(layerVariant('head')).toBe('sleep-habit')
+  })
+})
+
 describe('bottom button', () => {
   it('uses the shared footer on every step', () => {
     renderAt(ONBOARDING_ROUTES.school)

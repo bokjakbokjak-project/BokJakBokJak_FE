@@ -73,9 +73,9 @@ export default function DormitoryPage() {
       }
     >
       <ScreenTitle>기숙사 정보를 등록해주세요</ScreenTitle>
-      {/* On short windows this keeps room for the notice above the button, so it never covers
+      {/* On short phones this keeps room for the notice above the button, so it never covers
           the room options and showing it moves nothing. The page scrolls instead. */}
-      <div className="mt-[37px] flex flex-col gap-5 [@media(max-height:696px)]:pb-[78px]">
+      <div className="mt-[37px] flex flex-col gap-5 max-md:[@media(max-height:696px)]:pb-[78px]">
         <DormitoryField
           value={data.dormitory}
           onChange={(dormitory) => update({ dormitory })}

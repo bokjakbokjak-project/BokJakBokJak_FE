@@ -24,7 +24,7 @@ export default function OnboardingProvider() {
 
   return (
     <OnboardingContext.Provider value={value}>
-      <div className="-mt-[env(safe-area-inset-top)] -mb-[env(safe-area-inset-bottom)] flex flex-1 flex-col overflow-x-clip bg-brand-cream1 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)] md:overflow-hidden md:rounded-[24px]">
+      <div className="-mt-[env(safe-area-inset-top)] -mb-[env(safe-area-inset-bottom)] flex flex-1 flex-col overflow-x-clip bg-brand-cream1 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
         <Outlet />
       </div>
     </OnboardingContext.Provider>

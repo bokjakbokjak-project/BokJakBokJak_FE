@@ -19,11 +19,6 @@ import {
 import { ONBOARDING_ROUTES } from '../../lib/onboarding/routes'
 import { useStepNavigation } from '../../lib/onboarding/useStepNavigation'
 
-// The character shows 294px of its 342px above the panel, and the panel covers the rest. On a
-// short window it shrinks with the free height, down to a size that stays recognizable, so the
-// bottom button stays on screen. Below that size the page scrolls.
-const STAGE_WIDTH = 'clamp(220px, calc((100dvh - 550px) * 302 / 294), 302px)'
-
 export default function PriorityPage() {
   const { data, update, hasSeenMission, markMissionSeen } = useOnboarding()
   const go = useStepNavigation()
@@ -74,10 +69,9 @@ export default function PriorityPage() {
       </h1>
       <div className="relative flex flex-1 flex-col justify-end">
         <RoomBackground className="absolute inset-x-0 -bottom-[35px] h-[155px]" />
-        <div
-          className="relative mx-auto aspect-[302/294] min-h-0 shrink-0"
-          style={{ width: STAGE_WIDTH }}
-        >
+        {/* 294px of the 342px character shows above the panel. On a short phone it shrinks with
+            the free height, then the page scrolls. The PC frame is always 844px tall. */}
+        <div className="relative mx-auto aspect-[302/294] min-h-0 w-[clamp(220px,calc((100dvh-550px)*302/294),302px)] shrink-0 md:w-[302px]">
           <CharacterPreview priorities={priorities} />
         </div>
       </div>

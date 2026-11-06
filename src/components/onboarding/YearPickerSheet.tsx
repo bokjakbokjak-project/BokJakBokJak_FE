@@ -86,8 +86,8 @@ export default function YearPickerSheet({
       className="fixed inset-0 z-20 flex justify-center md:items-center"
       onClick={onClose}
     >
-      {/* Dims the MobileLayout frame on PC, or the full screen on phones. */}
-      <div className="relative flex h-full w-full justify-center bg-[rgba(18,18,18,0.7)] md:h-[min(844px,100dvh)] md:w-[390px] md:overflow-hidden md:rounded-[24px]">
+      {/* Dims the zoomed frame on PC (see docs/desktop-frame-scaling.md), or the full screen on phones. */}
+      <div className="relative flex h-full w-full justify-center bg-[rgba(18,18,18,0.7)] md:h-[844px] md:w-[390px] md:overflow-hidden md:rounded-[24px] md:[zoom:var(--frame-scale,1)]">
         <div
           ref={sheetRef}
           role="dialog"

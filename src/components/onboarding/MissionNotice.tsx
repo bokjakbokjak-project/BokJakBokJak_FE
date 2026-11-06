@@ -35,7 +35,7 @@ export default function MissionNotice({
       className="fixed inset-0 z-20 flex justify-center md:items-center"
       onClick={onClose}
     >
-      <div className="flex h-full w-full items-center justify-center bg-[rgba(18,18,18,0.5)] md:h-[min(844px,100dvh)] md:w-[390px] md:overflow-hidden md:rounded-[24px]">
+      <div className="flex h-full w-full items-center justify-center bg-[rgba(18,18,18,0.5)] md:h-[844px] md:w-[390px] md:overflow-hidden md:rounded-[24px] md:[zoom:var(--frame-scale,1)]">
         <div
           ref={contentRef}
           role="dialog"
