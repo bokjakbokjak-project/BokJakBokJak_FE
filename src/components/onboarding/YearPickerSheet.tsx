@@ -95,59 +95,62 @@ export default function YearPickerSheet({
   return createPortal(
     <div
       ref={overlayRef}
-      className="fixed inset-0 z-20 flex justify-center"
+      className="fixed inset-0 z-20 flex justify-center md:items-center"
       onClick={onClose}
     >
-      <div
-        ref={sheetRef}
-        role="dialog"
-        aria-modal="true"
-        aria-label="연도 선택"
-        tabIndex={-1}
-        className="absolute bottom-0 h-[376px] w-full max-w-[390px] rounded-t-[29px] bg-white shadow-[0_0_7.3px_0_rgba(0,0,0,0.25)] outline-none"
-        onClick={(event) => event.stopPropagation()}
-        onKeyDown={handleKeyDown}
-      >
-        <div className="absolute top-[9px] left-1/2 h-1 w-20 -translate-x-1/2 rounded-[10px] bg-[#efefef]" />
-        <p className="absolute top-[51px] left-1/2 -translate-x-1/2 text-center text-[20px] leading-6 font-semibold tracking-[-0.2px] whitespace-nowrap text-[#1a1a1a]">
-          연도 선택
-        </p>
+      {/* Lines the sheet up with the MobileLayout frame on PC. Full screen on phones. */}
+      <div className="relative flex h-full w-full justify-center md:h-[min(844px,100dvh)] md:w-[390px] md:overflow-hidden md:rounded-[24px]">
         <div
-          className="absolute top-[93px] left-1/2 h-[164px] w-[196px] -translate-x-1/2 overflow-hidden"
-          onWheel={handleWheel}
+          ref={sheetRef}
+          role="dialog"
+          aria-modal="true"
+          aria-label="연도 선택"
+          tabIndex={-1}
+          className="absolute bottom-0 h-[376px] w-full max-w-[390px] rounded-t-[29px] bg-white shadow-[0_0_7.3px_0_rgba(0,0,0,0.25)] outline-none"
+          onClick={(event) => event.stopPropagation()}
+          onKeyDown={handleKeyDown}
         >
-          <div className="absolute top-[58px] left-[11px] flex w-[169px] items-center justify-center rounded-[10px] bg-[#f5f5f5] px-[25px] py-1">
-            <p
-              data-testid="selected-year"
-              aria-live="polite"
-              className="text-center text-[20px] leading-[1.6] font-medium tracking-[-0.5px] whitespace-nowrap text-[#5e5e5e]"
-            >
-              {year}
-            </p>
-          </div>
-          {SLOTS.map(({ distance, top, color }) => {
-            const value = year + distance
-            if (value < MIN_BIRTH_YEAR || value > MAX_BIRTH_YEAR) return null
-            return (
-              <button
-                key={distance}
-                type="button"
-                className={`absolute left-[95px] -translate-x-1/2 text-center text-[20px] leading-[1.6] font-medium tracking-[-0.5px] whitespace-nowrap ${color}`}
-                style={{ top }}
-                onClick={() => setYear(value)}
+          <div className="absolute top-[9px] left-1/2 h-1 w-20 -translate-x-1/2 rounded-[10px] bg-[#efefef]" />
+          <p className="absolute top-[51px] left-1/2 -translate-x-1/2 text-center text-[20px] leading-6 font-semibold tracking-[-0.2px] whitespace-nowrap text-[#1a1a1a]">
+            연도 선택
+          </p>
+          <div
+            className="absolute top-[93px] left-1/2 h-[164px] w-[196px] -translate-x-1/2 overflow-hidden"
+            onWheel={handleWheel}
+          >
+            <div className="absolute top-[58px] left-[11px] flex w-[169px] items-center justify-center rounded-[10px] bg-[#f5f5f5] px-[25px] py-1">
+              <p
+                data-testid="selected-year"
+                aria-live="polite"
+                className="text-center text-[20px] leading-[1.6] font-medium tracking-[-0.5px] whitespace-nowrap text-[#5e5e5e]"
               >
-                {value}
-              </button>
-            )
-          })}
+                {year}
+              </p>
+            </div>
+            {SLOTS.map(({ distance, top, color }) => {
+              const value = year + distance
+              if (value < MIN_BIRTH_YEAR || value > MAX_BIRTH_YEAR) return null
+              return (
+                <button
+                  key={distance}
+                  type="button"
+                  className={`absolute left-[95px] -translate-x-1/2 text-center text-[20px] leading-[1.6] font-medium tracking-[-0.5px] whitespace-nowrap ${color}`}
+                  style={{ top }}
+                  onClick={() => setYear(value)}
+                >
+                  {value}
+                </button>
+              )
+            })}
+          </div>
+          <button
+            type="button"
+            className="absolute top-[291px] left-1/2 h-[67px] w-[332px] max-w-[calc(100%-58px)] -translate-x-1/2 rounded-[20px] bg-brand-brown1 text-center text-[20px] leading-6 font-semibold tracking-[-0.2px] text-white"
+            onClick={() => onSelect(year)}
+          >
+            선택하기
+          </button>
         </div>
-        <button
-          type="button"
-          className="absolute top-[291px] left-1/2 h-[67px] w-[332px] max-w-[calc(100%-58px)] -translate-x-1/2 rounded-[20px] bg-brand-brown1 text-center text-[20px] leading-6 font-semibold tracking-[-0.2px] text-white"
-          onClick={() => onSelect(year)}
-        >
-          선택하기
-        </button>
       </div>
     </div>,
     document.body,
