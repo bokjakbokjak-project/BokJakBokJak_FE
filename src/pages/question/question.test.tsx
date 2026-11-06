@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import AppRoutes from '../../app/AppRoutes'
-import { getQuestionStep } from './questionData'
+import { QUESTION_COUNT, getQuestionStep } from './questionData'
 
 function renderAt(path: string) {
   render(
@@ -27,6 +27,14 @@ const advance = (ms: number) => act(() => vi.advanceTimersByTime(ms))
 const finishSituation = () => {
   advance(2000)
   advance(500)
+}
+
+function answerAll() {
+  for (let index = 0; index < QUESTION_COUNT; index += 1) {
+    if (index % 2 === 0) finishSituation()
+    pick(index)
+    next()
+  }
 }
 
 describe('situational survey', () => {
@@ -123,5 +131,36 @@ describe('situational survey', () => {
     pick(1)
     next()
     expect(progress()).toHaveAttribute('aria-valuenow', '2')
+  })
+
+  it('shows both answers of every topic on the profile', () => {
+    renderAt('/question')
+    answerAll()
+
+    expect(
+      screen.getByRole('heading', { name: '사용자님의 정보' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('자주 있어도 괜찮다')).toBeInTheDocument()
+    expect(screen.getByText('흡연 여부는 상관없다')).toBeInTheDocument()
+  })
+
+  it('sends a profile visit without answers back to the survey', () => {
+    renderAt('/question/profile')
+
+    expect(
+      screen.getByRole('heading', { name: /밤에 함께 자고 있는데/ }),
+    ).toBeInTheDocument()
+  })
+
+  it('opens the share sheet and closes it with Escape', () => {
+    renderAt('/question')
+    answerAll()
+
+    fireEvent.click(screen.getByRole('button', { name: '공유하기' }))
+    const sheet = screen.getByRole('dialog', { name: '공유하기' })
+    expect(sheet).toHaveFocus()
+
+    fireEvent.keyDown(sheet, { key: 'Escape' })
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 })
