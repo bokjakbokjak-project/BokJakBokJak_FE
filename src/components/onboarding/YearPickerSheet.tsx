@@ -7,6 +7,7 @@ import {
   type WheelEvent,
 } from 'react'
 import { createPortal } from 'react-dom'
+import { useModalLayer } from '../../lib/onboarding/useModalLayer'
 
 // Figma shows 2003-2007 only. The real range is not decided, so this is provisional.
 export const MIN_BIRTH_YEAR = 1980
@@ -41,20 +42,7 @@ export default function YearPickerSheet({
   const moveTo = (next: number) =>
     setYear(Math.min(MAX_BIRTH_YEAR, Math.max(MIN_BIRTH_YEAR, next)))
 
-  // The sheet is portaled to the body, so everything else can be made inert. That removes
-  // the background from keyboard, pointer, and screen reader use while the sheet is open.
-  useEffect(() => {
-    const trigger = triggerRef.current
-    const background = [...document.body.children].filter(
-      (element) => element !== overlayRef.current,
-    )
-    background.forEach((element) => element.setAttribute('inert', ''))
-    sheetRef.current?.focus()
-    return () => {
-      background.forEach((element) => element.removeAttribute('inert'))
-      trigger?.focus()
-    }
-  }, [triggerRef])
+  useModalLayer({ overlayRef, contentRef: sheetRef, triggerRef })
 
   // A focused year button disappears at the edge of the range. Keep focus inside the sheet.
   useEffect(() => {
@@ -98,15 +86,15 @@ export default function YearPickerSheet({
       className="fixed inset-0 z-20 flex justify-center md:items-center"
       onClick={onClose}
     >
-      {/* Lines the sheet up with the MobileLayout frame on PC. Full screen on phones. */}
-      <div className="relative flex h-full w-full justify-center md:h-[min(844px,100dvh)] md:w-[390px] md:overflow-hidden md:rounded-[24px]">
+      {/* Dims the MobileLayout frame on PC, or the full screen on phones. */}
+      <div className="relative flex h-full w-full justify-center bg-[rgba(18,18,18,0.7)] md:h-[min(844px,100dvh)] md:w-[390px] md:overflow-hidden md:rounded-[24px]">
         <div
           ref={sheetRef}
           role="dialog"
           aria-modal="true"
           aria-label="연도 선택"
           tabIndex={-1}
-          className="absolute bottom-0 h-[376px] w-full max-w-[390px] rounded-t-[29px] bg-white shadow-[0_0_7.3px_0_rgba(0,0,0,0.25)] outline-none"
+          className="absolute bottom-0 h-[376px] w-full max-w-[390px] rounded-t-[29px] bg-brand-cream1 shadow-[0_0_7.3px_0_rgba(0,0,0,0.25)] outline-none"
           onClick={(event) => event.stopPropagation()}
           onKeyDown={handleKeyDown}
         >
@@ -118,11 +106,11 @@ export default function YearPickerSheet({
             className="absolute top-[93px] left-1/2 h-[164px] w-[196px] -translate-x-1/2 overflow-hidden"
             onWheel={handleWheel}
           >
-            <div className="absolute top-[58px] left-[11px] flex w-[169px] items-center justify-center rounded-[10px] bg-[#f5f5f5] px-[25px] py-1">
+            <div className="absolute top-[58px] left-[11px] flex w-[169px] items-center justify-center rounded-[10px] bg-brand-cream2 px-[25px] py-1">
               <p
                 data-testid="selected-year"
                 aria-live="polite"
-                className="text-center text-[20px] leading-[1.6] font-medium tracking-[-0.5px] whitespace-nowrap text-[#5e5e5e]"
+                className="text-center text-[20px] leading-[1.6] font-medium tracking-[-0.5px] whitespace-nowrap text-gray-500"
               >
                 {year}
               </p>
@@ -145,7 +133,7 @@ export default function YearPickerSheet({
           </div>
           <button
             type="button"
-            className="absolute top-[291px] left-1/2 h-[67px] w-[332px] max-w-[calc(100%-58px)] -translate-x-1/2 rounded-[20px] bg-brand-brown1 text-center text-[20px] leading-6 font-semibold tracking-[-0.2px] text-white"
+            className="absolute top-[291px] left-[29px] h-[65px] w-[342px] max-w-[calc(100%-48px)] rounded-[10px] bg-brand-brown1 text-center text-[20px] leading-[1.5] font-semibold text-white"
             onClick={() => onSelect(year)}
           >
             선택하기

@@ -26,13 +26,17 @@ export const INITIAL_ONBOARDING_DATA: OnboardingData = {
   birthYear: null,
   dormitory: '',
   roomType: '',
-  roomCapacity: null,
+  // Figma note: start on 2인실. 4인실 and 6인실 only show a notice for now.
+  roomCapacity: 2,
   priorities: [],
 }
 
 type OnboardingContextValue = {
   data: OnboardingData
   update: (patch: Partial<OnboardingData>) => void
+  /** The mission notice opens by itself only on the first visit to the priority step. */
+  hasSeenMission: boolean
+  markMissionSeen: () => void
 }
 
 export const OnboardingContext = createContext<OnboardingContextValue | null>(

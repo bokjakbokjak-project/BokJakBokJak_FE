@@ -1,7 +1,9 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { Link, MemoryRouter } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import AppRoutes from '../../app/AppRoutes'
+import { MISSION_NOTICE_MS } from '../../components/onboarding/MissionNotice'
+import { ROOM_NOTICE_MS } from './DormitoryPage'
 import {
   INITIAL_ONBOARDING_DATA,
   getRequiredStepRoute,
@@ -49,7 +51,7 @@ function completeSchoolStep() {
 }
 
 function completeProfileStep() {
-  type('이름', '복작이')
+  type('닉네임', '복작이')
   click('여성')
   click('출생년도를 선택해주세요')
   click('선택하기')
@@ -85,10 +87,10 @@ function chipRows() {
   )
 }
 
-function expectFixedChipRows({ smokingLabel = '흡연유무' } = {}) {
+function expectFixedChipRows() {
   expect(chipRows()).toEqual([
-    ['😴 잠버릇', '🧹 청소, 청결', '⏰ 기상 알람'],
-    ['🧼 개인 청결', `🚬 ${smokingLabel}`],
+    ['잠버릇', '기상알람', '청소,청결'],
+    ['개인청결', '흡연유무'],
   ])
 }
 
@@ -199,7 +201,7 @@ describe('priority chip positions', () => {
 
     click(/흡연유무/)
 
-    expectFixedChipRows({ smokingLabel: '흡연, 냄새' })
+    expectFixedChipRows()
     expect(within(chip(/흡연/)).getByAltText('1순위')).toBeInTheDocument()
     expect(layerVariant('head')).toBe('smoking')
   })
@@ -207,12 +209,12 @@ describe('priority chip positions', () => {
   it('keeps the third top-row chip in place when it is selected second', () => {
     renderPriorityStep()
 
-    click(/개인 청결/)
-    click(/기상 알람/)
+    click(/개인청결/)
+    click(/기상알람/)
 
     expectFixedChipRows()
-    expect(within(chip(/개인 청결/)).getByAltText('1순위')).toBeInTheDocument()
-    expect(within(chip(/기상 알람/)).getByAltText('2순위')).toBeInTheDocument()
+    expect(within(chip(/개인청결/)).getByAltText('1순위')).toBeInTheDocument()
+    expect(within(chip(/기상알람/)).getByAltText('2순위')).toBeInTheDocument()
     expect(layerVariant('head')).toBe('personal-hygiene')
     expect(layerVariant('hand')).toBe('wake-alarm')
   })
@@ -220,8 +222,8 @@ describe('priority chip positions', () => {
   it('keeps three chips on top and two below after three selections', () => {
     renderPriorityStep()
 
-    click(/개인 청결/)
-    click(/기상 알람/)
+    click(/개인청결/)
+    click(/기상알람/)
     click(/잠버릇/)
 
     expectFixedChipRows()
@@ -233,15 +235,15 @@ describe('priority chip positions', () => {
   it('keeps positions and pulls ranks forward when a selection is cancelled', () => {
     renderPriorityStep()
 
-    click(/개인 청결/)
-    click(/기상 알람/)
+    click(/개인청결/)
+    click(/기상알람/)
     click(/잠버릇/)
-    click(/개인 청결/)
+    click(/개인청결/)
 
     expectFixedChipRows()
-    expect(chip(/개인 청결/)).toHaveAttribute('aria-pressed', 'false')
-    expect(within(chip(/개인 청결/)).queryByRole('img')).not.toBeInTheDocument()
-    expect(within(chip(/기상 알람/)).getByAltText('1순위')).toBeInTheDocument()
+    expect(chip(/개인청결/)).toHaveAttribute('aria-pressed', 'false')
+    expect(within(chip(/개인청결/)).queryByRole('img')).not.toBeInTheDocument()
+    expect(within(chip(/기상알람/)).getByAltText('1순위')).toBeInTheDocument()
     expect(within(chip(/잠버릇/)).getByAltText('2순위')).toBeInTheDocument()
     expect(layerVariant('head')).toBe('wake-alarm')
     expect(layerVariant('hand')).toBe('sleep-habit')
@@ -269,7 +271,7 @@ describe('onboarding flow', () => {
     renderAt(ONBOARDING_ROUTES.school)
 
     completeSchoolStep()
-    type('이름', '복작이')
+    type('닉네임', '복작이')
     click('남성')
     click('이전')
 
@@ -277,7 +279,7 @@ describe('onboarding flow', () => {
     expect(screen.getByLabelText('학번')).toHaveValue('20261234')
 
     click('다음으로')
-    expect(screen.getByLabelText('이름')).toHaveValue('복작이')
+    expect(screen.getByLabelText('닉네임')).toHaveValue('복작이')
     expect(screen.getByRole('button', { name: '남성' })).toHaveAttribute(
       'aria-pressed',
       'true',
@@ -311,12 +313,12 @@ describe('onboarding flow', () => {
     expect(layerVariant('hand')).toBe('default')
     expect(screen.getByAltText('1순위')).toBeInTheDocument()
 
-    click(/기상 알람/)
+    click(/기상알람/)
     expect(layerVariant('hand')).toBe('wake-alarm')
     expect(layerVariant('body')).toBe('default')
     expect(finish).toBeDisabled()
 
-    click(/청소, 청결/)
+    click(/청소,청결/)
     expect(layerVariant('body')).toBe('cleaning')
     expect(screen.getByAltText('3순위')).toBeInTheDocument()
     expect(finish).toBeEnabled()
@@ -326,8 +328,8 @@ describe('onboarding flow', () => {
     renderPriorityStep()
 
     click(/잠버릇/)
-    click(/기상 알람/)
-    click(/청소, 청결/)
+    click(/기상알람/)
+    click(/청소,청결/)
     click(/잠버릇/)
 
     expect(layerVariant('head')).toBe('wake-alarm')
@@ -344,14 +346,14 @@ describe('onboarding flow', () => {
     completeDormitoryStep()
     click(/잠버릇/)
     click(/흡연유무/)
-    click(/청소, 청결/)
+    click(/청소,청결/)
     click('완료하기')
 
     expect(
       screen.getByRole('heading', { name: /등록완료!/ }),
     ).toBeInTheDocument()
     const chips = screen.getAllByRole('listitem').map((el) => el.textContent)
-    expect(chips).toEqual(['😴 잠버릇', '🚬 흡연유무', '🧹 청소, 청결'])
+    expect(chips).toEqual(['잠버릇', '흡연유무', '청소,청결'])
     expect(layerVariant('head')).toBe('sleep-habit')
     expect(layerVariant('hand')).toBe('smoking')
     expect(layerVariant('body')).toBe('cleaning')
@@ -393,8 +395,8 @@ describe('onboarding flow', () => {
 
   it('returns from the complete screen with the ranks kept', () => {
     renderPriorityStep()
-    click(/개인 청결/)
-    click(/기상 알람/)
+    click(/개인청결/)
+    click(/기상알람/)
     click(/잠버릇/)
     click('완료하기')
     expectHeading(/등록완료!/)
@@ -402,7 +404,7 @@ describe('onboarding flow', () => {
 
     click('이전')
 
-    expect(within(chip(/개인 청결/)).getByAltText('1순위')).toBeInTheDocument()
+    expect(within(chip(/개인청결/)).getByAltText('1순위')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '완료하기' })).toBeEnabled()
   })
 })
@@ -454,7 +456,7 @@ describe('onboarding step guard', () => {
     completeProfileStep()
     completeDormitoryStep()
     click(/잠버릇/)
-    click(/청소, 청결/)
+    click(/청소,청결/)
 
     enterUrl()
 
@@ -592,24 +594,180 @@ describe('birth year sheet focus', () => {
   })
 })
 
-describe('priority chip slots', () => {
-  it('keeps every slot width when a chip is selected', () => {
+describe('bottom button', () => {
+  it('uses the shared footer on every step', () => {
+    renderAt(ONBOARDING_ROUTES.school)
+    const expectInFooter = (name: string) =>
+      expect(
+        within(screen.getByTestId('onboarding-footer')).getByRole('button', {
+          name,
+        }),
+      ).toBeInTheDocument()
+
+    expectInFooter('다음으로')
+    completeSchoolStep()
+    expectInFooter('다음으로')
+    completeProfileStep()
+    expectInFooter('다음으로')
+    completeDormitoryStep()
+    expectInFooter('완료하기')
+    click(/잠버릇/)
+    click(/기상알람/)
+    click(/청소,청결/)
+    click('완료하기')
+    expectInFooter('시작하기!')
+  })
+})
+
+describe('room capacity', () => {
+  const NOTICE = 'MVP로 아직 4인실과 6인실 매칭을 지원하지 않습니다.'
+
+  function renderDormitoryStep() {
+    renderProfileStep()
+    completeProfileStep()
+  }
+
+  const expectPressed = (label: string, pressed: boolean) =>
+    expect(screen.getByRole('button', { name: label })).toHaveAttribute(
+      'aria-pressed',
+      String(pressed),
+    )
+
+  it('starts on 2인실 without the notice', () => {
+    renderDormitoryStep()
+
+    expectPressed('2인실', true)
+    expect(screen.queryByText(NOTICE)).not.toBeInTheDocument()
+  })
+
+  it.each(['4인실', '6인실'])(
+    'shows the notice and keeps 2인실 selected when %s is pressed',
+    (label) => {
+      renderDormitoryStep()
+
+      click(label)
+
+      expect(screen.getByRole('status')).toHaveTextContent(NOTICE)
+      expectPressed('2인실', true)
+      expectPressed(label, false)
+    },
+  )
+
+  it('hides the notice after about 3 seconds', () => {
+    renderDormitoryStep()
+    vi.useFakeTimers()
+    click('4인실')
+
+    act(() => vi.advanceTimersByTime(ROOM_NOTICE_MS - 1))
+    expect(screen.getByText(NOTICE)).toBeInTheDocument()
+
+    act(() => vi.advanceTimersByTime(1))
+    expect(screen.queryByText(NOTICE)).not.toBeInTheDocument()
+    expectPressed('2인실', true)
+    vi.useRealTimers()
+  })
+
+  it('restarts the time on each press, and works again after closing', () => {
+    renderDormitoryStep()
+    vi.useFakeTimers()
+    click('4인실')
+    act(() => vi.advanceTimersByTime(ROOM_NOTICE_MS - 1))
+
+    click('6인실')
+    act(() => vi.advanceTimersByTime(ROOM_NOTICE_MS - 1))
+    expect(screen.getByText(NOTICE)).toBeInTheDocument()
+
+    act(() => vi.advanceTimersByTime(1))
+    expect(screen.queryByText(NOTICE)).not.toBeInTheDocument()
+
+    click('4인실')
+    expect(screen.getByText(NOTICE)).toBeInTheDocument()
+    vi.useRealTimers()
+  })
+
+  it('hides the notice when 2인실 is pressed', () => {
+    renderDormitoryStep()
+    click('4인실')
+
+    click('2인실')
+
+    expect(screen.queryByText(NOTICE)).not.toBeInTheDocument()
+  })
+
+  it('still needs the text fields to continue', () => {
+    renderDormitoryStep()
+
+    click('다음으로')
+
+    expectHeading('기숙사 정보를 등록해주세요')
+  })
+})
+
+describe('mission notice', () => {
+  const mission = () => screen.queryByRole('dialog', { name: '미션 안내' })
+  const pass = (ms: number) => act(() => vi.advanceTimersByTime(ms))
+
+  afterEach(() => {
+    vi.useRealTimers()
+  })
+
+  it('shows on the first visit and closes by itself after 3-4 seconds', () => {
+    vi.useFakeTimers()
     renderPriorityStep()
-    const slots = () =>
-      screen
-        .getAllByTestId(/^priority-slot-/)
-        .map((slot) => [slot.dataset.testid, slot.style.width])
-    const before = slots()
+
+    expect(mission()).toBeInTheDocument()
+    expect(MISSION_NOTICE_MS).toBeGreaterThanOrEqual(3000)
+    expect(MISSION_NOTICE_MS).toBeLessThanOrEqual(4000)
+
+    pass(MISSION_NOTICE_MS - 1)
+    expect(mission()).toBeInTheDocument()
+
+    pass(1)
+    expect(mission()).not.toBeInTheDocument()
+  })
+
+  it('shows again from the info button, for the same time', () => {
+    vi.useFakeTimers()
+    renderPriorityStep()
+    pass(MISSION_NOTICE_MS)
+
+    click('미션 안내 보기')
+    expect(mission()).toBeInTheDocument()
+
+    pass(MISSION_NOTICE_MS)
+    expect(mission()).not.toBeInTheDocument()
+  })
+
+  it('does not show by itself when coming back to the step', () => {
+    renderPriorityStep()
+    fireEvent.keyDown(mission() as Element, { key: 'Escape' })
+
+    click('이전')
+    click('다음으로')
+
+    expect(mission()).not.toBeInTheDocument()
+  })
+
+  it('moves focus in, blocks the background, and returns focus to the info button', () => {
+    renderPriorityStep()
+    const info = screen.getByRole('button', { name: '미션 안내 보기' })
+    expect(mission()).toHaveFocus()
+    expect(info.closest('[inert]')).not.toBeNull()
+
+    fireEvent.keyDown(mission() as Element, { key: 'Escape' })
+
+    expect(mission()).not.toBeInTheDocument()
+    expect(info).toHaveFocus()
+    expect(info.closest('[inert]')).toBeNull()
+  })
+
+  it('keeps the character rules when the notice is closed', () => {
+    renderPriorityStep()
+    fireEvent.click((mission() as Element).parentElement as Element)
+    expect(mission()).not.toBeInTheDocument()
 
     click(/흡연유무/)
-    click(/기상 알람/)
 
-    expect(slots()).toEqual(before)
-    // The selected smoking chip is wider than its slot and centered in it.
-    expect(parseFloat(chip(/흡연/).style.width)).toBeCloseTo(
-      (116 / 108) * 100,
-      1,
-    )
-    expect(chip(/흡연/)).toHaveClass('left-1/2', '-translate-x-1/2')
+    expect(layerVariant('head')).toBe('smoking')
   })
 })

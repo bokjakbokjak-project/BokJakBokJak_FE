@@ -10,7 +10,7 @@ type FieldProps = {
 export function Field({
   label,
   htmlFor,
-  labelClassName = 'text-gray-black',
+  labelClassName = 'text-gray-500',
   children,
 }: FieldProps) {
   const labelClass = `text-[18px] leading-[1.5] font-medium ${labelClassName}`
@@ -29,7 +29,7 @@ export function Field({
 }
 
 export const FIELD_BOX_CLASS =
-  'w-full rounded-[8px] border border-gray-100 bg-white px-2.5 text-[14px] leading-[1.5] font-medium'
+  'w-full rounded-[8px] border border-brand-cream3 bg-white px-2.5 text-[14px] leading-[1.5] font-medium'
 
 type TextInputProps = Omit<
   InputHTMLAttributes<HTMLInputElement>,

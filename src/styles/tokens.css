@@ -35,6 +35,16 @@
   --color-brand-beige4: #f5ebdc; /* Actual fill. The Figma label says #F5EDBC; pending designer check. */
   --color-brand-beige5: #fffaec;
 
+  /* Final onboarding design (section 1041:30569). Raw fills there, without a Figma style name. */
+  --color-brand-cream1: #fff8f0; /* Page background */
+  --color-brand-cream2: #fff1e3; /* Unselected option background */
+  --color-brand-cream3: #fcd0a9; /* Field border, floor lines */
+  --color-brand-cream4: #fde8d4; /* Unselected category card border */
+  --color-brand-brown3: #6e5149; /* Round icon border, category text */
+  --color-room-wall: #fecd9b;
+  --color-room-wall-line: #edaa70;
+  --color-room-floor: #fddec1;
+
   /* Font */
   --font-sans:
     'Pretendard Variable', -apple-system, BlinkMacSystemFont, system-ui,
