@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="183" height="116" viewBox="0 0 183 116" fill="none">
+  <g id="Property 1=개인청결">
+    <g id="Group 1158">
+      <g id="Group 1157">
+        <g id="Group 2085667922">
+          <path id="Rectangle 776" d="M66 94H15.8027C10.4826 94 6.59456 99.0239 7.92969 104.174L8.0127 104.493C8.3602 105.834 8.29021 107.249 7.81152 108.548C6.65839 111.678 8.9746 115 12.3105 115H69C73.4183 115 77 111.418 77 107V105C77 98.9249 72.0751 94 66 94Z" fill="#FDDCDC" stroke="#FBB7BF" stroke-width="2" />
+          <path id="Vector 737" d="M24 106.5H9" stroke="#FBB7BF" stroke-width="2" stroke-linecap="round" />
+        </g>
+        <g id="Group 2085667921">
+          <path id="Rectangle 775" d="M12 76H62.5293C67.5562 76 71.1493 80.8643 69.6709 85.6689C69.1994 87.2015 69.2489 88.8598 69.7949 90.3613C71.138 94.0554 68.4172 97.9997 64.5225 98H9C4.58172 98 1 94.4183 1 90V87C1 80.9249 5.92487 76 12 76Z" fill="#FEE99B" stroke="#F7C57B" stroke-width="2" />
+          <path id="Vector 736" d="M54 87C53.4477 87 53 87.4477 53 88C53 88.5523 53.4477 89 54 89L54 88L54 87ZM54 88L54 89L69 89L69 88L69 87L54 87L54 88Z" fill="#F7C57B" />
+        </g>
+        <path id="Rectangle 774" d="M65 58H14.4316C9.34263 58 5.63351 62.9342 6.96582 67.8828C7.34001 69.273 7.29196 70.7644 6.81445 72.1289C5.63918 75.4868 8.13179 79 11.6895 79H68C72.4183 79 76 75.4183 76 71V69C76 62.9249 71.0751 58 65 58Z" fill="#FEFEFE" stroke="#9EB7E3" stroke-width="2" />
+        <path id="Vector 735" d="M23 69.5H8" stroke="#9EB7E3" stroke-width="2" stroke-linecap="round" />
+      </g>
+      <g id="Mask group">
+        <mask id="mask0_30_2" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="5" y="57" width="72" height="23">
+          <path id="Rectangle 777" d="M65 58H14.4316C9.34263 58 5.63351 62.9342 6.96582 67.8828C7.34001 69.273 7.29196 70.7644 6.81445 72.1289C5.63918 75.4868 8.13179 79 11.6895 79H68C72.4183 79 76 75.4183 76 71V69C76 62.9249 71.0751 58 65 58Z" fill="#FEFEFE" stroke="#9EB7E3" stroke-width="2" />
+        </mask>
+        <g mask="url(#mask0_30_2)">
+          <rect id="Rectangle 777_2" width="6" height="19" transform="matrix(-1 0 0 1 66 59)" fill="#DCE8FC" />
+          <rect id="Rectangle 778" width="6" height="19" transform="matrix(-1 0 0 1 58 59)" fill="#DCE8FC" />
+        </g>
+      </g>
+    </g>
+    <g id="hand_left">
+      <ellipse id="Ellipse 352" cx="69.2178" cy="52.3043" rx="18.3286" ry="15.8099" transform="rotate(20.7616 69.2178 52.3043)" fill="#6E5149" />
+    </g>
+    <g id="hand_right">
+      <ellipse id="Ellipse 352_2" cx="18.3286" cy="15.8099" rx="18.3286" ry="15.8099" transform="matrix(-0.935064 0.35448 0.35448 0.935064 159.316 31.0239)" fill="#6E5149" />
+    </g>
+  </g>
+</svg>

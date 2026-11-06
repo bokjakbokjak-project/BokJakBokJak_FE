@@ -65,4 +65,33 @@ src/
 
 ## 폰트 라이선스
 
-Pretendard는 [SIL Open Font License 1.1](public/licenses/pretendard-OFL.txt)로 배포되며, `pretendard` npm 패키지로 자체 호스팅합니다.
+Pretendard와 Inter는 SIL Open Font License 1.1로 배포되며, npm 패키지(`pretendard`, `@fontsource/inter`)로 자체 호스팅합니다. 라이선스 전문은 [Pretendard](public/licenses/pretendard-OFL.txt), [Inter](public/licenses/inter-OFL.txt)에 있습니다.
+
+## 온보딩 화면 경로
+
+| 경로                    | 화면                       |
+| ----------------------- | -------------------------- |
+| `/login`                | 로그인                     |
+| `/onboarding/school`    | 학교 정보 (1/4)            |
+| `/onboarding/profile`   | 사용자 정보 (2/4)          |
+| `/onboarding/dormitory` | 기숙사 정보 (3/4)          |
+| `/onboarding/priority`  | 생활습관 우선순위 (4/4)    |
+| `/onboarding/complete`  | 온보딩 완료                |
+| `/dev/onboarding`       | 화면 목록 (개발 서버 전용) |
+
+입력값은 메모리에만 유지되므로 새로고침하면 초기화됩니다. 인증과 저장 API는 아직 연결되지 않았습니다.
+
+이전 단계의 필수 입력이 비어 있으면 가장 먼저 작성할 단계로 이동합니다. 새로고침이나 주소 직접 입력은 입력값을 초기화하므로 학교 정보 화면으로 돌아갑니다. 개별 화면은 `/dev/onboarding`에서 샘플 값으로 열 수 있습니다.
+
+개발 서버에서는 흐름 확인을 위해 Google 버튼이 인증 없이 학교 정보 화면으로 이동합니다. 프로덕션 빌드에서는 이 버튼에 동작이 없습니다.
+
+## 시연 모드 (Vercel Preview)
+
+팀 체험용 Preview 링크에서만 켜는 임시 모드입니다.
+
+- **켜는 조건:** Vercel 환경 변수 `VITE_DEMO_MODE=true`와 Vercel이 제공하는 `VITE_VERCEL_ENV=preview`가 모두 있어야 합니다. 기본값과 Production에서는 꺼져 있습니다.
+- **동작:** Google 버튼이 학교 정보 화면으로 이동하고, 기숙사 자동완성에 샘플 데이터를 쓰며, 테스트 데이터 입력 안내를 상단에 표시합니다.
+- **유지되는 것:** 단계별 필수 입력 검증을 그대로 거칩니다. 로그인 상태나 토큰은 만들지 않고, 입력값은 저장하지 않습니다.
+- **변수 범위:** `VITE_DEMO_MODE`는 Preview 환경의 시연 브랜치에만 설정하고, Production에는 설정하지 않습니다.
+
+`vercel.json`은 하위 경로 접속과 새로고침을 위한 SPA rewrite만 담고 있습니다. 새로고침하면 입력값이 초기화되어 학교 정보 화면으로 돌아갑니다.

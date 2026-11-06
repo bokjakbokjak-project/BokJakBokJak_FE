@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="149" height="86" viewBox="0 0 149 86" fill="none">
+  <g id="Property 1=default">
+    <g id="hand_right">
+      <ellipse id="Ellipse 352" cx="18.3286" cy="15.8099" rx="18.3286" ry="15.8099" transform="matrix(-0.935064 0.35448 0.35448 0.935064 125.316 31.0239)" fill="#6E5149" />
+    </g>
+    <g id="hand_left">
+      <ellipse id="Ellipse 352_2" cx="35.2178" cy="52.3043" rx="18.3286" ry="15.8099" transform="rotate(20.7616 35.2178 52.3043)" fill="#6E5149" />
+    </g>
+  </g>
+</svg>

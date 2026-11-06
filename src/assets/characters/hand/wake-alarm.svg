@@ -1,0 +1,56 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="149" height="86" viewBox="0 0 149 86" fill="none">
+  <g id="Property 1=취침기상알림">
+    <g id="Group 2085667912">
+      <g id="Group 2085667911">
+        <rect id="Rectangle 240657561" width="8.42423" height="15.3168" rx="4.21212" transform="matrix(0.826579 0.562821 0.562821 -0.826579 38.3359 81.2822)" fill="#CB3824" />
+        <rect id="Rectangle 240657562" width="8.42423" height="15.3168" rx="4.21212" transform="matrix(0.562821 -0.826579 -0.826579 -0.562821 78.6797 79.6867)" fill="#CB3824" />
+      </g>
+      <g id="Group 2085667910">
+        <g id="Group 2085667472">
+          <g id="Group 2085667474">
+            <g id="Group 2085667475">
+              <rect id="Rectangle 6668255" x="49.582" y="24.2083" width="2.98809" height="5.97618" transform="rotate(-10.7489 49.582 24.2083)" fill="#CB3824" />
+              <rect id="Rectangle 6668256" x="57.0977" y="19.7391" width="3.73511" height="13.4464" rx="1.86756" transform="rotate(79.2511 57.0977 19.7391)" fill="#F94D37" />
+            </g>
+            <circle id="Ellipse 6373" cx="56.5564" cy="53.7139" r="26.6411" transform="rotate(-10.7489 56.5564 53.7139)" fill="#F94D37" />
+            <g id="Group 2085667473">
+              <g id="Group 2085667471">
+                <g id="Group 2085667469">
+                  <path id="Union" d="M32.8795 26.5416C35.5989 26.0255 38.3898 26.347 40.8933 27.4328C42.2033 28.001 42.5033 29.636 41.6997 30.8163L29.1744 49.2115C28.3706 50.3919 26.7395 50.7119 25.7307 49.7012C23.8029 47.7697 22.4801 45.2911 21.9638 42.5716C21.4556 39.8949 21.7597 37.1487 22.8047 34.6756C22.1181 34.2991 21.5985 33.6308 21.441 32.8014C21.1614 31.3283 22.1288 29.9076 23.6019 29.6279C24.432 29.4703 25.2455 29.7087 25.8476 30.2105C27.7646 28.3354 30.206 27.0492 32.8795 26.5416Z" fill="#F94D37" />
+                </g>
+                <g id="Group 2085667468">
+                  <path id="Union_2" d="M68.9981 19.6853C70.7673 19.3495 72.5858 19.3654 74.3488 19.7321C75.1152 19.8916 75.8646 20.1162 76.5893 20.4022C76.9795 19.8143 77.5969 19.3779 78.3449 19.2359C79.818 18.9564 81.2388 19.9237 81.5185 21.3968C81.6522 22.1014 81.4982 22.7923 81.1425 23.3538C81.8483 24.044 82.4797 24.8093 83.0235 25.6388C84.0109 27.1448 84.6921 28.8308 85.028 30.6001C85.3638 32.3693 85.3479 34.1876 84.9811 35.9507C84.7905 36.8672 84.5066 37.7594 84.1359 38.6141C83.5676 39.9241 81.9336 40.2239 80.7532 39.4202L62.3581 26.8949C61.1777 26.0912 60.8579 24.461 61.8686 23.4522C62.5279 22.7941 63.254 22.203 64.0369 21.6897C65.5429 20.7024 67.2289 20.0212 68.9981 19.6853Z" fill="#F94D37" />
+                </g>
+              </g>
+              <g id="Group 2085667470">
+                <circle id="Ellipse 6374" cx="56.1954" cy="53.4946" r="22.7233" transform="rotate(-10.7489 56.1954 53.4946)" fill="white" />
+                <g id="Group 2085667909">
+                  <rect id="Rectangle 240657559" x="53.1289" y="44.1992" width="3.06336" height="11.4876" rx="1.53168" transform="rotate(-10.7489 53.1289 44.1992)" fill="#68463B" />
+                  <rect id="Rectangle 240657560" x="66.7383" y="50.1903" width="3.06336" height="12.2534" rx="1.53168" transform="rotate(79.2511 66.7383 50.1903)" fill="#68463B" />
+                </g>
+              </g>
+            </g>
+          </g>
+        </g>
+        <g id="Repeat group 1">
+          <g id="Repeat group 1_inner" data-figma-trr="r8p33.7-0f">
+            <path id="Vector 20083" d="M53.0625 35.6372L53.6338 38.6468" stroke="#68463B" stroke-width="2.29752" stroke-linecap="round" />
+          </g>
+          <use xlink:href="#Repeat%20group%201_inner" transform="translate(54.5134 -24.2173) rotate(45)" />
+          <use xlink:href="#Repeat%20group%201_inner" transform="translate(110.184 -2.79468) rotate(90)" />
+          <use xlink:href="#Repeat%20group%201_inner" transform="translate(134.402 51.7187) rotate(135)" />
+          <use xlink:href="#Repeat%20group%201_inner" transform="translate(112.979 107.39) rotate(-180)" />
+          <use xlink:href="#Repeat%20group%201_inner" transform="translate(58.4657 131.607) rotate(-135)" />
+          <use xlink:href="#Repeat%20group%201_inner" transform="translate(2.79468 110.184) rotate(-90)" />
+          <use xlink:href="#Repeat%20group%201_inner" transform="translate(-21.4226 55.671) rotate(-45)" />
+        </g>
+      </g>
+    </g>
+    <g id="hand_left">
+      <ellipse id="Ellipse 352" cx="35.2178" cy="52.3043" rx="18.3286" ry="15.8099" transform="rotate(20.7616 35.2178 52.3043)" fill="#6E5149" />
+    </g>
+    <g id="hand_right">
+      <ellipse id="Ellipse 352_2" cx="18.3286" cy="15.8099" rx="18.3286" ry="15.8099" transform="matrix(-0.935064 0.35448 0.35448 0.935064 125.316 31.0239)" fill="#6E5149" />
+    </g>
+  </g>
+</svg>

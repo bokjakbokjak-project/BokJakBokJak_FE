@@ -39,4 +39,6 @@
   --font-sans:
     'Pretendard Variable', -apple-system, BlinkMacSystemFont, system-ui,
     sans-serif;
+  --font-inter:
+    'Inter', var(--font-sans); /* Figma text style "Button Text/Medium" */
 }

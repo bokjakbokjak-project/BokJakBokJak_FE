@@ -12,11 +12,14 @@ function renderAt(path: string) {
 }
 
 describe('AppRoutes', () => {
-  it('renders the start page at the root path', () => {
+  it('sends the root path to the login page', () => {
     renderAt('/')
 
     expect(
       screen.getByRole('heading', { name: '복작복작' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: 'Sign up with Google' }),
     ).toBeInTheDocument()
   })
 
@@ -28,7 +31,7 @@ describe('AppRoutes', () => {
     ).toBeInTheDocument()
   })
 
-  it('returns to the start page from the 404 page', () => {
+  it('returns to the start from the 404 page', () => {
     renderAt('/unknown-path')
 
     fireEvent.click(screen.getByRole('link', { name: '처음으로 돌아가기' }))
