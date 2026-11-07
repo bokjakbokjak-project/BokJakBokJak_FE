@@ -52,6 +52,14 @@
   --color-question-outline: #6e5149;
   --color-question-paper: #fffefb;
 
+  /* Roommate frames (section 657:675). Raw fills there, without a Figma style name. */
+  --color-roommate-pink: #fdb0bf;
+  --color-roommate-card-back: #ee8fa1;
+  --color-roommate-outline: #cfb3ab;
+  --color-roommate-surface: #fff0df;
+  --color-roommate-rank2-border: #f6e8c8;
+  --color-roommate-rank3-border: #fdf6d0;
+
   /* Font */
   --font-sans:
     'Pretendard Variable', -apple-system, BlinkMacSystemFont, system-ui,

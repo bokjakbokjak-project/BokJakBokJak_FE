@@ -99,3 +99,13 @@ Pretendard와 Inter는 SIL Open Font License 1.1로 배포되며, npm 패키지(
 - **변수 범위:** `VITE_DEMO_MODE`는 Preview 환경의 시연 브랜치에만 설정하고, Production에는 설정하지 않습니다.
 
 `vercel.json`은 하위 경로 접속과 새로고침을 위한 SPA rewrite만 담고 있습니다. 새로고침하면 입력값이 초기화되어 학교 정보 화면으로 돌아갑니다.
+
+## 룸메이트 화면 경로
+
+| 경로                    | 화면               |
+| ----------------------- | ------------------ |
+| `/roommate`             | 룸메이트 추천 목록 |
+| `/roommate/:id`         | 매칭 분석          |
+| `/roommate/:id/profile` | 상세 프로필        |
+
+후보와 매칭률은 시연용 데이터이며, 추천 API와 대화 요청은 연결되지 않았습니다. 미결정 사항은 [룸메이트 문서](src/pages/roommate/OPEN_QUESTIONS.md)에 있습니다.
