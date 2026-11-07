@@ -17,6 +17,11 @@ import QuestionPage from '../pages/question/QuestionPage'
 import QuestionProfilePage from '../pages/question/QuestionProfilePage'
 import QuestionProvider from '../pages/question/QuestionProvider'
 import { QUESTION_ROUTES } from '../pages/question/questionData'
+import RoommateProvider from '../lib/roommate/RoommateProvider'
+import { ROOMMATE_ROUTES } from '../lib/roommate/routes'
+import DetailProfilePage from '../pages/roommate/DetailProfilePage'
+import MatchAnalysisPage from '../pages/roommate/MatchAnalysisPage'
+import RoommateListPage from '../pages/roommate/RoommateListPage'
 
 export default function AppRoutes() {
   return (
@@ -76,6 +81,17 @@ export default function AppRoutes() {
             {import.meta.env.DEV && (
               <Route path="/dev/onboarding" element={<DevPreviewPage />} />
             )}
+          </Route>
+          <Route element={<RoommateProvider />}>
+            <Route path={ROOMMATE_ROUTES.list} element={<RoommateListPage />} />
+            <Route
+              path={ROOMMATE_ROUTES.analysis(':candidateId')}
+              element={<MatchAnalysisPage />}
+            />
+            <Route
+              path={ROOMMATE_ROUTES.profile(':candidateId')}
+              element={<DetailProfilePage />}
+            />
           </Route>
           <Route path="*" element={<NotFoundPage />} />
         </Route>

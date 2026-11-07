@@ -58,6 +58,9 @@ export default function DevPreviewPage() {
       >
         {ONBOARDING_ROUTES.login}
       </Link>
+      <Link to="/roommate" className="text-brand-brown1 underline">
+        /roommate
+      </Link>
       {PREVIEWS.map(({ route, data }) => (
         <button
           key={route}
