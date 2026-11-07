@@ -67,7 +67,7 @@ describe('roommate list', () => {
     expect(cards()).toHaveLength(10)
   })
 
-  it('enables only the roommate item in the navigation', () => {
+  it('marks the roommate item as current in the navigation', () => {
     renderAt('/roommate')
     const nav = screen.getByRole('navigation', { name: '하단 메뉴' })
 
@@ -75,9 +75,19 @@ describe('roommate list', () => {
       'aria-current',
       'page',
     )
-    for (const name of ['홈', '채팅', '마이']) {
-      expect(within(nav).getByRole('button', { name })).toBeDisabled()
-    }
+    expect(within(nav).getByRole('link', { name: '홈' })).not.toHaveAttribute(
+      'aria-current',
+    )
+  })
+
+  it('keeps the expanded list after visiting the home', () => {
+    renderAt('/roommate')
+    fireEvent.click(screen.getByRole('button', { name: '+더보기' }))
+
+    fireEvent.click(screen.getByRole('link', { name: '홈' }))
+    fireEvent.click(screen.getByRole('link', { name: '룸메이트' }))
+
+    expect(cards()).toHaveLength(10)
   })
 })
 

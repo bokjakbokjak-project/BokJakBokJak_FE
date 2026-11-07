@@ -2,7 +2,7 @@ import { useLayoutEffect, useRef } from 'react'
 import logo from '../../assets/onboarding/logo.svg'
 import listBackground from '../../assets/roommate/list-bg.png'
 import refreshIcon from '../../assets/roommate/refresh.svg'
-import BottomNav from '../../components/roommate/BottomNav'
+import BottomNav from '../../components/BottomNav/BottomNav'
 import RoommateCard from '../../components/roommate/RoommateCard'
 import { getCandidates } from '../../lib/roommate/roommateData'
 import { useRoommate } from '../../lib/roommate/roommateState'
@@ -82,7 +82,7 @@ export default function RoommateListPage() {
           </button>
         )}
       </div>
-      <BottomNav />
+      <BottomNav active="roommate" />
     </div>
   )
 }
