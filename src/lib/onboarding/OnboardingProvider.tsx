@@ -7,8 +7,8 @@ import {
 } from './onboardingState'
 
 /**
- * Keeps answers in memory across steps. Nothing is sent to a server yet. It also paints the
- * onboarding background, reaching into the safe area so no other color shows around it.
+ * Keeps answers in memory across every screen of a session, so it stays mounted above the home
+ * and roommate routes. Nothing is sent to a server yet.
  */
 export default function OnboardingProvider() {
   const [data, setData] = useState(INITIAL_ONBOARDING_DATA)
@@ -24,9 +24,7 @@ export default function OnboardingProvider() {
 
   return (
     <OnboardingContext.Provider value={value}>
-      <div className="-mt-[env(safe-area-inset-top)] -mb-[env(safe-area-inset-bottom)] flex flex-1 flex-col overflow-x-clip bg-brand-cream1 pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]">
-        <Outlet />
-      </div>
+      <Outlet />
     </OnboardingContext.Provider>
   )
 }

@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
-import { Navigate, useNavigate } from 'react-router'
+import { Navigate, useLocation, useNavigate } from 'react-router'
 import back from '../../assets/question/back.svg'
 import profileScene from '../../assets/question/profile-scene.png'
 import share from '../../assets/question/share.svg'
+import { HOME_ROUTES, isFromHome } from '../../lib/home/routes'
 import { useOnboarding } from '../../lib/onboarding/onboardingState'
 import {
   QUESTION_COUNT,
@@ -59,6 +60,7 @@ function ShareSheet({ onClose }: { onClose: () => void }) {
 
 export default function QuestionProfilePage() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { answers } = useQuestion()
   const { data } = useOnboarding()
   const [isSharing, setIsSharing] = useState(false)
@@ -74,7 +76,13 @@ export default function QuestionProfilePage() {
           type="button"
           aria-label="뒤로"
           className="size-7"
-          onClick={() => navigate(QUESTION_ROUTES.survey)}
+          onClick={() =>
+            navigate(
+              isFromHome(location.state)
+                ? HOME_ROUTES.home
+                : QUESTION_ROUTES.survey,
+            )
+          }
         >
           <img src={back} alt="" className="-rotate-90" />
         </button>
@@ -123,10 +131,9 @@ export default function QuestionProfilePage() {
         </ul>
       </main>
       <div className="mt-[17px] h-[94px] shrink-0 bg-white px-6 pt-4 shadow-[0px_-1px_30px_0px_rgba(212,212,212,0.25)]">
-        {/* There is no home screen yet, so this stays disabled (OPEN_QUESTIONS PL-6). */}
         <button
           type="button"
-          disabled
+          onClick={() => navigate(HOME_ROUTES.home)}
           className="flex h-[54px] w-full items-center justify-center rounded-[10px] bg-brand-brown1 p-2.5 text-[13px] leading-[1.5] font-semibold text-question-paper"
         >
           홈화면으로 가기

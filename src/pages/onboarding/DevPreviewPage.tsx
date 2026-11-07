@@ -1,4 +1,5 @@
 import { Link, useNavigate } from 'react-router'
+import { HOME_ROUTES } from '../../lib/home/routes'
 import {
   INITIAL_ONBOARDING_DATA,
   useOnboarding,
@@ -31,6 +32,7 @@ export default function DevPreviewPage() {
   const navigate = useNavigate()
 
   // Built here so that production builds, which never render this page, drop the samples.
+  const COMPLETE = { ...SCHOOL, ...PROFILE, ...DORMITORY, ...PRIORITIES }
   const PREVIEWS: { route: string; data: Partial<OnboardingData> }[] = [
     { route: ONBOARDING_ROUTES.school, data: {} },
     { route: ONBOARDING_ROUTES.profile, data: SCHOOL },
@@ -39,10 +41,11 @@ export default function DevPreviewPage() {
       route: ONBOARDING_ROUTES.priority,
       data: { ...SCHOOL, ...PROFILE, ...DORMITORY },
     },
-    {
-      route: ONBOARDING_ROUTES.complete,
-      data: { ...SCHOOL, ...PROFILE, ...DORMITORY, ...PRIORITIES },
-    },
+    { route: ONBOARDING_ROUTES.complete, data: COMPLETE },
+    { route: HOME_ROUTES.home, data: COMPLETE },
+    { route: HOME_ROUTES.previewMatched, data: COMPLETE },
+    { route: HOME_ROUTES.notifications, data: COMPLETE },
+    { route: HOME_ROUTES.previewTodayNotifications, data: COMPLETE },
   ]
 
   return (

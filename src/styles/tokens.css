@@ -60,6 +60,10 @@
   --color-roommate-rank2-border: #f6e8c8;
   --color-roommate-rank3-border: #fdf6d0;
 
+  /* Home frames (section 575:2037). Raw fills there, without a Figma style name. */
+  --color-home-floor: #f7c79e;
+  --color-home-alert: #ff3040;
+
   /* Font */
   --font-sans:
     'Pretendard Variable', -apple-system, BlinkMacSystemFont, system-ui,

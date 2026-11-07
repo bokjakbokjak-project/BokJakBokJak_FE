@@ -9,16 +9,25 @@ const percentOf = (value: number, total: number) => `${(value / total) * 100}%`
  */
 export default function CharacterPreview({
   priorities,
+  showRug = true,
+  className = 'relative mx-auto w-full max-w-[302px]',
 }: {
   priorities: readonly CategoryId[]
+  /** The home and notification frames draw the character without its rug. */
+  showRug?: boolean
+  className?: string
 }) {
+  const layers = getCharacterLayers(priorities).filter(
+    ({ key }) => showRug || key !== 'rug',
+  )
+
   return (
     <div
       role="img"
       aria-label="선택한 생활습관에 따라 꾸며진 캐릭터"
-      className="relative mx-auto aspect-[302/342] w-full max-w-[302px] shrink-0"
+      className={`aspect-[302/342] shrink-0 ${className}`}
     >
-      {getCharacterLayers(priorities).map((layer) => (
+      {layers.map((layer) => (
         <img
           key={layer.key}
           src={layer.src}
