@@ -31,7 +31,7 @@ const VARIANTS = {
     characterLeft: 51,
     logoClass: 'top-[9px] h-[38.98px] w-[59px]',
     bell: bellBefore,
-    bellClass: 'right-[30px] bg-white',
+    bellClass: 'right-[30px]',
   },
   // Figma 724:11202
   matched: {
