@@ -2,7 +2,7 @@ import { useId, useState } from 'react'
 import categoryIcons from '../../assets/onboarding/category-icons.png'
 import pageLeft from '../../assets/my/page-left.svg'
 import pageRight from '../../assets/my/page-right.svg'
-import type { AnswerSummaryCard } from '../../lib/my/answerSummary'
+import type { AnswerSummaryCard } from '../../lib/answerSummary'
 import { CATEGORY_LABELS } from '../../lib/onboarding/categories'
 
 const UNANSWERED = '아직 답하지 않았어요'
@@ -32,7 +32,10 @@ function AnswerRow({
   )
 }
 
-/** One category of the `상세 답변 요약` panel (Figma 1532:20058 and 1532:20077). */
+/**
+ * One category of the `상세 답변 요약` panel, shared by the my page (Figma 1532:20058) and the
+ * detail profile (component set 1377:37872). The labels describe the person whose answers these are.
+ */
 export default function AnswerCard({
   card: { category, title, items },
 }: {

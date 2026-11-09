@@ -2,7 +2,7 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import AppRoutes from '../../app/AppRoutes'
-import { ANSWER_GROUPS, getAnswerSummary } from '../../lib/my/answerSummary'
+import { ANSWER_GROUPS, getAnswerSummary } from '../../lib/answerSummary'
 import { CATEGORY_IDS } from '../../lib/onboarding/categories'
 import { QUESTION_COUNT, QUESTION_TOPICS } from '../question/questionData'
 

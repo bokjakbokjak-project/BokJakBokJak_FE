@@ -4,7 +4,7 @@ import bellMatched from '../../assets/home/bell-matched.svg'
 import bubbleBefore from '../../assets/home/bubble-before.svg'
 import bubbleMatched from '../../assets/home/bubble-matched.svg'
 import roomBackground from '../../assets/home/room-bg.png'
-import logo from '../../assets/onboarding/logo.svg'
+import AppLogo from '../../components/AppLogo/AppLogo'
 import BottomNav from '../../components/BottomNav/BottomNav'
 import CharacterPreview from '../../components/onboarding/CharacterPreview'
 import { STAGE } from '../../lib/onboarding/character'
@@ -17,7 +17,8 @@ import { FROM_HOME_STATE, HOME_ROUTES } from '../../lib/home/routes'
 import { useOnboarding } from '../../lib/onboarding/onboardingState'
 import { QUESTION_ROUTES } from '../question/questionData'
 
-// The two Figma frames also differ in the logo, the bell, and a 1px shift (OPEN_QUESTIONS DE-H1).
+// The two Figma frames also differ in the bell and a 1px shift (OPEN_QUESTIONS DE-H1). The logo is
+// the same on both and on the roommate list (AppLogo).
 const VARIANTS = {
   // Figma 724:9392
   before: {
@@ -29,7 +30,6 @@ const VARIANTS = {
     bubbleImage: bubbleBefore,
     bubbleLeft: 109,
     characterLeft: 51,
-    logoClass: 'top-[9px] h-[38.98px] w-[59px]',
     bell: bellBefore,
     bellClass: 'right-[30px]',
   },
@@ -43,7 +43,6 @@ const VARIANTS = {
     bubbleImage: bubbleMatched,
     bubbleLeft: 108,
     characterLeft: 50,
-    logoClass: 'top-[13px] h-[29.75px] w-[45px]',
     bell: bellMatched,
     bellClass: 'right-[33px]',
   },
@@ -121,11 +120,7 @@ export default function HomePage({
           </div>
           <div className="relative pt-[max(47px,env(safe-area-inset-top))]">
             <header className="relative h-14">
-              <img
-                src={logo}
-                alt="복작복작"
-                className={`absolute left-6 max-w-none ${variant.logoClass}`}
-              />
+              <AppLogo />
               <Link
                 to={HOME_ROUTES.notifications}
                 aria-label={hasNew ? '알림, 새 알림 있음' : '알림'}

@@ -3,6 +3,7 @@ import avatarCheck from '../../assets/roommate/avatar-check.png'
 import avatarMask from '../../assets/roommate/avatar-mask.png'
 import avatarSleep from '../../assets/roommate/avatar-sleep.png'
 import { QUESTION_TOPICS } from '../../pages/question/questionData'
+import type { QuestionAnswers } from '../../pages/question/questionState'
 
 /**
  * Sample data for the frontend demo. There is no recommendation API or matching algorithm yet,
@@ -10,16 +11,12 @@ import { QUESTION_TOPICS } from '../../pages/question/questionData'
  * frames, and everything else is fictional and written by hand. Replace these functions with API calls (OPEN_QUESTIONS RM-1 to RM-3).
  */
 
-/** Card colors by priority rank, from the Figma frames named "N순위(프레임 색 구별)". */
-export type AnswerTone = 'rank1' | 'rank2' | 'rank3' | 'rest'
-
+/** A candidate's answers to one survey topic: the self question and the roommate question. */
 export type AnswerRow = {
-  id: string
-  /** Includes the question number. Line breaks are kept. */
-  question: string
+  /** `QUESTION_TOPICS` id. */
+  topicId: string
   selfAnswer: string
   partnerAnswer: string
-  tone: AnswerTone
 }
 
 export type MatchAnalysis = {
@@ -41,79 +38,53 @@ export type RoommateCandidate = {
   answers: readonly AnswerRow[]
 }
 
-/** The Figma list shows five cards before `+더보기`. */
+/** The Figma list shows five cards before `리스트 더보기`. */
 export const CANDIDATES_PER_PAGE = 5
 
-const TONES: readonly AnswerTone[] = [
-  'rank1',
-  'rank2',
-  'rank2',
-  'rank2',
-  'rank3',
-  'rest',
-  'rest',
-  'rest',
-]
-
-/** The Figma frame 1057:11619 as drawn. Its differences from the survey are in OPEN_QUESTIONS DE-R1. */
+/**
+ * The Figma candidate's answers as drawn in the summary card component (1377:37872), in survey
+ * order. Some differ from the survey options; OPEN_QUESTIONS DE-R1 lists them.
+ */
 const FIGMA_SAMPLE_ANSWERS: readonly AnswerRow[] = [
   {
-    id: 'figma-1',
-    question:
-      'Q1. 나는 코골이, 잠꼬대 같은 잠버릇이 어느 정도 있는\n 편인가요?',
+    topicId: 'sleep-habit',
     selfAnswer: '자주 있다는 말을 들었다',
     partnerAnswer: '가끔 있는 정도는 괜찮다',
-    tone: 'rank1',
   },
   {
-    id: 'figma-2',
-    question: 'Q2. 평일에 나는 보통 몇 시쯤 잠자리에 드나요?',
-    selfAnswer: '밤 11시~12시',
-    partnerAnswer: '밤 12시까지',
-    tone: 'rank2',
+    topicId: 'bedtime',
+    selfAnswer: '밤 10시 이전',
+    partnerAnswer: '조용하기만 하면 상관없다',
   },
   {
-    id: 'figma-3',
-    question: 'Q3. 아침에 알람을 보통 어떻게 사용하는 편인가요?',
+    topicId: 'morning-alarm',
     selfAnswer: '첫 알람에 바로 일어난다',
-    partnerAnswer: '한 번만 울렸으면 좋겠다',
-    tone: 'rank2',
+    partnerAnswer: '3~4번 까지는 괜찮다',
   },
   {
-    id: 'figma-4',
-    question: 'Q2. 평일에 나는 보통 몇 시쯤 잠자리에 드나요?',
-    selfAnswer: '밤 11시~12시',
-    partnerAnswer: '밤 12시까지',
-    tone: 'rank2',
+    topicId: 'floor-cleaning',
+    selfAnswer: '거의 매일 해야한다',
+    partnerAnswer: '주 1회면 괜찮다',
   },
   {
-    id: 'figma-5',
-    question:
-      'Q5. 먹다 남긴 음식이나 냄새날 수 있는 쓰레기는 보통\n 언제 치우나요?',
-    selfAnswer: '첫 알람에 바로 일어난다',
-    partnerAnswer: '한 번만 울렸으면 좋겠다',
-    tone: 'rank3',
-  },
-  {
-    id: 'figma-6',
-    question: 'Q6. 개인 물건을 사용한 뒤 보통 언제 정리하나요?',
-    selfAnswer: '그날 안에 정리한다',
-    partnerAnswer: '위생 문제가 없다면 더 두어도 괜찮다',
-    tone: 'rest',
-  },
-  {
-    id: 'figma-7',
-    question: 'Q7. 사용한 컵이나 식기를 보통 언제 정리하나요?',
-    selfAnswer: '사용 직후 바로 치운다',
-    partnerAnswer: '위생 문제가 없다면 더 두어도 괜찮다',
-    tone: 'rest',
-  },
-  {
-    id: 'figma-8',
-    question: 'Q8. 흡연과 관련해 어느 쪽에 해당하나요?',
+    topicId: 'food-waste',
     selfAnswer: '먹은 직후 바로 치운다',
-    partnerAnswer: '그날 안에만 치우면 괜찮다',
-    tone: 'rest',
+    partnerAnswer: '먹은 직후 바로 치워줬으면 좋겠다',
+  },
+  {
+    topicId: 'belongings',
+    selfAnswer: '바로 정리한다',
+    partnerAnswer: '바로 정리했으면 좋겠다',
+  },
+  {
+    topicId: 'dishes',
+    selfAnswer: '그날 안에 정리한다',
+    partnerAnswer: '다음 날까지는 괜챃다',
+  },
+  {
+    topicId: 'smoking',
+    selfAnswer: '비흡연자다',
+    partnerAnswer: '가능한 비흡연자였으면 좋겠다',
   },
 ]
 
@@ -122,11 +93,9 @@ function surveyAnswers(
   picks: readonly (readonly [number, number])[],
 ): readonly AnswerRow[] {
   return QUESTION_TOPICS.map((topic, index) => ({
-    id: topic.id,
-    question: `Q${index + 1}. ${topic.self.text.replace('\n', ' ')}`,
+    topicId: topic.id,
     selfAnswer: topic.self.options[picks[index][0]],
     partnerAnswer: topic.roommate.options[picks[index][1]],
-    tone: TONES[index],
   }))
 }
 
@@ -493,6 +462,23 @@ const CANDIDATES: readonly RoommateCandidate[] = [
     ]),
   },
 ]
+
+/**
+ * A candidate's answers in the same shape as the user's survey answers (topic n at 2n and 2n+1),
+ * so the answer summary can be built the same way as on the my page.
+ */
+export function getCandidateAnswers(
+  candidate: RoommateCandidate,
+): QuestionAnswers {
+  const answers: Record<number, string> = {}
+  for (const row of candidate.answers) {
+    const index = QUESTION_TOPICS.findIndex(({ id }) => id === row.topicId)
+    if (index === -1) continue
+    answers[index * 2] = row.selfAnswer
+    answers[index * 2 + 1] = row.partnerAnswer
+  }
+  return answers
+}
 
 export function getCandidates() {
   return CANDIDATES

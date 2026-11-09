@@ -242,7 +242,7 @@ describe('state across screens', () => {
     answerAll()
     fireEvent.click(screen.getByRole('button', { name: '홈화면으로 가기' }))
     clickLink('룸메이트')
-    fireEvent.click(screen.getByRole('button', { name: '+더보기' }))
+    fireEvent.click(screen.getByRole('button', { name: '리스트 더보기' }))
     clickLink('홈')
 
     clickLink('내 설문 다시보기 →')

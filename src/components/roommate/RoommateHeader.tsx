@@ -1,8 +1,14 @@
 import { Link } from 'react-router'
 import arrowLeft from '../../assets/icons/arrow-left.svg'
 
-/** Back button and title from Figma (1057:13038). */
-export default function RoommateHeader({ backTo }: { backTo: string }) {
+/** Back button and centered title from Figma (1057:13038 `룸메이트`, 1377:36705 `상세 프로필`). */
+export default function RoommateHeader({
+  backTo,
+  title,
+}: {
+  backTo: string
+  title: string
+}) {
   return (
     <header className="relative z-20 h-14 shrink-0">
       <Link
@@ -16,8 +22,8 @@ export default function RoommateHeader({ backTo }: { backTo: string }) {
           </span>
         </span>
       </Link>
-      <h1 className="absolute top-[13px] left-[calc(50%-34px)] text-[20px] leading-[1.5] font-bold whitespace-nowrap text-brand-brown1">
-        룸메이트
+      <h1 className="absolute top-[13px] left-1/2 -translate-x-1/2 text-[20px] leading-[1.5] font-bold whitespace-nowrap text-brand-brown1">
+        {title}
       </h1>
     </header>
   )
