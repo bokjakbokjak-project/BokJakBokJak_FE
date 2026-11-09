@@ -1,7 +1,8 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import AppRoutes from '../../app/AppRoutes'
+import { chatApi } from '../../lib/chat/chatApi'
 import {
   getSampleChatRooms,
   resetMockChatRooms,
@@ -165,5 +166,69 @@ describe('chat', () => {
     expect(
       await screen.findByRole('heading', { name: '채팅' }),
     ).toBeInTheDocument()
+  })
+})
+
+// jsdom has no layout, so these check the structure that keeps the bar on screen (C-1): a page
+// as tall as the screen or the PC frame, a list that scrolls by itself, and the bar outside it.
+describe('chat list layout', () => {
+  beforeEach(() => {
+    resetMockChatRooms()
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
+  })
+
+  function expectFixedBar() {
+    const scroller = screen.getByTestId('chat-list-scroll')
+    const nav = screen.getByRole('navigation')
+    const page = scroller.parentElement
+
+    expect(page).toHaveClass(
+      'h-[calc(100dvh-env(safe-area-inset-top))]',
+      'md:h-[844px]',
+      'overflow-hidden',
+    )
+    expect(scroller).toHaveClass('min-h-0', 'flex-1', 'overflow-y-auto')
+    expect(scroller).not.toContainElement(nav)
+    expect(nav.parentElement).toBe(page)
+    expect(
+      screen.getByRole('heading', { name: '채팅' }).closest('header')
+        ?.parentElement,
+    ).toBe(page)
+    expect(
+      within(nav).getByRole('link', { name: '채팅', current: 'page' }),
+    ).toBeInTheDocument()
+  }
+
+  it('keeps all eight rooms in the scrolling list and the bar outside it', async () => {
+    renderAt('/chat')
+
+    const rooms = await screen.findAllByRole('link', { name: /님과의 매칭이/ })
+    expect(rooms).toHaveLength(8)
+    rooms.forEach((room) =>
+      expect(screen.getByTestId('chat-list-scroll')).toContainElement(room),
+    )
+    expectFixedBar()
+  })
+
+  it('keeps the same layout with one room', async () => {
+    const [first] = getSampleChatRooms()
+    vi.spyOn(chatApi, 'listRooms').mockResolvedValue([first])
+    renderAt('/chat')
+
+    expect(
+      await screen.findAllByRole('link', { name: /님과의 매칭이/ }),
+    ).toHaveLength(1)
+    expectFixedBar()
+  })
+
+  it('keeps the same layout with no rooms', async () => {
+    vi.spyOn(chatApi, 'listRooms').mockResolvedValue([])
+    renderAt('/chat')
+
+    expect(await screen.findByText('아직 채팅방이 없어요')).toBeInTheDocument()
+    expectFixedBar()
   })
 })

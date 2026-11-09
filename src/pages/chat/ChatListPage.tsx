@@ -31,7 +31,10 @@ export default function ChatListPage() {
   }, [])
 
   return (
-    <div className="relative isolate flex flex-1 flex-col overflow-hidden bg-brand-beige1">
+    // The page is as tall as the screen (the 844px frame on PC), so the bar stays at the bottom
+    // and only the list scrolls. The header already allows for the top safe area, so the height
+    // leaves it out; the bottom one is taken back like the other tabs, since BottomNav pads it.
+    <div className="relative isolate -mb-[env(safe-area-inset-bottom)] flex h-[calc(100dvh-env(safe-area-inset-top))] flex-col overflow-hidden bg-brand-beige1 md:h-[844px]">
       <img
         src={background}
         alt=""
@@ -42,7 +45,10 @@ export default function ChatListPage() {
           채팅
         </h1>
       </header>
-      <main className="flex-1 px-6 pt-[19px] pb-6">
+      <main
+        data-testid="chat-list-scroll"
+        className="scrollbar-none min-h-0 flex-1 overflow-y-auto px-6 pt-[19px] pb-6"
+      >
         {rooms?.length === 0 && (
           <p className="mt-10 text-center text-[14px] text-gray-500">
             아직 채팅방이 없어요
