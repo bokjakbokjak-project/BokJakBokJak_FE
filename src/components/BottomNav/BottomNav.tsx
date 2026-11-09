@@ -1,4 +1,5 @@
 import { Link } from 'react-router'
+import navChatActive from '../../assets/nav/nav-chat-active.svg'
 import navChat from '../../assets/nav/nav-chat.svg'
 import navHomeActive from '../../assets/nav/nav-home-active.svg'
 import navHome from '../../assets/nav/nav-home.svg'
@@ -6,12 +7,13 @@ import navMyActive from '../../assets/nav/nav-my-active.svg'
 import navMy from '../../assets/nav/nav-my.svg'
 import navPeopleInactive from '../../assets/nav/nav-people-inactive.svg'
 import navPeople from '../../assets/nav/nav-people.svg'
+import { CHAT_ROUTES } from '../../lib/chat/routes'
 import { HOME_ROUTES } from '../../lib/home/routes'
 import { MY_ROUTES } from '../../lib/my/routes'
 import { ROOMMATE_ROUTES } from '../../lib/roommate/routes'
-import { usePendingNotice, type PendingNotice } from './usePendingNotice'
+import type { PendingNotice } from './usePendingNotice'
 
-export type BottomNavItem = 'home' | 'roommate' | 'my'
+export type BottomNavItem = 'home' | 'roommate' | 'chat' | 'my'
 
 const LABEL_CLASS =
   'absolute top-[47px] -translate-x-1/2 text-[14px] leading-[1.5] font-medium whitespace-nowrap'
@@ -43,6 +45,17 @@ const LINK_ITEMS = [
     inactiveIcon: navPeopleInactive,
   },
   {
+    id: 'chat',
+    label: '채팅',
+    to: CHAT_ROUTES.list,
+    center: 237,
+    width: 'w-14',
+    iconClass: 'top-5 h-[19.94px] w-[19.944px]',
+    labelClass: 'left-1/2',
+    activeIcon: navChatActive,
+    inactiveIcon: navChat,
+  },
+  {
     id: 'my',
     label: '마이',
     to: MY_ROUTES.my,
@@ -59,14 +72,12 @@ const toPercent = (center: number) => `${(center / 390) * 100}%`
 
 type BottomNavProps = {
   active: BottomNavItem
-  /** Lets the page show the same notice from its own buttons. */
+  /** Shows the page's "not ready" notice above the bar, for buttons on the page itself. */
   notice?: PendingNotice
 }
 
-/** Chat is not built yet, so that item only shows a notice (OPEN_QUESTIONS HM-3). */
 export default function BottomNav({ active, notice }: BottomNavProps) {
-  const ownNotice = usePendingNotice()
-  const { isShown, show } = notice ?? ownNotice
+  const isShown = notice?.isShown ?? false
 
   return (
     <nav
@@ -107,19 +118,6 @@ export default function BottomNav({ active, notice }: BottomNavProps) {
             </Link>
           )
         })}
-        <button
-          type="button"
-          className="absolute top-0 h-20 w-14 -translate-x-1/2 text-gray-300"
-          style={{ left: toPercent(237) }}
-          onClick={show}
-        >
-          <img
-            src={navChat}
-            alt=""
-            className={`${ICON_CLASS} top-5 h-[19.94px] w-[19.944px]`}
-          />
-          <span className={`${LABEL_CLASS} left-1/2`}>채팅</span>
-        </button>
       </div>
     </nav>
   )
