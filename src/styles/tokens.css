@@ -64,6 +64,12 @@
   --color-home-floor: #f7c79e;
   --color-home-alert: #ff3040;
 
+  /* My page frames (section 732:4459). Raw fills there, without a Figma style name. */
+  --color-my-avatar: #ffcdab;
+  --color-my-avatar-shadow: #fff3e3;
+  --color-my-menu-border: #f1ba8d;
+  --color-my-label: #fef0e2;
+
   /* Font */
   --font-sans:
     'Pretendard Variable', -apple-system, BlinkMacSystemFont, system-ui,

@@ -4,11 +4,14 @@ import DemoNotice from '../components/onboarding/DemoNotice'
 import OnboardingStepGuard from '../components/onboarding/OnboardingStepGuard'
 import OnboardingSurface from '../components/onboarding/OnboardingSurface'
 import { HOME_ROUTES } from '../lib/home/routes'
+import { MY_ROUTES } from '../lib/my/routes'
 import { isDemoMode } from '../lib/onboarding/demoMode'
 import OnboardingProvider from '../lib/onboarding/OnboardingProvider'
 import { ONBOARDING_ROUTES } from '../lib/onboarding/routes'
 import HomePage from '../pages/home/HomePage'
 import NotificationsPage from '../pages/home/NotificationsPage'
+import EditNamePage from '../pages/my/EditNamePage'
+import MyPage from '../pages/my/MyPage'
 import NotFoundPage from '../pages/NotFoundPage/NotFoundPage'
 import CompletePage from '../pages/onboarding/CompletePage'
 import DevPreviewPage from '../pages/onboarding/DevPreviewPage'
@@ -99,6 +102,8 @@ export default function AppRoutes() {
                   )}
                 </Route>
                 <Route path={HOME_ROUTES.home} element={<HomePage />} />
+                <Route path={MY_ROUTES.my} element={<MyPage />} />
+                <Route path={MY_ROUTES.editName} element={<EditNamePage />} />
                 <Route
                   path={HOME_ROUTES.notifications}
                   element={<NotificationsPage />}

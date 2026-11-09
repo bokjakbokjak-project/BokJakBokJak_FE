@@ -5,7 +5,10 @@ import {
   useOnboarding,
   type OnboardingData,
 } from '../../lib/onboarding/onboardingState'
+import { MY_ROUTES } from '../../lib/my/routes'
 import { ONBOARDING_ROUTES } from '../../lib/onboarding/routes'
+import { QUESTION_COUNT, QUESTION_TOPICS } from '../question/questionData'
+import { useQuestion } from '../question/questionState'
 
 // Sample answers for opening a later step directly. They stay in memory and are never saved.
 const SCHOOL: Partial<OnboardingData> = {
@@ -29,6 +32,7 @@ const PRIORITIES: Partial<OnboardingData> = {
 /** Development-only index of the onboarding screens. Not part of the production build. */
 export default function DevPreviewPage() {
   const { update } = useOnboarding()
+  const { answer } = useQuestion()
   const navigate = useNavigate()
 
   // Built here so that production builds, which never render this page, drop the samples.
@@ -46,6 +50,7 @@ export default function DevPreviewPage() {
     { route: HOME_ROUTES.previewMatched, data: COMPLETE },
     { route: HOME_ROUTES.notifications, data: COMPLETE },
     { route: HOME_ROUTES.previewTodayNotifications, data: COMPLETE },
+    { route: MY_ROUTES.my, data: COMPLETE },
   ]
 
   return (
@@ -64,6 +69,27 @@ export default function DevPreviewPage() {
       <Link to="/roommate" className="text-brand-brown1 underline">
         /roommate
       </Link>
+      <button
+        type="button"
+        className="text-left text-brand-brown1 underline"
+        onClick={() => {
+          update({ ...INITIAL_ONBOARDING_DATA, ...COMPLETE })
+          // Sample answers: the first option for the self questions and the second for the
+          // roommate questions, the same as the Figma example card (1532:20058).
+          for (let index = 0; index < QUESTION_COUNT; index += 1) {
+            const topic = QUESTION_TOPICS[Math.floor(index / 2)]
+            answer(
+              index,
+              index % 2 === 0
+                ? topic.self.options[0]
+                : topic.roommate.options[1],
+            )
+          }
+          navigate(MY_ROUTES.my)
+        }}
+      >
+        {MY_ROUTES.my} (샘플 설문 답변)
+      </button>
       {PREVIEWS.map(({ route, data }) => (
         <button
           key={route}
