@@ -76,7 +76,7 @@ const PART_ASSETS: Record<PartName, Record<PartVariant, Asset>> = {
     'wake-alarm': { src: bodyAlarm, offsetX: -2.08, width: 122, height: 95 },
     cleaning: { src: bodyCleaning, width: 117, height: 92 },
     'personal-hygiene': { src: bodyHygiene, width: 118, height: 92 },
-    smoking: { src: bodySmoking, width: 117, height: 96 },
+    smoking: { src: bodySmoking, width: 117, height: 89 },
   },
 }
 
