@@ -136,12 +136,22 @@ export default function AppRoutes() {
                   path={ROOMMATE_ROUTES.profile(':candidateId')}
                   element={<DetailProfilePage />}
                 />
+                {/* Inside the providers too, so a visit to the chat tab keeps the session state. */}
+                <Route
+                  path={CHAT_ROUTE_PATTERNS.list}
+                  element={<ChatListPage />}
+                />
+                <Route
+                  path={CHAT_ROUTE_PATTERNS.room}
+                  element={<ChatRoomPage />}
+                />
+                <Route
+                  path={CHAT_ROUTE_PATTERNS.menu}
+                  element={<ChatMenuPage />}
+                />
               </Route>
             </Route>
           </Route>
-          <Route path={CHAT_ROUTE_PATTERNS.list} element={<ChatListPage />} />
-          <Route path={CHAT_ROUTE_PATTERNS.room} element={<ChatRoomPage />} />
-          <Route path={CHAT_ROUTE_PATTERNS.menu} element={<ChatMenuPage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>

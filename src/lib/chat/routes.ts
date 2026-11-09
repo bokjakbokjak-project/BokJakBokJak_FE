@@ -15,6 +15,9 @@ export function fromChatState(roomId: string) {
   return { from: 'chat', roomId } as const
 }
 
+/** A single path segment, so a bad state cannot point at another route such as a room menu. */
+const ROOM_ID_PATTERN = /^[A-Za-z0-9_-]+$/
+
 /** History state can hold anything, so only a chat state with a room id counts. */
 export function getChatReturnPath(state: unknown) {
   if (
@@ -23,7 +26,8 @@ export function getChatReturnPath(state: unknown) {
     'from' in state &&
     state.from === 'chat' &&
     'roomId' in state &&
-    typeof state.roomId === 'string'
+    typeof state.roomId === 'string' &&
+    ROOM_ID_PATTERN.test(state.roomId)
   ) {
     return CHAT_ROUTES.room(state.roomId)
   }

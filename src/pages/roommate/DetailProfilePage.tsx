@@ -1,20 +1,23 @@
 import { Navigate, useLocation, useParams } from 'react-router'
+import panelDecor from '../../assets/onboarding/panel-decor.svg'
+import AnswerCard from '../../components/AnswerCard/AnswerCard'
 import ChatRequestBar from '../../components/roommate/ChatRequestBar'
-import ProfileCard from '../../components/roommate/ProfileCard'
+import ProfileHero from '../../components/roommate/ProfileHero'
 import RoommateHeader from '../../components/roommate/RoommateHeader'
 import RoommatePage from '../../components/roommate/RoommatePage'
+import { getAnswerSummary } from '../../lib/answerSummary'
 import { getChatReturnPath } from '../../lib/chat/routes'
-import { getCandidate, type AnswerTone } from '../../lib/roommate/roommateData'
+import {
+  getCandidate,
+  getCandidateAnswers,
+} from '../../lib/roommate/roommateData'
 import { ROOMMATE_ROUTES } from '../../lib/roommate/routes'
 
-// Figma frames "N순위(프레임 색 구별)" (1095:27512, 1095:27519, 1095:27525, 1095:27530).
-const TONE_CLASS: Record<AnswerTone, string> = {
-  rank1: 'min-h-[106px] border border-brand-cream3 bg-brand-cream2',
-  rank2: 'min-h-[94px] border border-roommate-rank2-border bg-brand-beige5',
-  rank3: 'min-h-[106px] border border-roommate-rank3-border bg-brand-beige2',
-  rest: 'min-h-[94px] bg-white',
-}
-
+/**
+ * Figma 1377:36669 (first screen) and 1377:30540 (whole page). The summary cards show the
+ * candidate's own answers with the same cards and grouping as the my page. Only the content
+ * scrolls; the chat request bar stays at the bottom.
+ */
 export default function DetailProfilePage() {
   const { candidateId } = useParams()
   const { state } = useLocation()
@@ -25,48 +28,37 @@ export default function DetailProfilePage() {
   }
 
   return (
-    <RoommatePage>
+    <RoommatePage footer={<ChatRequestBar />}>
+      {/* Opened from a chat room, the analysis keeps that state so its back returns to the room. */}
       <RoommateHeader
         backTo={ROOMMATE_ROUTES.analysis(candidate.id)}
         backState={getChatReturnPath(state) ? state : undefined}
+        title="상세 프로필"
       />
-      <div className="mx-auto w-full max-w-[390px] px-6">
-        <ProfileCard candidate={candidate} variant="detail" />
-        <ul className="mt-[45px] flex flex-col gap-2.5 pb-[37px]">
-          {candidate.answers.map((row, index) => (
-            <li
-              key={row.id}
-              data-tone={row.tone}
-              className={`relative flex flex-col justify-center rounded-[10px] p-2 text-[14px] leading-[normal] ${TONE_CLASS[row.tone]}`}
-            >
-              <p className="font-semibold text-gray-black min-[390px]:whitespace-pre-line">
-                {row.question}
-              </p>
-              <div
-                className={`mt-2.5 flex flex-col gap-1 ${index === 0 ? 'pr-14' : ''}`}
-              >
-                <p className="font-semibold text-brand-brown1">
-                  {row.selfAnswer}
-                </p>
-                <p className="font-medium text-gray-500">{row.partnerAnswer}</p>
-              </div>
-              {index === 0 && (
-                <ul className="absolute top-[53px] right-[18px] flex flex-col gap-[5px] text-[12px]">
-                  <li className="flex items-center gap-[7px] font-semibold text-brand-brown1">
-                    <span className="size-[3px] rounded-full bg-current" />
-                    본인
-                  </li>
-                  <li className="flex items-center gap-[7px] font-medium text-gray-500">
-                    <span className="size-[3px] rounded-full bg-current" />
-                    상대
-                  </li>
-                </ul>
-              )}
-            </li>
-          ))}
-        </ul>
-      </div>
-      <ChatRequestBar variant="detail" />
+      <ProfileHero candidate={candidate} offset={9} />
+      <section
+        aria-labelledby="detail-summary-title"
+        className="relative z-10 flex flex-1 flex-col rounded-t-[35px] bg-brand-cream1 shadow-[0_0_0_2px_var(--color-brand-brown2)]"
+      >
+        <img
+          src={panelDecor}
+          alt=""
+          className="absolute top-[15px] left-1/2 h-[27px] w-[116.003px] max-w-none -translate-x-1/2"
+        />
+        <div className="mx-auto w-full max-w-[390px] px-6 pt-[57px] pb-[35px]">
+          <h2
+            id="detail-summary-title"
+            className="text-center text-[20px] leading-[1.5] font-bold tracking-[-0.4px] text-gray-500"
+          >
+            상세 답변 요약
+          </h2>
+          <div className="mt-[15px] flex flex-col gap-3">
+            {getAnswerSummary(getCandidateAnswers(candidate)).map((card) => (
+              <AnswerCard key={card.category} card={card} />
+            ))}
+          </div>
+        </div>
+      </section>
     </RoommatePage>
   )
 }

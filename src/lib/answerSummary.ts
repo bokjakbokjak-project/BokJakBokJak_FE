@@ -1,6 +1,6 @@
-import type { CategoryId } from '../onboarding/categories'
-import { QUESTION_TOPICS } from '../../pages/question/questionData'
-import type { QuestionAnswers } from '../../pages/question/questionState'
+import type { CategoryId } from './onboarding/categories'
+import { QUESTION_TOPICS } from '../pages/question/questionData'
+import type { QuestionAnswers } from '../pages/question/questionState'
 
 type AnswerGroup = {
   category: CategoryId

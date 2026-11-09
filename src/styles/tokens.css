@@ -59,6 +59,7 @@
   --color-roommate-surface: #fff0df;
   --color-roommate-rank2-border: #f6e8c8;
   --color-roommate-rank3-border: #fdf6d0;
+  --color-roommate-caption: #6a6563; /* Subtitle under 룸메이트 매칭 결과 (1377:30944) */
 
   /* Home frames (section 575:2037). Raw fills there, without a Figma style name. */
   --color-home-floor: #f7c79e;
