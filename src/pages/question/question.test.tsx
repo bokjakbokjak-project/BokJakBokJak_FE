@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import AppRoutes from '../../app/AppRoutes'
@@ -24,10 +24,8 @@ const next = () =>
 
 const advance = (ms: number) => act(() => vi.advanceTimersByTime(ms))
 
-const finishSituation = () => {
-  advance(2000)
-  advance(500)
-}
+// The STEP screen leaves after 2 seconds. The dissolve after it is CSS only.
+const finishSituation = () => advance(2000)
 
 function answerAll() {
   for (let index = 0; index < QUESTION_COUNT; index += 1) {
@@ -46,52 +44,69 @@ describe('situational survey', () => {
     vi.useRealTimers()
   })
 
-  it('shows the situation for 2 seconds, fades it out, then shows the question', () => {
+  it('opens each topic on its STEP screen, then shows the question after 2 seconds', () => {
     renderAt('/question')
-    const situation = screen.getByRole('heading', {
-      name: /밤에 함께 자고 있는데/,
-    })
+    const step = screen.getByLabelText('STEP 1 상황')
 
-    expect(screen.getByRole('button', { name: '다음으로' })).toBeDisabled()
+    expect(step).toHaveClass('visible')
     expect(
-      screen.queryByRole('button', { name: '이전으로' }),
+      within(step).getByRole('heading', { name: /밤에 함께 자고 있는데/ }),
+    ).toBeInTheDocument()
+    expect(
+      within(step).queryByRole('button', { name: '질문 보기' }),
     ).not.toBeInTheDocument()
 
     advance(1999)
-    expect(situation.parentElement).not.toHaveClass('opacity-0')
+    expect(step).toHaveClass('visible')
 
     advance(1)
-    expect(situation.parentElement).toHaveClass('opacity-0')
-    expect(screen.queryByText('Q1')).not.toBeInTheDocument()
-
-    advance(500)
-    expect(screen.getByText('Q1')).toBeInTheDocument()
+    expect(step).toHaveClass('invisible', 'opacity-0')
+    expect(screen.getByText('Q1-1')).toBeInTheDocument()
     expect(
       screen.getByRole('heading', { name: /어느 정도 있는 편인가요/ }),
     ).toBeInTheDocument()
-    expect(screen.getByText('Q1').parentElement).not.toHaveClass('opacity-0')
   })
 
-  it('keeps the sheet lowered and empty during the situation, then raises it with the question', () => {
+  it('shows the situation again from the question and returns with 질문 보기', () => {
     renderAt('/question')
-    const options = screen.getByRole('group', { hidden: true })
-    const buttons = screen.getByRole('button', {
-      name: '다음으로',
-    }).parentElement
-    const sheet = options.parentElement
+    finishSituation()
+    const step = screen.getByLabelText('STEP 1 상황')
 
-    expect(sheet).toHaveClass('translate-y-[66px]')
-    expect(options).toHaveClass('invisible', 'opacity-0')
-    expect(buttons).toHaveClass('invisible', 'opacity-0')
+    fireEvent.click(screen.getByRole('button', { name: '상황 보기' }))
+    expect(step).toHaveClass('visible')
+    const showQuestion = within(step).getByRole('button', { name: '질문 보기' })
+    expect(showQuestion).toHaveFocus()
 
-    advance(2000)
-    expect(sheet).toHaveClass('translate-y-[66px]')
+    // It stays until the button is used, unlike the first visit.
+    advance(5000)
+    expect(step).toHaveClass('visible')
 
-    advance(500)
-    expect(sheet).not.toHaveClass('translate-y-[66px]')
-    expect(options).not.toHaveClass('invisible')
-    expect(buttons).not.toHaveClass('invisible')
-    expect(screen.getByText('Q1')).toBeInTheDocument()
+    fireEvent.click(showQuestion)
+    expect(step).toHaveClass('invisible')
+    expect(screen.getByRole('button', { name: '상황 보기' })).toHaveFocus()
+  })
+
+  it('numbers the roommate question of a topic as its second question', () => {
+    renderAt('/question')
+    finishSituation()
+    pick(0)
+    next()
+
+    expect(screen.getByText('Q1-2')).toBeInTheDocument()
+    expect(screen.getByLabelText('STEP 1 상황')).toHaveClass('invisible')
+  })
+
+  it('uses the light STEP screen for the next topic', () => {
+    renderAt('/question')
+    finishSituation()
+    pick(0)
+    next()
+    pick(1)
+    next()
+
+    const step = screen.getByRole('region', { name: 'STEP 2 상황' })
+    expect(step).toHaveClass('visible')
+    expect(within(step).getByRole('heading')).toHaveClass('text-brand-brown1')
   })
 
   it('needs an answer after the situation ends', () => {
@@ -107,12 +122,12 @@ describe('situational survey', () => {
     pick(0)
     next()
 
-    expect(screen.getByText('Q2')).toBeInTheDocument()
+    expect(screen.getByText('Q1-2')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: '다음으로' })).toBeDisabled()
 
     fireEvent.click(screen.getByRole('button', { name: '이전으로' }))
 
-    expect(screen.getByText('Q1')).toBeInTheDocument()
+    expect(screen.getByText('Q1-1')).toBeInTheDocument()
     expect(
       screen.getByRole('radio', {
         name: getQuestionStep(0).question.options[0],

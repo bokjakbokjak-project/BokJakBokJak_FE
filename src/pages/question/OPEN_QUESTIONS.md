@@ -2,26 +2,27 @@
 
 현재 코드에서 도출한 확인 목록이다. 아래 항목은 모두 미확인 상태이며 확정된 서버 계약이 아니다.
 
-| ID   | 상태      | 주제                             | 근거                                                |
-| ---- | --------- | -------------------------------- | --------------------------------------------------- |
-| BE-1 | 미확인    | Google 인증 및 세션 계약         | `src/pages/onboarding/LoginPage.tsx`                |
-| BE-6 | 미확인    | 온보딩 저장과 완료 처리          | `src/pages/onboarding/CompletePage.tsx`             |
-| BE-8 | 미확인    | 입력값 검증 정책                 | `src/lib/onboarding/onboardingState.ts`             |
-| BE-4 | 미확인    | 생활습관 우선순위 전달 형식      | `src/lib/onboarding/priority.ts`                    |
-| BE-5 | 미확인    | 기숙사 검색·생성 API             | `src/lib/onboarding/dormitoryApi.ts`                |
-| BE-3 | 미확인    | 인증과 단계 가드                 | `src/components/onboarding/OnboardingStepGuard.tsx` |
-| BE-7 | 미확인    | 저장 완료 이후 처리              | `src/pages/onboarding/CompletePage.tsx`             |
-| PL-1 | 미확인    | 방 인원 지원 범위                | `src/pages/onboarding/DormitoryPage.tsx`            |
-| PL-3 | 미확인    | 우선순위 선택 정책               | `src/lib/onboarding/priority.ts`                    |
-| PL-4 | 미확인    | 카테고리 명칭                    | `src/lib/onboarding/categories.ts`                  |
-| DE-5 | 미확인    | 기숙사 자동완성 디자인           | `src/components/onboarding/DormitoryField.tsx`      |
-| BE-9 | 미확인    | 설문 답변 저장                   | `src/pages/question/QuestionProvider.tsx`           |
-| PL-5 | 미확인    | 우선순위별 설문 순서와 일반 설문 | `src/pages/question/questionData.ts`                |
-| PL-6 | 미확인    | 프로필 이후 이동과 공유          | `src/pages/question/QuestionProfilePage.tsx`        |
-| DE-6 | 반영 완료 | 상황 화면 전환 방식              | `src/pages/question/QuestionPage.tsx`               |
-| DE-7 | 미확인    | 설문 문구 확정                   | `src/pages/question/questionData.ts`                |
-| DE-8 | 미확인    | 설문·프로필 캐릭터 이미지        | `src/assets/question/`                              |
-| DE-9 | 미확인    | 4·5순위 배지와 완료 화면 배치    | `src/components/onboarding/PriorityChip.tsx`        |
+| ID    | 상태      | 주제                             | 근거                                                |
+| ----- | --------- | -------------------------------- | --------------------------------------------------- |
+| BE-1  | 미확인    | Google 인증 및 세션 계약         | `src/pages/onboarding/LoginPage.tsx`                |
+| BE-6  | 미확인    | 온보딩 저장과 완료 처리          | `src/pages/onboarding/CompletePage.tsx`             |
+| BE-8  | 미확인    | 입력값 검증 정책                 | `src/lib/onboarding/onboardingState.ts`             |
+| BE-4  | 미확인    | 생활습관 우선순위 전달 형식      | `src/lib/onboarding/priority.ts`                    |
+| BE-5  | 미확인    | 기숙사 검색·생성 API             | `src/lib/onboarding/dormitoryApi.ts`                |
+| BE-3  | 미확인    | 인증과 단계 가드                 | `src/components/onboarding/OnboardingStepGuard.tsx` |
+| BE-7  | 미확인    | 저장 완료 이후 처리              | `src/pages/onboarding/CompletePage.tsx`             |
+| PL-1  | 미확인    | 방 인원 지원 범위                | `src/pages/onboarding/DormitoryPage.tsx`            |
+| PL-3  | 미확인    | 우선순위 선택 정책               | `src/lib/onboarding/priority.ts`                    |
+| PL-4  | 미확인    | 카테고리 명칭                    | `src/lib/onboarding/categories.ts`                  |
+| DE-5  | 미확인    | 기숙사 자동완성 디자인           | `src/components/onboarding/DormitoryField.tsx`      |
+| BE-9  | 미확인    | 설문 답변 저장                   | `src/pages/question/QuestionProvider.tsx`           |
+| PL-5  | 미확인    | 우선순위별 설문 순서와 일반 설문 | `src/pages/question/questionData.ts`                |
+| PL-6  | 미확인    | 프로필 이후 이동과 공유          | `src/pages/question/QuestionProfilePage.tsx`        |
+| DE-6  | 반영 완료 | 상황 화면 전환 방식              | `src/pages/question/QuestionPage.tsx`               |
+| DE-7  | 미확인    | 설문 문구 확정                   | `src/pages/question/questionData.ts`                |
+| DE-8  | 미확인    | 설문·프로필 캐릭터 이미지        | `src/assets/question/`                              |
+| DE-9  | 미확인    | 4·5순위 배지와 완료 화면 배치    | `src/components/onboarding/PriorityChip.tsx`        |
+| DE-10 | 미확인    | STEP 화면 일러스트와 변형        | `src/pages/question/QuestionPage.tsx`               |
 
 ## BE-1: Google 인증 및 세션 계약
 
@@ -75,10 +76,17 @@
 
 ## DE-6: 상황 화면 전환 방식
 
-- 결정 내용: 상황 문구를 2초 보여준 뒤 서서히 투명하게 사라지고, Q 문구가 나타나면서 시트가 동시에 올라오고 그 안에 선택지와 버튼이 나타난다. 상황 문구 단계의 화면은 Figma `1099:14106`을 따른다.
-- 답변 근거 및 날짜: 프로젝트 담당자 결정, 2026-11-07.
-- 영향 파일: `src/pages/question/QuestionPage.tsx`, `src/pages/question/question.test.tsx`
-- 임시 구현(미확정): 페이드와 올라오는 동작은 0.5초씩이다. Figma에는 잠버릇 프레임만 있어서, 다른 주제도 시트 시작 위치를 y=532로 맞췄다. 흡연은 시트가 원래 낮아 28px만 올라온다. 룸메이트 질문에는 상황 문구가 없어 바로 표시한다. 답한 질문으로 돌아오면 상황 문구를 다시 보여주지 않는다.
+- 결정 내용: Figma 프로토타입 `1377:49785`를 따른다. 주제마다 STEP 화면(전체 일러스트, `STEP n`, 상황 문구)을 2초 보여준 뒤 0.8초 디졸브로 질문 화면으로 넘어간다. 질문 화면의 `상황 보기`를 누르면 `질문 보기` 버튼이 있는 STEP 화면이 디졸브로 뜨고, `질문 보기`로 돌아온다. 질문 번호는 `Q1-1`(나), `Q1-2`(룸메이트) 형식이다.
+- 답변 근거 및 날짜: 프로젝트 담당자 요청, 2026-11-10. 이전 결정(2026-11-07, 상황 문구 2초 후 시트가 올라오는 방식)을 대체한다.
+- 영향 파일: `src/pages/question/QuestionPage.tsx`, `src/pages/question/questionData.ts`, `src/pages/question/question.test.tsx`
+- 임시 구현(미확정): 답한 질문으로 돌아오면 STEP 화면을 다시 보여주지 않는다. 룸메이트 질문은 STEP 화면 없이 바로 표시하지만 `상황 보기`로 열 수 있다. `상황 보기`로 연 STEP 화면은 자동으로 닫히지 않는다.
+
+## DE-10: STEP 화면 일러스트와 변형
+
+- 현재: 화면 전체 높이 일러스트는 STEP 1(잠버릇, 어두운 버전)과 STEP 2(취침 시간, 밝은 버전)만 있다. STEP 3~8은 질문 화면의 장면 이미지를 밝은 버전 배치에 위아래로 흐려서 쓴다.
+- 근거: 프로토타입의 두 프레임 이름은 모두 `_dark`이지만, STEP 1만 어두운 덧칠과 흰 글씨이고 STEP 2는 밝은 배경에 갈색 글씨다. 진행 바도 STEP 2 프레임은 첫 칸만 채워져 있다.
+- 질문: STEP 3~8의 전체 일러스트가 나오는가? 어두운 버전은 밤 장면에만 쓰는가? 진행 바는 주제 번호만큼 채우는 것이 맞는가(현재 구현)?
+- 답변 전: 현재 임시 배치를 유지하고 최종 디자인으로 간주하지 않는다.
 
 ## DE-7: 설문 문구 확정
 
