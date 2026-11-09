@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { getCharacterLayers, getPartVariants } from './character'
-import { getRank, isPriorityComplete, togglePriority } from './priority'
+import { CATEGORY_IDS, type CategoryId } from './categories'
+import {
+  MAX_PRIORITY_COUNT,
+  MIN_PRIORITY_COUNT,
+  getRank,
+  isPriorityComplete,
+  togglePriority,
+} from './priority'
 
 describe('togglePriority', () => {
   it('assigns ranks in click order', () => {
@@ -22,10 +29,28 @@ describe('togglePriority', () => {
     ).toEqual(['smoking', 'sleep-habit'])
   })
 
-  it('ignores a fourth selection', () => {
-    expect(
-      togglePriority(['cleaning', 'smoking', 'sleep-habit'], 'wake-alarm'),
-    ).toEqual(['cleaning', 'smoking', 'sleep-habit'])
+  it('allows ranks 4 and 5, and every count from three to five completes', () => {
+    let priorities = ['cleaning', 'smoking', 'sleep-habit'] as CategoryId[]
+    priorities = togglePriority(priorities, 'wake-alarm')
+    expect(getRank(priorities, 'wake-alarm')).toBe(4)
+    expect(isPriorityComplete(priorities)).toBe(true)
+
+    priorities = togglePriority(priorities, 'personal-hygiene')
+    expect(getRank(priorities, 'personal-hygiene')).toBe(5)
+    expect(isPriorityComplete(priorities)).toBe(true)
+    expect(priorities).toHaveLength(MAX_PRIORITY_COUNT)
+  })
+
+  it('needs at least three priorities', () => {
+    expect(isPriorityComplete([])).toBe(false)
+    expect(isPriorityComplete(['cleaning', 'smoking'])).toBe(false)
+    expect(MIN_PRIORITY_COUNT).toBe(3)
+  })
+
+  it('ignores a selection beyond the maximum', () => {
+    const all = [...CATEGORY_IDS]
+    expect(togglePriority(all.slice(0, 4), all[4])).toEqual(all)
+    expect(isPriorityComplete([...all, 'cleaning'])).toBe(false)
   })
 })
 
@@ -46,6 +71,18 @@ describe('character parts', () => {
       hand: 'smoking',
       body: 'wake-alarm',
     })
+  })
+
+  it('ignores ranks 4 and 5', () => {
+    expect(
+      getPartVariants([
+        'cleaning',
+        'smoking',
+        'wake-alarm',
+        'sleep-habit',
+        'personal-hygiene',
+      ]),
+    ).toEqual(getPartVariants(['cleaning', 'smoking', 'wake-alarm']))
   })
 
   it('keeps the Figma layer order and has no separate face layer', () => {

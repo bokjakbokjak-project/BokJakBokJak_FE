@@ -1,14 +1,10 @@
-import rank1 from '../../assets/icons/rank-1.svg'
-import rank2 from '../../assets/icons/rank-2.svg'
-import rank3 from '../../assets/icons/rank-3.svg'
 import {
   categoryCardClass,
   type CategoryId,
 } from '../../lib/onboarding/categories'
 import type { Rank } from '../../lib/onboarding/priority'
 import CategoryCardContent from './CategoryCard'
-
-const RANK_BADGES = { 1: rank1, 2: rank2, 3: rank3 }
+import RankBadge from './RankBadge'
 
 type PriorityChipProps = {
   id: CategoryId
@@ -29,15 +25,7 @@ export default function PriorityChip({
       onClick={() => onToggle(id)}
     >
       <CategoryCardContent id={id} />
-      {rank && (
-        <span className="absolute -top-[11.5px] left-1/2 flex size-5 -translate-x-1/2 items-center justify-center rounded-full border-[1.5px] border-brand-brown1 bg-white">
-          <img
-            src={RANK_BADGES[rank]}
-            alt={`${rank}순위`}
-            className="block size-3 max-w-none -scale-x-100"
-          />
-        </span>
-      )}
+      {rank && <RankBadge rank={rank} />}
     </button>
   )
 }

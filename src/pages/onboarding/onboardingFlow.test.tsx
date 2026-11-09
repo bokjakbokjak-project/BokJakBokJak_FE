@@ -324,6 +324,52 @@ describe('onboarding flow', () => {
     expect(finish).toBeEnabled()
   })
 
+  it('allows ranks 4 and 5 without changing the character', () => {
+    renderPriorityStep()
+    const finish = screen.getByRole('button', { name: '완료하기' })
+
+    click(/잠버릇/)
+    click(/기상알람/)
+    click(/청소,청결/)
+    const parts = () =>
+      ['head', 'hand', 'body'].map((part) => layerVariant(part)).join()
+    const threeRanks = parts()
+
+    click(/개인청결/)
+    expect(
+      within(chip(/개인청결/)).getByRole('img', { name: '4순위' }),
+    ).toBeInTheDocument()
+    expect(parts()).toBe(threeRanks)
+    expect(finish).toBeEnabled()
+
+    click(/흡연유무/)
+    expect(
+      within(chip(/흡연유무/)).getByRole('img', { name: '5순위' }),
+    ).toBeInTheDocument()
+    expect(parts()).toBe(threeRanks)
+    expect(finish).toBeEnabled()
+
+    click(/잠버릇/)
+    expect(
+      within(chip(/개인청결/)).getByRole('img', { name: '3순위' }),
+    ).toBeInTheDocument()
+    expect(layerVariant('body')).toBe('personal-hygiene')
+
+    click('완료하기')
+    const items = screen.getAllByRole('listitem')
+    expect(items.map((item) => item.textContent?.replace(/\d/g, ''))).toEqual([
+      '기상알람',
+      '청소,청결',
+      '개인청결',
+      '흡연유무',
+    ])
+    items.forEach((item, index) => {
+      expect(
+        within(item).getByRole('img', { name: `${index + 1}순위` }),
+      ).toBeInTheDocument()
+    })
+  })
+
   it('moves the character with the ranks when a selection is cancelled', () => {
     renderPriorityStep()
 

@@ -91,7 +91,7 @@ export type CharacterLayer = {
   height: number
 }
 
-/** Rank 1 sets the head, rank 2 the hand, and rank 3 the body. */
+/** Rank 1 sets the head, rank 2 the hand, and rank 3 the body. Ranks 4 and 5 change nothing. */
 export function getPartVariants(
   priorities: readonly CategoryId[],
 ): Record<PartName, PartVariant> {
