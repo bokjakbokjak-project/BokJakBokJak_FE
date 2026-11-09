@@ -1,5 +1,4 @@
 import { Link, Navigate, useParams } from 'react-router'
-import panelPlus from '../../assets/icons/panel-plus.svg'
 import panelDecor from '../../assets/onboarding/panel-decor.svg'
 import iconAdjust from '../../assets/roommate/analysis-adjust.png'
 import iconCheck from '../../assets/roommate/analysis-check.png'
@@ -74,16 +73,6 @@ export default function MatchAnalysisPage() {
           className="absolute top-[15px] left-1/2 h-[27px] w-[116.003px] max-w-none -translate-x-1/2"
         />
         <div className="relative mx-auto w-full max-w-[390px] px-6 pt-[57px] pb-[17.5px]">
-          <img
-            src={panelPlus}
-            alt=""
-            className="absolute top-[17.25px] left-[23.25px] size-[21.5px] max-w-none"
-          />
-          <img
-            src={panelPlus}
-            alt=""
-            className="absolute top-[17.25px] right-[23.25px] size-[21.5px] max-w-none"
-          />
           <h2 className="relative -left-[5.5px] text-center text-[20px] leading-[1.5] font-bold tracking-[-0.4px] text-gray-500">
             {candidate.givenName}님과의 나의 매칭결과
           </h2>

@@ -1,6 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import infoIcon from '../../assets/icons/info.svg'
-import panelPlus from '../../assets/icons/panel-plus.svg'
 import panelDecor from '../../assets/onboarding/panel-decor.svg'
 import CharacterPreview from '../../components/onboarding/CharacterPreview'
 import MissionNotice from '../../components/onboarding/MissionNotice'
@@ -81,18 +80,6 @@ export default function PriorityPage() {
           alt=""
           className="absolute top-[15px] left-1/2 h-[27px] w-[116.003px] max-w-none -translate-x-1/2"
         />
-        <div className="relative mx-auto h-full w-full max-w-[390px]">
-          <img
-            src={panelPlus}
-            alt=""
-            className="absolute top-[17.25px] left-[23.25px] size-[21.5px] max-w-none"
-          />
-          <img
-            src={panelPlus}
-            alt=""
-            className="absolute top-[17.25px] right-[23.25px] size-[21.5px] max-w-none"
-          />
-        </div>
       </div>
       <div className="relative z-20 mx-auto flex w-full max-w-[390px] shrink-0 flex-col gap-[17px] px-6 pt-[73px] pb-[42px]">
         {CATEGORY_ROWS.map((row) => (
