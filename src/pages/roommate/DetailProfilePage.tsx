@@ -1,4 +1,4 @@
-import { Navigate, useParams } from 'react-router'
+import { Navigate, useLocation, useParams } from 'react-router'
 import panelDecor from '../../assets/onboarding/panel-decor.svg'
 import AnswerCard from '../../components/AnswerCard/AnswerCard'
 import ChatRequestBar from '../../components/roommate/ChatRequestBar'
@@ -6,6 +6,7 @@ import ProfileHero from '../../components/roommate/ProfileHero'
 import RoommateHeader from '../../components/roommate/RoommateHeader'
 import RoommatePage from '../../components/roommate/RoommatePage'
 import { getAnswerSummary } from '../../lib/answerSummary'
+import { getChatReturnPath } from '../../lib/chat/routes'
 import {
   getCandidate,
   getCandidateAnswers,
@@ -19,6 +20,7 @@ import { ROOMMATE_ROUTES } from '../../lib/roommate/routes'
  */
 export default function DetailProfilePage() {
   const { candidateId } = useParams()
+  const { state } = useLocation()
   const candidate = getCandidate(candidateId)
 
   if (!candidate) {
@@ -27,8 +29,10 @@ export default function DetailProfilePage() {
 
   return (
     <RoommatePage footer={<ChatRequestBar />}>
+      {/* Opened from a chat room, the analysis keeps that state so its back returns to the room. */}
       <RoommateHeader
         backTo={ROOMMATE_ROUTES.analysis(candidate.id)}
+        backState={getChatReturnPath(state) ? state : undefined}
         title="상세 프로필"
       />
       <ProfileHero candidate={candidate} offset={9} />

@@ -106,38 +106,31 @@ describe('bottom navigation', () => {
     expect(current('홈')).toBe('page')
   })
 
-  it.each(['채팅'])('shows the notice for %s and stays on the page', (name) => {
-    vi.useFakeTimers()
+  it('opens the chat list from the bottom menu', async () => {
     renderAt('/home')
-    const status = within(nav()).getByRole('status')
-    expect(status).toBeEmptyDOMElement()
 
-    fireEvent.click(screen.getByRole('button', { name }))
+    clickLink('채팅')
 
-    expect(status).toHaveTextContent(NOTICE)
-    expect(screen.getByTestId('home-scroll')).toBeInTheDocument()
-    expect(within(nav()).getByRole('link', { name: '홈' })).toHaveAttribute(
+    expect(
+      await screen.findByRole('heading', { name: '채팅' }),
+    ).toBeInTheDocument()
+    expect(within(nav()).getByRole('link', { name: '채팅' })).toHaveAttribute(
       'aria-current',
       'page',
     )
-    expect(screen.getByRole('button', { name })).not.toHaveAttribute(
-      'aria-current',
-    )
-
-    act(() => vi.advanceTimersByTime(2999))
-    expect(status).toHaveTextContent(NOTICE)
-    act(() => vi.advanceTimersByTime(1))
-    expect(status).toBeEmptyDOMElement()
+    expect(within(nav()).getByRole('status')).toBeEmptyDOMElement()
   })
 
   it('restarts the notice time on another click', () => {
     vi.useFakeTimers()
-    renderAt('/roommate')
+    renderAt('/my')
     const status = within(nav()).getByRole('status')
+    const logOut = () =>
+      fireEvent.click(screen.getByRole('button', { name: '로그아웃 하기' }))
 
-    fireEvent.click(screen.getByRole('button', { name: '채팅' }))
+    logOut()
     act(() => vi.advanceTimersByTime(2000))
-    fireEvent.click(screen.getByRole('button', { name: '채팅' }))
+    logOut()
     act(() => vi.advanceTimersByTime(2999))
 
     expect(status).toHaveTextContent(NOTICE)

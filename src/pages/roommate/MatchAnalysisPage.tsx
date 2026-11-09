@@ -1,4 +1,4 @@
-import { Link, Navigate, useParams } from 'react-router'
+import { Link, Navigate, useLocation, useParams } from 'react-router'
 import panelDecor from '../../assets/onboarding/panel-decor.svg'
 import iconAdjust from '../../assets/roommate/analysis-adjust.png'
 import iconCheck from '../../assets/roommate/analysis-check.png'
@@ -7,6 +7,7 @@ import ChatRequestBar from '../../components/roommate/ChatRequestBar'
 import ProfileHero from '../../components/roommate/ProfileHero'
 import RoommateHeader from '../../components/roommate/RoommateHeader'
 import RoommatePage from '../../components/roommate/RoommatePage'
+import { getChatReturnPath } from '../../lib/chat/routes'
 import { getCandidate } from '../../lib/roommate/roommateData'
 import { ROOMMATE_ROUTES } from '../../lib/roommate/routes'
 
@@ -37,7 +38,10 @@ const CATEGORIES = [
 
 export default function MatchAnalysisPage() {
   const { candidateId } = useParams()
+  const { state } = useLocation()
   const candidate = getCandidate(candidateId)
+  // Opened from a chat room's profile picture, back returns to that room.
+  const chatReturnPath = getChatReturnPath(state)
 
   if (!candidate) {
     return <Navigate to={ROOMMATE_ROUTES.list} replace />
@@ -45,10 +49,14 @@ export default function MatchAnalysisPage() {
 
   return (
     <RoommatePage footer={<ChatRequestBar />}>
-      <RoommateHeader backTo={ROOMMATE_ROUTES.list} title="룸메이트" />
+      <RoommateHeader
+        backTo={chatReturnPath ?? ROOMMATE_ROUTES.list}
+        title="룸메이트"
+      />
       <ProfileHero candidate={candidate}>
         <Link
           to={ROOMMATE_ROUTES.profile(candidate.id)}
+          state={chatReturnPath ? state : undefined}
           className="absolute top-[188.58px] left-[38px] flex w-[161px] items-center justify-center rounded-b-[15px] bg-brand-brown3 px-2.5 pt-[35px] pb-2.5 text-[16px] leading-[1.5] font-semibold whitespace-nowrap text-white"
         >
           상세프로필 보기 →

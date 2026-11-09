@@ -1,5 +1,6 @@
 import { Navigate, Route, Routes } from 'react-router'
 import MobileLayout from '../components/MobileLayout/MobileLayout'
+import { CHAT_ROUTE_PATTERNS } from '../lib/chat/routes'
 import DemoNotice from '../components/onboarding/DemoNotice'
 import OnboardingStepGuard from '../components/onboarding/OnboardingStepGuard'
 import OnboardingSurface from '../components/onboarding/OnboardingSurface'
@@ -13,6 +14,9 @@ import NotificationsPage from '../pages/home/NotificationsPage'
 import EditNamePage from '../pages/my/EditNamePage'
 import MyPage from '../pages/my/MyPage'
 import NotFoundPage from '../pages/NotFoundPage/NotFoundPage'
+import ChatListPage from '../pages/chat/ChatListPage'
+import ChatMenuPage from '../pages/chat/ChatMenuPage'
+import ChatRoomPage from '../pages/chat/ChatRoomPage'
 import CompletePage from '../pages/onboarding/CompletePage'
 import DevPreviewPage from '../pages/onboarding/DevPreviewPage'
 import DormitoryPage from '../pages/onboarding/DormitoryPage'
@@ -131,6 +135,19 @@ export default function AppRoutes() {
                 <Route
                   path={ROOMMATE_ROUTES.profile(':candidateId')}
                   element={<DetailProfilePage />}
+                />
+                {/* Inside the providers too, so a visit to the chat tab keeps the session state. */}
+                <Route
+                  path={CHAT_ROUTE_PATTERNS.list}
+                  element={<ChatListPage />}
+                />
+                <Route
+                  path={CHAT_ROUTE_PATTERNS.room}
+                  element={<ChatRoomPage />}
+                />
+                <Route
+                  path={CHAT_ROUTE_PATTERNS.menu}
+                  element={<ChatMenuPage />}
                 />
               </Route>
             </Route>

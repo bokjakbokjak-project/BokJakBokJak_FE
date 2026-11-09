@@ -171,6 +171,22 @@ describe('my page', () => {
     expect(screen.getByTestId('home-scroll')).toBeInTheDocument()
   })
 
+  it('keeps everything when visiting the chat tab and back', async () => {
+    openSeededMyPage()
+
+    fireEvent.click(link('채팅'))
+    expect(
+      await screen.findByRole('heading', { name: '채팅' }),
+    ).toBeInTheDocument()
+    fireEvent.click(link('마이'))
+
+    expect(
+      screen.getByRole('heading', { name: '미리보기' }),
+    ).toBeInTheDocument()
+    expect(card('흡연유무')).toHaveTextContent(selfOption(7, 0))
+    expect(layer('head')).toBe('sleep-habit')
+  })
+
   it('keeps everything when moving to the roommate list and back', () => {
     openSeededMyPage()
 

@@ -1,5 +1,6 @@
 import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
+import { fromChatState } from '../../lib/chat/routes'
 import { describe, expect, it } from 'vitest'
 import AppRoutes from '../../app/AppRoutes'
 import {
@@ -9,9 +10,9 @@ import {
 } from '../../lib/roommate/roommateData'
 import { QUESTION_TOPICS } from '../question/questionData'
 
-function renderAt(path: string) {
+function renderAt(path: string, state?: unknown) {
   render(
-    <MemoryRouter initialEntries={[path]}>
+    <MemoryRouter initialEntries={[{ pathname: path, state }]}>
       <AppRoutes />
     </MemoryRouter>,
   )
@@ -82,6 +83,19 @@ describe('roommate list', () => {
     expect(within(nav).getByRole('link', { name: '홈' })).not.toHaveAttribute(
       'aria-current',
     )
+  })
+
+  it('keeps the expanded list after visiting the chat tab', async () => {
+    renderAt('/roommate')
+    fireEvent.click(screen.getByRole('button', { name: '리스트 더보기' }))
+
+    fireEvent.click(screen.getByRole('link', { name: '채팅' }))
+    expect(
+      await screen.findByRole('heading', { name: '채팅' }),
+    ).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('link', { name: '룸메이트' }))
+
+    expect(cards()).toHaveLength(10)
   })
 
   it('keeps the expanded list after visiting the home', () => {
@@ -278,4 +292,57 @@ describe('chat request', () => {
       ).toHaveLength(1)
     },
   )
+})
+
+describe('roommate screens opened from a chat room', () => {
+  const chatState = fromChatState('jeonhyeyun')
+
+  it('use the same design and keep the chat request disabled', () => {
+    renderAt('/roommate/hyeyun/profile', chatState)
+
+    expect(
+      screen.getByRole('heading', { name: '상세 프로필' }),
+    ).toBeInTheDocument()
+    for (const title of [
+      '잠버릇',
+      '기상알람',
+      '청소 청결',
+      '개인 청결',
+      '흡연유무',
+    ]) {
+      expect(screen.getByRole('region', { name: title })).toBeInTheDocument()
+    }
+    const bar = screen.getByTestId('chat-request-bar')
+    expect(screen.getByTestId('roommate-scroll')).not.toContainElement(bar)
+    expect(chatButton()).toBeDisabled()
+  })
+
+  it('return to the chat room through the analysis', async () => {
+    renderAt('/roommate/hyeyun/profile', chatState)
+
+    fireEvent.click(screen.getByRole('link', { name: '이전' }))
+    expect(
+      screen.getByRole('heading', { name: '혜윤님과의 나의 매칭결과' }),
+    ).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('link', { name: '이전' }))
+    expect(
+      await screen.findByRole('heading', { name: '전혜윤님' }),
+    ).toBeInTheDocument()
+  })
+
+  it.each([
+    ['no state', undefined],
+    ['a chat state without a room', { from: 'chat' }],
+    ['another kind of state', { from: 'home' }],
+    ['a room id with a path', { from: 'chat', roomId: 'minsujeong/menu' }],
+    ['an empty room id', { from: 'chat', roomId: '' }],
+  ])('fall back to the list with %s', (_, state) => {
+    renderAt('/roommate/hyeyun/profile', state)
+
+    fireEvent.click(screen.getByRole('link', { name: '이전' }))
+    fireEvent.click(screen.getByRole('link', { name: '이전' }))
+
+    expect(screen.getByTestId('roommate-list')).toBeInTheDocument()
+  })
 })
