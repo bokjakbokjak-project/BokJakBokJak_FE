@@ -2,7 +2,11 @@ import { fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it } from 'vitest'
 import AppRoutes from '../../app/AppRoutes'
-import { resetMockChatRooms } from '../../lib/chat/chatApi.mock'
+import {
+  getSampleChatRooms,
+  resetMockChatRooms,
+} from '../../lib/chat/chatApi.mock'
+import { getCandidate } from '../../lib/roommate/roommateData'
 
 function renderAt(path: string) {
   render(
@@ -24,7 +28,7 @@ describe('chat', () => {
     renderAt('/chat')
 
     const rooms = await screen.findAllByRole('link', { name: /님과의 매칭이/ })
-    expect(rooms).toHaveLength(7)
+    expect(rooms).toHaveLength(8)
     expect(screen.getByText('민수정님과의 매칭이 완료되었어요')).toBeVisible()
     expect(screen.getByText('전혜윤님과의 매칭이 종료되었어요')).toBeVisible()
     expect(screen.getByText('서유정님과의 매칭이 시작되었어요')).toBeVisible()
@@ -104,13 +108,13 @@ describe('chat', () => {
   })
 
   it('ends a room from the menu', async () => {
-    renderAt('/chat/hansuhui/menu')
+    renderAt('/chat/namyungyeong/menu')
 
     expect(await screen.findByText('님과의 채팅')).toBeInTheDocument()
     click('채팅방 종료하기')
 
     expect(
-      await screen.findByText('한수희님과의 매칭이 종료되었어요'),
+      await screen.findByText('남윤경님과의 매칭이 종료되었어요'),
     ).toBeVisible()
   })
 
@@ -139,15 +143,20 @@ describe('chat', () => {
     ).toBeInTheDocument()
   })
 
-  it('keeps the partner picture plain when there is no profile', async () => {
-    renderAt('/chat/hansuhui')
+  it('gives every sample room a partner in the roommate sample data', () => {
+    for (const room of getSampleChatRooms()) {
+      const candidate = getCandidate(room.candidateId)
+      expect(candidate?.name, room.id).toBe(room.partnerName)
+      expect(candidate?.matchRate, room.id).toBe(room.matchRate)
+    }
+  })
+
+  it('shows the waiting vote when I already asked for the next agenda', async () => {
+    renderAt('/chat/iseoyun')
 
     expect(
-      await screen.findByRole('heading', { name: '한수희님' }),
+      await screen.findByRole('button', { name: '안건 확정 취소하기' }),
     ).toBeInTheDocument()
-    expect(
-      screen.queryByRole('link', { name: /프로필 보기/ }),
-    ).not.toBeInTheDocument()
   })
 
   it('sends an unknown room back to the list', async () => {
