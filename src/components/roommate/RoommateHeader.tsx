@@ -2,11 +2,21 @@ import { Link } from 'react-router'
 import arrowLeft from '../../assets/icons/arrow-left.svg'
 
 /** Back button and title from Figma (1057:13038). */
-export default function RoommateHeader({ backTo }: { backTo: string }) {
+type RoommateHeaderProps = {
+  backTo: string
+  /** Router state to keep on the way back, such as the chat room a visit started from. */
+  backState?: unknown
+}
+
+export default function RoommateHeader({
+  backTo,
+  backState,
+}: RoommateHeaderProps) {
   return (
     <header className="relative z-20 h-14 shrink-0">
       <Link
         to={backTo}
+        state={backState}
         aria-label="이전"
         className="absolute top-3.5 left-6 size-7 overflow-hidden rounded-full border-[1.5px] border-brand-brown3 bg-brand-beige1"
       >

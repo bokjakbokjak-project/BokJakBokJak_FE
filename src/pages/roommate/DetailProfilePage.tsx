@@ -1,8 +1,9 @@
-import { Navigate, useParams } from 'react-router'
+import { Navigate, useLocation, useParams } from 'react-router'
 import ChatRequestBar from '../../components/roommate/ChatRequestBar'
 import ProfileCard from '../../components/roommate/ProfileCard'
 import RoommateHeader from '../../components/roommate/RoommateHeader'
 import RoommatePage from '../../components/roommate/RoommatePage'
+import { getChatReturnPath } from '../../lib/chat/routes'
 import { getCandidate, type AnswerTone } from '../../lib/roommate/roommateData'
 import { ROOMMATE_ROUTES } from '../../lib/roommate/routes'
 
@@ -16,6 +17,7 @@ const TONE_CLASS: Record<AnswerTone, string> = {
 
 export default function DetailProfilePage() {
   const { candidateId } = useParams()
+  const { state } = useLocation()
   const candidate = getCandidate(candidateId)
 
   if (!candidate) {
@@ -24,7 +26,10 @@ export default function DetailProfilePage() {
 
   return (
     <RoommatePage>
-      <RoommateHeader backTo={ROOMMATE_ROUTES.analysis(candidate.id)} />
+      <RoommateHeader
+        backTo={ROOMMATE_ROUTES.analysis(candidate.id)}
+        backState={getChatReturnPath(state) ? state : undefined}
+      />
       <div className="mx-auto w-full max-w-[390px] px-6">
         <ProfileCard candidate={candidate} variant="detail" />
         <ul className="mt-[45px] flex flex-col gap-2.5 pb-[37px]">

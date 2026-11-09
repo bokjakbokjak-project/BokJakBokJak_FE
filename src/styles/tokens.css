@@ -70,6 +70,12 @@
   --color-my-menu-border: #f1ba8d;
   --color-my-label: #fef0e2;
 
+  /* Chat frames (Figma 793:5158). Not in the design system section. */
+  --color-chat-agenda: #fff2cf; /* Figma variable bk-yellow */
+  --color-chat-muted: #6c7d73; /* Figma variable bk-muted */
+  --color-chat-badge-text: #283c35;
+  --color-chat-danger: #ff7849;
+
   /* Font */
   --font-sans:
     'Pretendard Variable', -apple-system, BlinkMacSystemFont, system-ui,
