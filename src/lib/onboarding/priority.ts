@@ -1,15 +1,17 @@
-import type { CategoryId } from './categories'
+import { CATEGORY_IDS, type CategoryId } from './categories'
 
-export const REQUIRED_PRIORITY_COUNT = 3
+/** Decided on 2026-11-09: at least three priorities, up to all five categories. */
+export const MIN_PRIORITY_COUNT = 3
+export const MAX_PRIORITY_COUNT = CATEGORY_IDS.length
 
-export type Rank = 1 | 2 | 3
+export type Rank = 1 | 2 | 3 | 4 | 5
 
 /**
- * Priorities are ordered: index 0 is rank 1. They express matching importance, and the
- * character is derived from them. Weights are decided by the backend, not stored here.
+ * Priorities are ordered: index 0 is rank 1. They express matching importance. Only ranks 1-3
+ * change the character (see `getPartVariants`); ranks 4 and 5 are kept for matching only.
+ * Weights are decided by the backend, not stored here.
  *
- * Deselecting pulls later ranks forward, and a fourth selection is ignored. These rules
- * are provisional until OPEN_QUESTIONS PL-3 is decided.
+ * Deselecting pulls later ranks forward. That rule is still provisional (OPEN_QUESTIONS PL-3).
  */
 export function togglePriority(
   priorities: readonly CategoryId[],
@@ -18,7 +20,7 @@ export function togglePriority(
   if (priorities.includes(id)) {
     return priorities.filter((item) => item !== id)
   }
-  if (priorities.length >= REQUIRED_PRIORITY_COUNT) {
+  if (priorities.length >= MAX_PRIORITY_COUNT) {
     return [...priorities]
   }
   return [...priorities, id]
@@ -33,5 +35,8 @@ export function getRank(
 }
 
 export function isPriorityComplete(priorities: readonly CategoryId[]) {
-  return priorities.length === REQUIRED_PRIORITY_COUNT
+  return (
+    priorities.length >= MIN_PRIORITY_COUNT &&
+    priorities.length <= MAX_PRIORITY_COUNT
+  )
 }
