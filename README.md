@@ -118,3 +118,12 @@ Pretendard와 Inter는 SIL Open Font License 1.1로 배포되며, npm 패키지(
 | `/notifications` | 알림 목록 |
 
 설문 프로필의 `홈화면으로 가기`로 홈에 들어옵니다. 매칭 후 홈과 오늘 알림이 있는 화면은 `/dev/onboarding`에서 샘플 값으로 열 수 있습니다. 온보딩과 설문 답변은 메모리에만 있어 새로고침하면 초기화됩니다. 미결정 사항은 [홈 문서](src/pages/home/OPEN_QUESTIONS.md)에 있습니다.
+
+### 마이페이지
+
+| 경로            | 화면        |
+| --------------- | ----------- |
+| `/my`           | 마이페이지  |
+| `/my/edit-name` | 닉네임 수정 |
+
+하단 메뉴의 `마이`로 들어옵니다. 설문 답변이 채워진 화면은 `/dev/onboarding`의 `/my (샘플 설문 답변)`으로 열 수 있습니다. 미결정 사항은 [마이페이지 문서](src/pages/my/OPEN_QUESTIONS.md)에 있습니다.

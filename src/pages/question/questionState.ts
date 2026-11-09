@@ -9,6 +9,8 @@ type QuestionContextValue = {
   /** Kept here so the profile's back button returns to the last question. */
   index: number
   setIndex: (index: number) => void
+  /** Clears every answer and returns to the first question, for retaking the survey. */
+  reset: () => void
 }
 
 export const QuestionContext = createContext<QuestionContextValue | null>(null)

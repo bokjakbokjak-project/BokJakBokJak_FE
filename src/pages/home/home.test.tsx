@@ -106,32 +106,29 @@ describe('bottom navigation', () => {
     expect(current('홈')).toBe('page')
   })
 
-  it.each(['채팅', '마이'])(
-    'shows the notice for %s and stays on the page',
-    (name) => {
-      vi.useFakeTimers()
-      renderAt('/home')
-      const status = within(nav()).getByRole('status')
-      expect(status).toBeEmptyDOMElement()
+  it.each(['채팅'])('shows the notice for %s and stays on the page', (name) => {
+    vi.useFakeTimers()
+    renderAt('/home')
+    const status = within(nav()).getByRole('status')
+    expect(status).toBeEmptyDOMElement()
 
-      fireEvent.click(screen.getByRole('button', { name }))
+    fireEvent.click(screen.getByRole('button', { name }))
 
-      expect(status).toHaveTextContent(NOTICE)
-      expect(screen.getByTestId('home-scroll')).toBeInTheDocument()
-      expect(within(nav()).getByRole('link', { name: '홈' })).toHaveAttribute(
-        'aria-current',
-        'page',
-      )
-      expect(screen.getByRole('button', { name })).not.toHaveAttribute(
-        'aria-current',
-      )
+    expect(status).toHaveTextContent(NOTICE)
+    expect(screen.getByTestId('home-scroll')).toBeInTheDocument()
+    expect(within(nav()).getByRole('link', { name: '홈' })).toHaveAttribute(
+      'aria-current',
+      'page',
+    )
+    expect(screen.getByRole('button', { name })).not.toHaveAttribute(
+      'aria-current',
+    )
 
-      act(() => vi.advanceTimersByTime(2999))
-      expect(status).toHaveTextContent(NOTICE)
-      act(() => vi.advanceTimersByTime(1))
-      expect(status).toBeEmptyDOMElement()
-    },
-  )
+    act(() => vi.advanceTimersByTime(2999))
+    expect(status).toHaveTextContent(NOTICE)
+    act(() => vi.advanceTimersByTime(1))
+    expect(status).toBeEmptyDOMElement()
+  })
 
   it('restarts the notice time on another click', () => {
     vi.useFakeTimers()
@@ -140,7 +137,7 @@ describe('bottom navigation', () => {
 
     fireEvent.click(screen.getByRole('button', { name: '채팅' }))
     act(() => vi.advanceTimersByTime(2000))
-    fireEvent.click(screen.getByRole('button', { name: '마이' }))
+    fireEvent.click(screen.getByRole('button', { name: '채팅' }))
     act(() => vi.advanceTimersByTime(2999))
 
     expect(status).toHaveTextContent(NOTICE)

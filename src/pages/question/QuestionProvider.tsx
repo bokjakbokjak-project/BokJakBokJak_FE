@@ -9,9 +9,13 @@ export default function QuestionProvider() {
   const answer = useCallback((question: number, option: string) => {
     setAnswers((current) => ({ ...current, [question]: option }))
   }, [])
+  const reset = useCallback(() => {
+    setAnswers({})
+    setIndex(0)
+  }, [])
   const value = useMemo(
-    () => ({ answers, answer, index, setIndex }),
-    [answers, answer, index],
+    () => ({ answers, answer, index, setIndex, reset }),
+    [answers, answer, index, reset],
   )
 
   return (
