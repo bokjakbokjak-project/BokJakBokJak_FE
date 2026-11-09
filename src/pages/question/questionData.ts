@@ -6,6 +6,8 @@ import sceneFloor from '../../assets/question/scene-floor.png'
 import sceneFood from '../../assets/question/scene-food.png'
 import sceneSleep from '../../assets/question/scene-sleep.png'
 import sceneSmoking from '../../assets/question/scene-smoking.png'
+import situationBedtime from '../../assets/question/situation-bedtime.png'
+import situationSleep from '../../assets/question/situation-sleep.png'
 
 export const QUESTION_ROUTES = {
   survey: '/question',
@@ -18,11 +20,16 @@ type Question = {
   options: readonly string[]
 }
 
-type QuestionTopic = {
+export type QuestionTopic = {
   id: string
   /** Shown for a moment before the self question. */
   situation: string
   scene: string
+  /**
+   * Full-height picture of the STEP screen (Figma 1377:49785). Only the first two topics have
+   * one. `dark` puts white copy on the night picture (OPEN_QUESTIONS DE-10).
+   */
+  situationScene?: { src: string; tone: 'dark' | 'light' }
   /** The smoking frames sit 15px higher with a shorter sheet (986:13764). */
   layout: 'default' | 'compact'
   self: Question
@@ -37,6 +44,7 @@ export const QUESTION_TOPICS: readonly QuestionTopic[] = [
     situation:
       '밤에 함께 자고 있는데, 한 사람이\n자는 동안 코를 골거나 잠꼬대를 해요.',
     scene: sceneSleep,
+    situationScene: { src: situationSleep, tone: 'dark' },
     layout: 'default',
     self: {
       text: '나는 코골이, 잠꼬대 같은 잠버릇이\n어느 정도 있는 편인가요?',
@@ -63,6 +71,7 @@ export const QUESTION_TOPICS: readonly QuestionTopic[] = [
     situation:
       '밤 12시가 되었어요. 한 사람은 자려고 하고,\n다른 한 사람은 아직 잠들지 않았어요.',
     scene: sceneBedtime,
+    situationScene: { src: situationBedtime, tone: 'light' },
     layout: 'default',
     self: {
       text: '평일에 나는 보통 몇 시쯤 잠자리에 드나요?',

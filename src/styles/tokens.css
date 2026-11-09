@@ -51,6 +51,7 @@
   --color-question-selected-border: #ffe191;
   --color-question-outline: #6e5149;
   --color-question-paper: #fffefb;
+  --color-question-sheet-border: #fde8d4; /* Prototype 1377:49785 */
 
   /* Roommate frames (section 657:675). Raw fills there, without a Figma style name. */
   --color-roommate-pink: #fdb0bf;
