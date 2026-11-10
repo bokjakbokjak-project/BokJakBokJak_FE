@@ -53,7 +53,7 @@ describe('situational survey', () => {
       within(step).getByRole('heading', { name: /밤에 함께 자고 있는데/ }),
     ).toBeInTheDocument()
     expect(
-      within(step).queryByRole('button', { name: '질문 보기' }),
+      within(step).queryByRole('button', { name: '질문 다시보기' }),
     ).not.toBeInTheDocument()
 
     advance(1999)
@@ -67,14 +67,16 @@ describe('situational survey', () => {
     ).toBeInTheDocument()
   })
 
-  it('shows the situation again from the question and returns with 질문 보기', () => {
+  it('shows the situation again from the question and returns with 질문 다시보기', () => {
     renderAt('/question')
     finishSituation()
     const step = screen.getByLabelText('STEP 1 상황')
 
     fireEvent.click(screen.getByRole('button', { name: '상황 보기' }))
     expect(step).toHaveClass('visible')
-    const showQuestion = within(step).getByRole('button', { name: '질문 보기' })
+    const showQuestion = within(step).getByRole('button', {
+      name: '질문 다시보기',
+    })
     expect(showQuestion).toHaveFocus()
 
     // It stays until the button is used, unlike the first visit.
