@@ -20,7 +20,7 @@ export default function RoommateHeader({
         to={backTo}
         state={backState}
         aria-label="이전"
-        className="absolute top-3.5 left-6 size-7 overflow-hidden rounded-full border-[1.5px] border-brand-brown3 bg-brand-beige1"
+        className="absolute top-3.5 left-6 size-7 overflow-hidden rounded-full border-[1.5px] border-transparent transition-colors hover:border-brand-brown3 hover:bg-brand-beige1 focus-visible:border-brand-brown3 focus-visible:bg-brand-beige1"
       >
         <span className="absolute inset-[calc(25%-0.38px)]">
           <span className="absolute inset-[-7.14%_-7.16%_-7.14%_-7.12%]">

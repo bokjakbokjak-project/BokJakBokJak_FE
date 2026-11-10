@@ -65,7 +65,7 @@ export default function NotificationsPage({
         <Link
           to={HOME_ROUTES.home}
           aria-label="뒤로"
-          className="absolute top-3.5 left-6 flex size-7 items-center justify-center rounded-full border-[1.5px] border-brand-brown3 bg-brand-beige4 before:absolute before:-inset-2"
+          className="absolute top-3.5 left-6 flex size-7 items-center justify-center rounded-full border-[1.5px] border-transparent transition-colors hover:border-brand-brown3 hover:bg-brand-beige4 focus-visible:border-brand-brown3 focus-visible:bg-brand-beige4 before:absolute before:-inset-2"
         >
           <img src={arrowLeft} alt="" className="size-[15.2px] max-w-none" />
         </Link>

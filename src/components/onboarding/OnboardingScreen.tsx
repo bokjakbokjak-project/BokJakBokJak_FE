@@ -64,7 +64,7 @@ export default function OnboardingScreen({
           <button
             type="button"
             aria-label="이전"
-            className="absolute top-4 left-6 size-7 overflow-hidden rounded-full border-[1.5px] border-brand-brown3 bg-brand-beige1"
+            className="absolute top-4 left-6 size-7 overflow-hidden rounded-full border-[1.5px] border-transparent transition-colors hover:border-brand-brown3 hover:bg-brand-beige1 focus-visible:border-brand-brown3 focus-visible:bg-brand-beige1"
             onClick={() => go(backTo)}
           >
             <span className="absolute inset-[calc(25%-0.38px)]">

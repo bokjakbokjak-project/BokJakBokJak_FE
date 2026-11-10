@@ -7,7 +7,7 @@ export default function ProfileHeader({ onBack }: { onBack: () => void }) {
       <button
         type="button"
         aria-label="뒤로"
-        className="absolute top-3.5 left-6 flex size-7 items-center justify-center rounded-full border-[1.5px] border-brand-brown3 bg-brand-beige1 before:absolute before:-inset-2"
+        className="absolute top-3.5 left-6 flex size-7 items-center justify-center rounded-full border-[1.5px] border-transparent transition-colors hover:border-brand-brown3 hover:bg-brand-beige1 focus-visible:border-brand-brown3 focus-visible:bg-brand-beige1 before:absolute before:-inset-2"
         onClick={onBack}
       >
         <img src={arrowLeft} alt="" className="size-[15.2px] max-w-none" />
