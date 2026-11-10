@@ -288,6 +288,8 @@ describe('retaking the survey', () => {
       )
       fireEvent.click(button('다음으로'))
     }
+    // The loading screen after the last question stays for 2 seconds.
+    act(() => vi.advanceTimersByTime(2000))
   }
 
   it('keeps everything when the confirmation is cancelled', () => {

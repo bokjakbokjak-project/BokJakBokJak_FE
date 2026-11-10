@@ -11,6 +11,7 @@ import situationSleep from '../../assets/question/situation-sleep.png'
 
 export const QUESTION_ROUTES = {
   survey: '/question',
+  loading: '/question/loading',
   profile: '/question/profile',
 } as const
 
