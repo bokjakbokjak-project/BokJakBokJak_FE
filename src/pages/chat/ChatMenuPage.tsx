@@ -39,7 +39,7 @@ export default function ChatMenuPage() {
         <button
           type="button"
           aria-label="채팅방으로 돌아가기"
-          className="absolute top-3.5 left-6 flex size-7 items-center justify-center rounded-full border-[1.5px] border-question-outline bg-brand-beige1"
+          className="absolute top-3.5 left-6 flex size-7 items-center justify-center rounded-full border-[1.5px] border-transparent transition-colors hover:border-question-outline hover:bg-brand-beige1 focus-visible:border-question-outline focus-visible:bg-brand-beige1"
           onClick={() => navigate(CHAT_ROUTES.room(room.id))}
         >
           <img src={backArrow} alt="" />

@@ -20,7 +20,7 @@ import {
 import { useQuestion } from './questionState'
 
 // Prototype in Figma 1377:49785: the STEP screen waits 2 seconds, then dissolves into the
-// question over 0.8 seconds with Figma's ease in and out. `상황 보기` and `질문 보기` use the same dissolve
+// question over 0.8 seconds with Figma's ease in and out. `상황 보기` and `질문 다시보기` use the same dissolve
 // (OPEN_QUESTIONS DE-6).
 const SITUATION_DURATION = 2000
 const DISSOLVE_CLASS =
@@ -87,7 +87,7 @@ function TopicProgress({
   )
 }
 
-/** Back button and the pill on the right (`상황 보기`, `질문 보기`), Figma 1352:19421. */
+/** Back button and the pill on the right (`상황 보기`, `질문 다시보기`), Figma 1352:19421. */
 function SurveyHeader({
   onBack,
   children,
@@ -100,7 +100,7 @@ function SurveyHeader({
       <button
         type="button"
         aria-label="뒤로"
-        className="absolute top-4 left-6 flex size-7 items-center justify-center rounded-full border-[1.5px] border-question-outline bg-brand-beige1"
+        className="absolute top-4 left-6 flex size-7 items-center justify-center rounded-full border-[1.5px] border-transparent transition-colors hover:border-question-outline hover:bg-brand-beige1 focus-visible:border-question-outline focus-visible:bg-brand-beige1"
         onClick={onBack}
       >
         <img src={backArrow} alt="" />
@@ -173,7 +173,7 @@ function SituationScreen({
               className={PILL_CLASS}
               onClick={onShowQuestion}
             >
-              질문 보기
+              질문 다시보기
             </button>
           )}
         </SurveyHeader>
@@ -248,7 +248,7 @@ function QuestionStep({ focusHeading, onMove }: QuestionStepProps) {
   }
 
   const goNext = () => {
-    if (index === QUESTION_COUNT - 1) navigate(QUESTION_ROUTES.profile)
+    if (index === QUESTION_COUNT - 1) navigate(QUESTION_ROUTES.loading)
     else onMove(index + 1)
   }
 

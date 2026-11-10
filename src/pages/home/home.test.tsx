@@ -192,6 +192,8 @@ describe('state across screens', () => {
       )
       fireEvent.click(screen.getByRole('button', { name: '다음으로' }))
     }
+    // The loading screen after the last question stays for 2 seconds.
+    act(() => vi.advanceTimersByTime(2000))
   }
 
   it('keeps the name, the character, and the answers through home and roommate', () => {
