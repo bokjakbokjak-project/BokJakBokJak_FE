@@ -1,8 +1,9 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { fromChatState } from '../../lib/chat/routes'
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 import AppRoutes from '../../app/AppRoutes'
+import { resetMockChatRooms } from '../../lib/chat/chatApi.mock'
 import {
   getCandidate,
   getCandidateAnswers,
@@ -266,9 +267,97 @@ describe('detail profile data', () => {
 })
 
 describe('chat request', () => {
+  afterEach(() => {
+    vi.unstubAllEnvs()
+    resetMockChatRooms()
+  })
+
+  const dialog = () =>
+    screen.queryByRole('dialog', { name: '대화 요청을 보냈어요!' })
+  const request = async () => {
+    await act(async () => {
+      fireEvent.click(chatButton())
+    })
+    return screen.getByRole('dialog', { name: '대화 요청을 보냈어요!' })
+  }
+
   it.each(['/roommate/sujeong', '/roommate/sujeong/profile'])(
-    'is disabled and does nothing on %s',
+    'shows the sent dialog in development on %s',
+    async (path) => {
+      renderAt(path)
+
+      expect(chatButton()).toBeEnabled()
+      const sent = await request()
+
+      expect(sent).toHaveAccessibleDescription(
+        /^성공적으로 대화 요청을 보냈어요!\s*룸메이트에게 답장이 올 때까지 기다려봐요$/,
+      )
+      expect(
+        within(sent).getByRole('button', { name: '계속 둘러보기' }),
+      ).toBeInTheDocument()
+      expect(
+        within(sent).getByRole('button', { name: '대화창 이동' }),
+      ).toBeInTheDocument()
+      expect(localStorage).toHaveLength(0)
+    },
+  )
+
+  it('keeps browsing on the same screen', async () => {
+    renderAt('/roommate/sujeong')
+    const sent = await request()
+
+    fireEvent.click(within(sent).getByRole('button', { name: '계속 둘러보기' }))
+
+    expect(dialog()).not.toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: '수정님과의 나의 매칭결과' }),
+    ).toBeInTheDocument()
+    expect(chatButton()).toHaveFocus()
+    expect(chatButton()).toBeEnabled()
+  })
+
+  it('closes with Escape like 계속 둘러보기', async () => {
+    renderAt('/roommate/sujeong/profile')
+    const sent = await request()
+
+    fireEvent.keyDown(sent, { key: 'Escape' })
+
+    expect(dialog()).not.toBeInTheDocument()
+    expect(
+      screen.getByRole('heading', { name: '상세 프로필' }),
+    ).toBeInTheDocument()
+  })
+
+  it('opens the chat room with the candidate', async () => {
+    renderAt('/roommate/sujeong/profile')
+    const sent = await request()
+
+    fireEvent.click(within(sent).getByRole('button', { name: '대화창 이동' }))
+
+    expect(
+      await screen.findByRole('heading', { name: '민수정님' }),
+    ).toBeInTheDocument()
+    expect(dialog()).not.toBeInTheDocument()
+  })
+
+  it('opens the chat list when the candidate has no room yet', async () => {
+    renderAt('/roommate/daeun')
+    const sent = await request()
+
+    fireEvent.click(within(sent).getByRole('button', { name: '대화창 이동' }))
+
+    expect(
+      await screen.findByRole('heading', { name: '채팅' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('link', { name: '채팅', current: 'page' }),
+    ).toBeInTheDocument()
+  })
+
+  it.each(['/roommate/sujeong', '/roommate/sujeong/profile'])(
+    'is disabled and does nothing in production on %s',
     (path) => {
+      vi.stubEnv('DEV', false)
       renderAt(path)
       const before = document.body.textContent
 
@@ -276,6 +365,7 @@ describe('chat request', () => {
       fireEvent.click(chatButton())
 
       expect(document.body.textContent).toBe(before)
+      expect(dialog()).not.toBeInTheDocument()
       expect(localStorage).toHaveLength(0)
     },
   )
@@ -297,7 +387,7 @@ describe('chat request', () => {
 describe('roommate screens opened from a chat room', () => {
   const chatState = fromChatState('jeonhyeyun')
 
-  it('use the same design and keep the chat request disabled', () => {
+  it('use the same design and the same chat request', async () => {
     renderAt('/roommate/hyeyun/profile', chatState)
 
     expect(
@@ -314,7 +404,13 @@ describe('roommate screens opened from a chat room', () => {
     }
     const bar = screen.getByTestId('chat-request-bar')
     expect(screen.getByTestId('roommate-scroll')).not.toContainElement(bar)
-    expect(chatButton()).toBeDisabled()
+    expect(chatButton()).toBeEnabled()
+    await act(async () => {
+      fireEvent.click(chatButton())
+    })
+    expect(
+      screen.getByRole('dialog', { name: '대화 요청을 보냈어요!' }),
+    ).toBeInTheDocument()
   })
 
   it('return to the chat room through the analysis', async () => {

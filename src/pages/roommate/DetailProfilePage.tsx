@@ -1,6 +1,6 @@
 import { Navigate, useLocation, useParams } from 'react-router'
 import AnswerCard from '../../components/AnswerCard/AnswerCard'
-import ChatRequestBar from '../../components/roommate/ChatRequestBar'
+import ChatRequestFooter from '../../components/roommate/ChatRequestFooter'
 import ProfileHero from '../../components/roommate/ProfileHero'
 import RoommateHeader from '../../components/roommate/RoommateHeader'
 import RoommatePage from '../../components/roommate/RoommatePage'
@@ -28,7 +28,7 @@ export default function DetailProfilePage() {
   }
 
   return (
-    <RoommatePage footer={<ChatRequestBar />}>
+    <RoommatePage footer={<ChatRequestFooter candidateId={candidate.id} />}>
       {/* Opened from a chat room, the analysis keeps that state so its back returns to the room. */}
       <RoommateHeader
         backTo={ROOMMATE_ROUTES.analysis(candidate.id)}

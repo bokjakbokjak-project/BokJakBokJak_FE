@@ -2,7 +2,7 @@ import { Link, Navigate, useLocation, useParams } from 'react-router'
 import iconAdjust from '../../assets/roommate/analysis-adjust.png'
 import iconCheck from '../../assets/roommate/analysis-check.png'
 import iconGood from '../../assets/roommate/analysis-good.png'
-import ChatRequestBar from '../../components/roommate/ChatRequestBar'
+import ChatRequestFooter from '../../components/roommate/ChatRequestFooter'
 import ProfileHero from '../../components/roommate/ProfileHero'
 import RoommateHeader from '../../components/roommate/RoommateHeader'
 import RoommatePage from '../../components/roommate/RoommatePage'
@@ -48,7 +48,7 @@ export default function MatchAnalysisPage() {
   }
 
   return (
-    <RoommatePage footer={<ChatRequestBar />}>
+    <RoommatePage footer={<ChatRequestFooter candidateId={candidate.id} />}>
       <RoommateHeader
         backTo={chatReturnPath ?? ROOMMATE_ROUTES.list}
         title="룸메이트"
