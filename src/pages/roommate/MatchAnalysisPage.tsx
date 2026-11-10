@@ -1,5 +1,4 @@
 import { Link, Navigate, useLocation, useParams } from 'react-router'
-import panelDecor from '../../assets/onboarding/panel-decor.svg'
 import iconAdjust from '../../assets/roommate/analysis-adjust.png'
 import iconCheck from '../../assets/roommate/analysis-check.png'
 import iconGood from '../../assets/roommate/analysis-good.png'
@@ -7,6 +6,7 @@ import ChatRequestBar from '../../components/roommate/ChatRequestBar'
 import ProfileHero from '../../components/roommate/ProfileHero'
 import RoommateHeader from '../../components/roommate/RoommateHeader'
 import RoommatePage from '../../components/roommate/RoommatePage'
+import RoommateSheet from '../../components/roommate/RoommateSheet'
 import { getChatReturnPath } from '../../lib/chat/routes'
 import { getCandidate } from '../../lib/roommate/roommateData'
 import { ROOMMATE_ROUTES } from '../../lib/roommate/routes'
@@ -62,13 +62,8 @@ export default function MatchAnalysisPage() {
           상세프로필 보기 →
         </Link>
       </ProfileHero>
-      <section className="relative z-10 flex flex-1 flex-col rounded-t-[35px] bg-brand-cream1 shadow-[0_0_0_2px_var(--color-brand-brown2)]">
-        <img
-          src={panelDecor}
-          alt=""
-          className="absolute top-[15px] left-1/2 h-[27px] w-[116.003px] max-w-none -translate-x-1/2"
-        />
-        <div className="relative mx-auto w-full max-w-[390px] px-6 pt-[57px] pb-[17.5px]">
+      <RoommateSheet>
+        <div className="relative mx-auto w-full max-w-[390px] px-6 pt-[15px] pb-[17.5px]">
           <h2 className="relative -left-[5.5px] text-center text-[20px] leading-[1.5] font-bold tracking-[-0.4px] text-gray-500">
             {candidate.givenName}님과의 나의 매칭결과
           </h2>
@@ -103,7 +98,7 @@ export default function MatchAnalysisPage() {
             })}
           </ul>
         </div>
-      </section>
+      </RoommateSheet>
     </RoommatePage>
   )
 }

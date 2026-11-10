@@ -1,10 +1,10 @@
 import { Navigate, useLocation, useParams } from 'react-router'
-import panelDecor from '../../assets/onboarding/panel-decor.svg'
 import AnswerCard from '../../components/AnswerCard/AnswerCard'
 import ChatRequestBar from '../../components/roommate/ChatRequestBar'
 import ProfileHero from '../../components/roommate/ProfileHero'
 import RoommateHeader from '../../components/roommate/RoommateHeader'
 import RoommatePage from '../../components/roommate/RoommatePage'
+import RoommateSheet from '../../components/roommate/RoommateSheet'
 import { getAnswerSummary } from '../../lib/answerSummary'
 import { getChatReturnPath } from '../../lib/chat/routes'
 import {
@@ -36,16 +36,8 @@ export default function DetailProfilePage() {
         title="상세 프로필"
       />
       <ProfileHero candidate={candidate} offset={9} />
-      <section
-        aria-labelledby="detail-summary-title"
-        className="relative z-10 flex flex-1 flex-col rounded-t-[35px] bg-brand-cream1 shadow-[0_0_0_2px_var(--color-brand-brown2)]"
-      >
-        <img
-          src={panelDecor}
-          alt=""
-          className="absolute top-[15px] left-1/2 h-[27px] w-[116.003px] max-w-none -translate-x-1/2"
-        />
-        <div className="mx-auto w-full max-w-[390px] px-6 pt-[57px] pb-[35px]">
+      <RoommateSheet labelledBy="detail-summary-title">
+        <div className="mx-auto w-full max-w-[390px] px-6 pt-[15px] pb-[35px]">
           <h2
             id="detail-summary-title"
             className="text-center text-[20px] leading-[1.5] font-bold tracking-[-0.4px] text-gray-500"
@@ -58,7 +50,7 @@ export default function DetailProfilePage() {
             ))}
           </div>
         </div>
-      </section>
+      </RoommateSheet>
     </RoommatePage>
   )
 }
