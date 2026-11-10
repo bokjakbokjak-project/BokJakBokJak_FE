@@ -25,6 +25,7 @@ import PriorityPage from '../pages/onboarding/PriorityPage'
 import ProfilePage from '../pages/onboarding/ProfilePage'
 import SchoolInfoPage from '../pages/onboarding/SchoolInfoPage'
 import QuestionPage from '../pages/question/QuestionPage'
+import QuestionLoadingPage from '../pages/question/QuestionLoadingPage'
 import QuestionProfilePage from '../pages/question/QuestionProfilePage'
 import QuestionProvider from '../pages/question/QuestionProvider'
 import { QUESTION_ROUTES } from '../pages/question/questionData'
@@ -93,6 +94,10 @@ export default function AppRoutes() {
                   <Route
                     path={QUESTION_ROUTES.survey}
                     element={<QuestionPage />}
+                  />
+                  <Route
+                    path={QUESTION_ROUTES.loading}
+                    element={<QuestionLoadingPage />}
                   />
                   <Route
                     path={QUESTION_ROUTES.profile}

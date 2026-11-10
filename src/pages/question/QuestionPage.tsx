@@ -248,7 +248,7 @@ function QuestionStep({ focusHeading, onMove }: QuestionStepProps) {
   }
 
   const goNext = () => {
-    if (index === QUESTION_COUNT - 1) navigate(QUESTION_ROUTES.profile)
+    if (index === QUESTION_COUNT - 1) navigate(QUESTION_ROUTES.loading)
     else onMove(index + 1)
   }
 

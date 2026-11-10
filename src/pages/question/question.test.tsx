@@ -27,12 +27,18 @@ const advance = (ms: number) => act(() => vi.advanceTimersByTime(ms))
 // The STEP screen leaves after 2 seconds. The dissolve after it is CSS only.
 const finishSituation = () => advance(2000)
 
-function answerAll() {
+function answerQuestions() {
   for (let index = 0; index < QUESTION_COUNT; index += 1) {
     if (index % 2 === 0) finishSituation()
     pick(index)
     next()
   }
+}
+
+/** Answers everything and waits out the loading screen. */
+function answerAll() {
+  answerQuestions()
+  advance(2000)
 }
 
 describe('situational survey', () => {
@@ -159,6 +165,34 @@ describe('situational survey', () => {
     ).toBeInTheDocument()
     expect(screen.getByText('자주 있어도 괜찮다')).toBeInTheDocument()
     expect(screen.getByText('흡연 여부는 상관없다')).toBeInTheDocument()
+  })
+
+  it('shows the loading screen for 2 seconds before the result', () => {
+    renderAt('/question')
+    answerQuestions()
+
+    expect(
+      screen.getByRole('heading', { name: '잠시만 기다려 주세요,' }),
+    ).toBeInTheDocument()
+    expect(screen.getByText('프로필을 만들고 있어요')).toBeInTheDocument()
+
+    advance(1999)
+    expect(
+      screen.queryByRole('heading', { name: '사용자님의 정보' }),
+    ).not.toBeInTheDocument()
+
+    advance(1)
+    expect(
+      screen.getByRole('heading', { name: '사용자님의 정보' }),
+    ).toBeInTheDocument()
+  })
+
+  it('sends a loading visit without answers back to the survey', () => {
+    renderAt('/question/loading')
+
+    expect(
+      screen.getByRole('heading', { name: /밤에 함께 자고 있는데/ }),
+    ).toBeInTheDocument()
   })
 
   it('sends a profile visit without answers back to the survey', () => {

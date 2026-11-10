@@ -52,6 +52,7 @@
   --color-question-outline: #6e5149;
   --color-question-paper: #fffefb;
   --color-question-sheet-border: #fde8d4; /* Prototype 1377:49785 */
+  --color-question-caption: #a8a8a8; /* Figma style "gray400", not the gray-400 token */
 
   /* Roommate frames (section 657:675). Raw fills there, without a Figma style name. */
   --color-roommate-pink: #fdb0bf;
