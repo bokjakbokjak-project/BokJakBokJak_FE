@@ -1,15 +1,20 @@
+import type { Ref } from 'react'
+
 /**
  * Bottom action of the match analysis and the detail profile (Figma 1057:14810, 1377:36887): a
  * 62px button 10px below the top of a cream bar, with 28px under it. The page renders it outside
  * its scroll area, so it stays at the bottom of the screen or the PC frame (designer comment:
- * "하단에 고정"). The chat request API and the chat screen do not exist yet (OPEN_QUESTIONS RM-3),
- * so without `onRequest` it is disabled and does nothing.
+ * "하단에 고정"). Without `onRequest` it is disabled and does nothing; `ChatRequestFooter` passes
+ * it only while a request can be made (OPEN_QUESTIONS RM-3).
  */
 export default function ChatRequestBar({
   onRequest,
+  buttonRef,
 }: {
   /** Connect the chat request here. Until then the button keeps its look but cannot be used. */
   onRequest?: () => void
+  /** Lets a dialog return focus to the button. */
+  buttonRef?: Ref<HTMLButtonElement>
 }) {
   return (
     <div
@@ -18,6 +23,7 @@ export default function ChatRequestBar({
     >
       <div className="mx-auto w-full max-w-[390px] px-6">
         <button
+          ref={buttonRef}
           type="button"
           disabled={!onRequest}
           onClick={onRequest}
