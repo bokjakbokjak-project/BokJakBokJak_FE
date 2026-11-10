@@ -31,17 +31,17 @@ function NotificationRow({
         />
       </div>
       <div
-        className={`flex min-w-0 flex-col gap-1 text-[12px] leading-[1.5] whitespace-nowrap text-gray-black ${isNew ? 'pr-[38px]' : ''}`}
+        className={`flex min-w-0 flex-col gap-1 leading-[1.5] whitespace-nowrap text-gray-black ${isNew ? 'pr-[38px]' : ''}`}
       >
-        <p className="flex gap-1">
+        <p className="flex gap-1 text-[12px]">
           <span className="font-semibold">{sender}</span>
           <span className="font-medium text-brand-brown1">{time}</span>
         </p>
-        <p className="truncate font-medium">{message}</p>
+        <p className="truncate text-[14px] font-medium">{message}</p>
       </div>
       {isNew && (
         <span
-          className={`absolute top-3.5 flex size-6 items-center justify-center rounded-full bg-brand-brown2 text-[12px] leading-[1.5] font-extrabold text-white ${badgeClass}`}
+          className={`absolute top-3.5 flex size-6 items-center justify-center rounded-full bg-brand-brown1 text-[12px] leading-[1.5] font-extrabold text-white ${badgeClass}`}
         >
           <span aria-hidden="true">N</span>
           <span className="sr-only">새 알림</span>
@@ -51,7 +51,11 @@ function NotificationRow({
   )
 }
 
-/** Figma 805:3459 and 805:3559. Sample data only: nothing is fetched, read, or deleted. */
+/**
+ * Figma 805:3459 and 805:3559 (latest revision: N mark instead of the match rate, cream page,
+ * brown1 badge, 14px messages, Pretendard throughout). Sample data only: nothing is fetched,
+ * read, or deleted.
+ */
 export default function NotificationsPage({
   sample,
 }: {
@@ -60,12 +64,12 @@ export default function NotificationsPage({
   const { today, previous } = getNotifications(sample)
 
   return (
-    <div className="-mt-[env(safe-area-inset-top)] -mb-[env(safe-area-inset-bottom)] flex flex-1 flex-col bg-brand-beige5 pt-[max(55px,env(safe-area-inset-top))]">
+    <div className="-mt-[env(safe-area-inset-top)] -mb-[env(safe-area-inset-bottom)] flex flex-1 flex-col bg-brand-cream1 pt-[max(55px,env(safe-area-inset-top))]">
       <header className="relative h-14 shrink-0">
         <Link
           to={HOME_ROUTES.home}
           aria-label="뒤로"
-          className="absolute top-3.5 left-6 flex size-7 items-center justify-center rounded-full border-[1.5px] border-transparent transition-colors hover:border-brand-brown3 hover:bg-brand-beige4 focus-visible:border-brand-brown3 focus-visible:bg-brand-beige4 before:absolute before:-inset-2"
+          className="absolute top-3.5 left-6 flex size-7 items-center justify-center rounded-full border-[1.5px] border-transparent transition-colors hover:border-brand-brown3 hover:bg-brand-beige1 focus-visible:border-brand-brown3 focus-visible:bg-brand-beige1 before:absolute before:-inset-2"
         >
           <img src={arrowLeft} alt="" className="size-[15.2px] max-w-none" />
         </Link>
@@ -79,7 +83,7 @@ export default function NotificationsPage({
             오늘
           </h2>
           {today.length === 0 ? (
-            <p className="mt-[17px] mb-[13px] flex h-[60px] items-center justify-center rounded-[10px] bg-brand-beige4 text-[12px] leading-[1.5] font-medium text-brand-brown1">
+            <p className="mt-[17px] mb-[13px] flex h-[60px] items-center justify-center rounded-[10px] bg-brand-cream2 text-[14px] leading-[1.5] font-medium text-brand-brown2">
               오늘 받은 알림이 없어요.
             </p>
           ) : (
@@ -88,7 +92,7 @@ export default function NotificationsPage({
                 <li key={notification.id}>
                   <NotificationRow
                     notification={notification}
-                    badgeClass="right-[19.5px]"
+                    badgeClass="right-[7.5px]"
                   />
                 </li>
               ))}
