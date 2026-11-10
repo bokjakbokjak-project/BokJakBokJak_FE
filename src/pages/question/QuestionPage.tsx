@@ -100,7 +100,7 @@ function SurveyHeader({
       <button
         type="button"
         aria-label="뒤로"
-        className="absolute top-4 left-6 flex size-7 items-center justify-center rounded-full border-[1.5px] border-question-outline bg-brand-beige1"
+        className="absolute top-4 left-6 flex size-7 items-center justify-center rounded-full border-[1.5px] border-transparent transition-colors hover:border-question-outline hover:bg-brand-beige1 focus-visible:border-question-outline focus-visible:bg-brand-beige1"
         onClick={onBack}
       >
         <img src={backArrow} alt="" />
