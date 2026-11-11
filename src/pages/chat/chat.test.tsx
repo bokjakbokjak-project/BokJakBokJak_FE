@@ -160,6 +160,18 @@ describe('chat', () => {
     ).toBeInTheDocument()
   })
 
+  it('goes back to the chat list from the room', async () => {
+    renderAt('/chat/seoyujeong')
+
+    fireEvent.click(
+      await screen.findByRole('link', { name: '채팅 목록으로 돌아가기' }),
+    )
+
+    expect(
+      await screen.findByRole('heading', { name: '채팅' }),
+    ).toBeInTheDocument()
+  })
+
   it('sends an unknown room back to the list', async () => {
     renderAt('/chat/unknown')
 

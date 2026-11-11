@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type FormEvent } from 'react'
 import { Link, Navigate, useParams } from 'react-router'
 import menuIcon from '../../assets/chat/menu.svg'
+import backArrow from '../../assets/question/back-arrow-brown.svg'
 import sendActive from '../../assets/chat/send-active.svg'
 import sendIdle from '../../assets/chat/send-idle.svg'
 import { chatApi, type ChatItem, type ChatRoom } from '../../lib/chat/chatApi'
@@ -158,10 +159,21 @@ export default function ChatRoomPage() {
   return (
     <div className="flex h-[calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom))] flex-col bg-brand-beige5 md:h-auto md:min-h-0 md:flex-1">
       <header className="shrink-0 pt-[max(0px,calc(47px-env(safe-area-inset-top)))]">
-        <div className="flex h-14 items-center justify-between pr-[26px] pl-[30px]">
-          <h1 className="text-[20px] leading-[1.5] font-bold text-gray-black">
-            {room.partnerName}님
-          </h1>
+        {/* Figma has no back button here. It was added on request, in the same style as the
+            other screens, and returns to the chat list. */}
+        <div className="flex h-14 items-center justify-between pr-[26px] pl-6">
+          <div className="flex min-w-0 items-center gap-2.5">
+            <Link
+              to={CHAT_ROUTES.list}
+              aria-label="채팅 목록으로 돌아가기"
+              className="flex size-7 shrink-0 items-center justify-center rounded-full border-[1.5px] border-transparent transition-colors hover:border-question-outline hover:bg-brand-beige1 focus-visible:border-question-outline focus-visible:bg-brand-beige1"
+            >
+              <img src={backArrow} alt="" />
+            </Link>
+            <h1 className="truncate text-[20px] leading-[1.5] font-bold text-gray-black">
+              {room.partnerName}님
+            </h1>
+          </div>
           <Link to={CHAT_ROUTES.menu(room.id)} aria-label="채팅방 메뉴">
             <img src={menuIcon} alt="" className="size-[26px]" />
           </Link>
