@@ -3,6 +3,7 @@ import { Link, Navigate, useParams } from 'react-router'
 import menuIcon from '../../assets/chat/menu.svg'
 import sendActive from '../../assets/chat/send-active.svg'
 import sendIdle from '../../assets/chat/send-idle.svg'
+import ChoiceDialog from '../../components/dialog/ChoiceDialog'
 import { chatApi, type ChatItem, type ChatRoom } from '../../lib/chat/chatApi'
 import { CHAT_ROUTES, fromChatState } from '../../lib/chat/routes'
 import { ROOMMATE_ROUTES } from '../../lib/roommate/routes'
@@ -121,6 +122,8 @@ export default function ChatRoomPage() {
   const [isPending, setIsPending] = useState(false)
   const [hasError, setHasError] = useState(false)
   const listRef = useRef<HTMLOListElement>(null)
+  const voteRef = useRef<HTMLButtonElement>(null)
+  const [isConfirming, setIsConfirming] = useState(false)
 
   const itemCount = room?.items.length ?? 0
   useEffect(() => {
@@ -201,8 +204,12 @@ export default function ChatRoomPage() {
             type="button"
             disabled={isPending}
             className={`h-10 self-center rounded-[62px] p-2.5 text-[14px] leading-[1.5] font-semibold ${room.agendaVoted ? 'bg-brand-brown2 text-white' : 'bg-brand-beige4 text-gray-black'}`}
+            ref={voteRef}
+            // Voting asks first (Figma 1715:38389). Taking the vote back does not (CH-2).
             onClick={() =>
-              run(() => chatApi.setAgendaVote(room.id, !room.agendaVoted))
+              room.agendaVoted
+                ? run(() => chatApi.setAgendaVote(room.id, false))
+                : setIsConfirming(true)
             }
           >
             {room.agendaVoted ? '안건 확정 취소하기' : '다음 안건 진행하기'}
@@ -246,6 +253,22 @@ export default function ChatRoomPage() {
           </form>
         </div>
       </footer>
+      {isConfirming && (
+        <ChoiceDialog
+          title="이대로 확정하시겠습니까?"
+          message={
+            '안건을 확정하면 다시 수정할 수 없어요\nAI가 다음 안건으로 이동해요'
+          }
+          cancelLabel="취소하기"
+          confirmLabel="확정하기"
+          triggerRef={voteRef}
+          onCancel={() => setIsConfirming(false)}
+          onConfirm={() => {
+            setIsConfirming(false)
+            run(() => chatApi.setAgendaVote(room.id, true))
+          }}
+        />
+      )}
     </div>
   )
 }

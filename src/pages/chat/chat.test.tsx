@@ -68,12 +68,36 @@ describe('chat', () => {
     expect(input).toHaveValue('')
   })
 
+  it('asks before voting for the next agenda', async () => {
+    renderAt('/chat/seoyujeong')
+
+    const vote = await screen.findByRole('button', {
+      name: '다음 안건 진행하기',
+    })
+    fireEvent.click(vote)
+    const dialog = screen.getByRole('dialog', {
+      name: '이대로 확정하시겠습니까?',
+    })
+    expect(dialog).toHaveAccessibleDescription(
+      /^안건을 확정하면 다시 수정할 수 없어요\s*AI가 다음 안건으로 이동해요$/,
+    )
+
+    fireEvent.click(within(dialog).getByRole('button', { name: '취소하기' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(vote).toHaveAccessibleName('다음 안건 진행하기')
+
+    fireEvent.click(vote)
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
   it('toggles the agenda vote', async () => {
     renderAt('/chat/seoyujeong')
 
     fireEvent.click(
       await screen.findByRole('button', { name: '다음 안건 진행하기' }),
     )
+    click('확정하기')
     expect(
       await screen.findByRole('button', { name: '안건 확정 취소하기' }),
     ).toBeInTheDocument()
