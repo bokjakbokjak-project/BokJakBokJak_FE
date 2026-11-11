@@ -13,6 +13,17 @@ const STATUS_TEXT: Record<ChatRoom['status'], string> = {
   ended: '매칭이 종료되었어요',
 }
 
+/** A room with unread messages shows the partner's latest message instead (Figma 1574:38000). */
+function previewOf(room: ChatRoom) {
+  if (room.unreadCount > 0) {
+    const latest = room.items.findLast(
+      (item) => item.kind === 'message' && item.from === 'partner',
+    )
+    if (latest?.kind === 'message') return latest.text
+  }
+  return `${room.partnerName}님과의 ${STATUS_TEXT[room.status]}`
+}
+
 /** Figma 1057:13344, with the rows of 1377:57476. */
 export default function ChatListPage() {
   const [rooms, setRooms] = useState<ChatRoom[] | null>(null)
@@ -60,8 +71,8 @@ export default function ChatListPage() {
               {/* The visual spans run together, so screen readers get a spaced summary. */}
               <Link
                 to={CHAT_ROUTES.room(room.id)}
-                aria-label={`${room.partnerName}님, ${room.updatedAt}, 매칭률 ${room.matchRate}%, ${room.partnerName}님과의 ${STATUS_TEXT[room.status]}`}
-                className="flex h-20 items-center gap-3.5 rounded-[18px] bg-white pr-4 pl-1.5"
+                aria-label={`${room.partnerName}님, ${room.updatedAt}, 매칭률 ${room.matchRate}%, ${room.unreadCount > 0 ? `새 메시지 ${room.unreadCount}개, ` : ''}${previewOf(room)}`}
+                className="relative flex h-20 items-center gap-3.5 rounded-[18px] bg-white pr-4 pl-1.5"
               >
                 <img
                   src={LIST_AVATARS[room.listAvatar]}
@@ -83,10 +94,17 @@ export default function ChatListPage() {
                       </span>
                     </span>
                   </span>
-                  <span className="truncate text-[14px] leading-[1.5] font-medium text-gray-black">
-                    {room.partnerName}님과의 {STATUS_TEXT[room.status]}
+                  <span
+                    className={`truncate text-[14px] leading-[1.5] font-medium text-gray-black ${room.unreadCount > 0 ? 'pr-8' : ''}`}
+                  >
+                    {previewOf(room)}
                   </span>
                 </span>
+                {room.unreadCount > 0 && (
+                  <span className="absolute top-9 right-[17px] flex h-5 min-w-5 items-center justify-center rounded-full bg-home-alert px-1.5 text-[14px] leading-[1.5] font-medium text-white">
+                    {room.unreadCount > 99 ? '99+' : room.unreadCount}
+                  </span>
+                )}
               </Link>
             </li>
           ))}

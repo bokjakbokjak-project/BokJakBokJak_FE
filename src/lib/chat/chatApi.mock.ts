@@ -5,6 +5,12 @@ import type { ChatApi, ChatItem, ChatRoom } from './chatApi'
 // The rooms cover every state in the Figma chat frames (793:5158) and the stages in between:
 // matched, ended, waiting for the partner's vote, mid-agenda, talking, and just started.
 
+const intro: ChatItem = {
+  id: 'intro',
+  kind: 'intro',
+  agendas: ['시험기간, 밤늦은 공부', '배달음식과 쓰레기 처리'],
+}
+
 const studyAgenda: ChatItem = {
   id: 'agenda-1',
   kind: 'agenda',
@@ -54,7 +60,8 @@ function room(seed: RoomSeed): ChatRoom {
     listAvatar: 'sleep-mask',
     chatAvatar: 'sleep-mask',
     agendaVoted: false,
-    items: [studyAgenda],
+    unreadCount: 0,
+    items: [intro, studyAgenda],
     ...seed,
   }
 }
@@ -70,6 +77,7 @@ function createRooms(): ChatRoom[] {
       status: 'matched',
       listAvatar: 'blue-cap',
       items: [
+        intro,
         studyAgenda,
         ...messages(1, [
           [
@@ -107,6 +115,7 @@ function createRooms(): ChatRoom[] {
       matchRate: 86,
       agendaVoted: true,
       items: [
+        intro,
         studyAgenda,
         ...messages(1, [
           ['partner', '저는 시험기간에도 새벽 1시 전에는 자려고 해요'],
@@ -121,8 +130,10 @@ function createRooms(): ChatRoom[] {
       id: 'seoyujeong',
       partnerName: '서유정',
       candidateId: 'yujeong',
+      unreadCount: 1,
       matchRate: 83,
       items: [
+        intro,
         studyAgenda,
         ...messages(1, [
           [
@@ -138,11 +149,13 @@ function createRooms(): ChatRoom[] {
       id: 'parkjimin',
       partnerName: '박지민',
       candidateId: 'jimin',
+      unreadCount: 2,
       matchRate: 67,
       updatedAt: '어제',
       listAvatar: 'yellow-hat',
       chatAvatar: 'yellow-hat',
       items: [
+        intro,
         studyAgenda,
         ...messages(1, [
           ['partner', '저는 보통 12시 반쯤 자요'],
@@ -163,6 +176,7 @@ function createRooms(): ChatRoom[] {
       matchRate: 75,
       updatedAt: '어제',
       items: [
+        intro,
         studyAgenda,
         ...messages(1, [
           ['partner', '안녕하세요! 저는 아침형이라 11시면 자요 😊'],
@@ -188,6 +202,7 @@ function createRooms(): ChatRoom[] {
       listAvatar: 'yellow-hat',
       chatAvatar: 'yellow-hat',
       items: [
+        intro,
         studyAgenda,
         ...messages(1, [
           [
@@ -255,5 +270,8 @@ export const mockChatApi: ChatApi = {
   },
   endRoom: async (id) => {
     findRoom(id).status = 'ended'
+  },
+  markRead: async (id) => {
+    findRoom(id).unreadCount = 0
   },
 }

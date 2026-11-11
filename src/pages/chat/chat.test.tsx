@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import AppRoutes from '../../app/AppRoutes'
@@ -28,11 +34,11 @@ describe('chat', () => {
   it('lists every sample room with its state', async () => {
     renderAt('/chat')
 
-    const rooms = await screen.findAllByRole('link', { name: /님과의 매칭이/ })
+    const rooms = await screen.findAllByRole('link', { name: /매칭률/ })
     expect(rooms).toHaveLength(8)
     expect(screen.getByText('민수정님과의 매칭이 완료되었어요')).toBeVisible()
     expect(screen.getByText('전혜윤님과의 매칭이 종료되었어요')).toBeVisible()
-    expect(screen.getByText('서유정님과의 매칭이 시작되었어요')).toBeVisible()
+    expect(screen.getByText('남윤경님과의 매칭이 시작되었어요')).toBeVisible()
     expect(
       screen.getByRole('link', { name: '채팅', current: 'page' }),
     ).toBeInTheDocument()
@@ -48,7 +54,7 @@ describe('chat', () => {
     expect(
       await screen.findByRole('heading', { name: '서유정님' }),
     ).toBeInTheDocument()
-    expect(screen.getByText('1 시험기간, 밤늦은 공부')).toBeInTheDocument()
+    expect(screen.getByText('1. 시험기간, 밤늦은 공부')).toBeInTheDocument()
   })
 
   it('sends a message only when there is text', async () => {
@@ -68,12 +74,36 @@ describe('chat', () => {
     expect(input).toHaveValue('')
   })
 
+  it('asks before voting for the next agenda', async () => {
+    renderAt('/chat/seoyujeong')
+
+    const vote = await screen.findByRole('button', {
+      name: '다음 안건 진행하기',
+    })
+    fireEvent.click(vote)
+    const dialog = screen.getByRole('dialog', {
+      name: '이대로 확정하시겠습니까?',
+    })
+    expect(dialog).toHaveAccessibleDescription(
+      /^안건을 확정하면 다시 수정할 수 없어요\s*AI가 다음 안건으로 이동해요$/,
+    )
+
+    fireEvent.click(within(dialog).getByRole('button', { name: '취소하기' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(vote).toHaveAccessibleName('다음 안건 진행하기')
+
+    fireEvent.click(vote)
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
   it('toggles the agenda vote', async () => {
     renderAt('/chat/seoyujeong')
 
     fireEvent.click(
       await screen.findByRole('button', { name: '다음 안건 진행하기' }),
     )
+    click('확정하기')
     expect(
       await screen.findByRole('button', { name: '안건 확정 취소하기' }),
     ).toBeInTheDocument()
@@ -90,7 +120,7 @@ describe('chat', () => {
     expect(await screen.findByRole('status')).toHaveTextContent(
       '매칭이 확정되었습니다',
     )
-    expect(screen.getByText('2 배달 음식과 쓰레기 처리 확정!')).toBeVisible()
+    expect(screen.getByText('2. 배달 음식과 쓰레기 처리 확정!')).toBeVisible()
     expect(
       screen.queryByRole('button', { name: '다음 안건 진행하기' }),
     ).not.toBeInTheDocument()
@@ -160,6 +190,56 @@ describe('chat', () => {
     ).toBeInTheDocument()
   })
 
+  it('goes back to the chat list from the room', async () => {
+    renderAt('/chat/seoyujeong')
+
+    fireEvent.click(
+      await screen.findByRole('link', { name: '채팅 목록으로 돌아가기' }),
+    )
+
+    expect(
+      await screen.findByRole('heading', { name: '채팅' }),
+    ).toBeInTheDocument()
+  })
+
+  it('shows the latest message and the unread count for new messages', async () => {
+    renderAt('/chat')
+
+    const room = await screen.findByRole('link', {
+      name: /^박지민님, 어제, 매칭률 67%, 새 메시지 2개, /,
+    })
+    expect(room).toHaveTextContent(
+      '저는 방에서 거의 안 먹어서 바로만 치워주시면 돼요',
+    )
+    expect(within(room).getByText('2')).toBeVisible()
+  })
+
+  it('clears the unread count once the room is opened', async () => {
+    renderAt('/chat')
+
+    fireEvent.click(
+      await screen.findByRole('link', { name: /^서유정님, .*새 메시지 1개/ }),
+    )
+    await screen.findByRole('heading', { name: '서유정님' })
+    cleanup()
+    renderAt('/chat')
+
+    const room = await screen.findByRole('link', { name: /^서유정님/ })
+    expect(room).not.toHaveAccessibleName(/새 메시지/)
+    expect(room).toHaveTextContent('서유정님과의 매칭이 시작되었어요')
+  })
+
+  it('opens with the chatbot introduction and its agendas', async () => {
+    renderAt('/chat/jeonhyeyun')
+
+    const intro = await screen.findByText('안건 조율을 시작할께요!')
+    const card = intro.parentElement!.parentElement!
+    expect(within(card).getByText('[ 조율안건 ]')).toBeInTheDocument()
+    expect(within(card).getAllByRole('listitem')).toHaveLength(2)
+    expect(screen.getAllByText('AI 챗봇')[0]).toBeVisible()
+    expect(screen.getByText('미정')).toBeInTheDocument()
+  })
+
   it('sends an unknown room back to the list', async () => {
     renderAt('/chat/unknown')
 
@@ -205,7 +285,7 @@ describe('chat list layout', () => {
   it('keeps all eight rooms in the scrolling list and the bar outside it', async () => {
     renderAt('/chat')
 
-    const rooms = await screen.findAllByRole('link', { name: /님과의 매칭이/ })
+    const rooms = await screen.findAllByRole('link', { name: /매칭률/ })
     expect(rooms).toHaveLength(8)
     rooms.forEach((room) =>
       expect(screen.getByTestId('chat-list-scroll')).toContainElement(room),
@@ -218,9 +298,9 @@ describe('chat list layout', () => {
     vi.spyOn(chatApi, 'listRooms').mockResolvedValue([first])
     renderAt('/chat')
 
-    expect(
-      await screen.findAllByRole('link', { name: /님과의 매칭이/ }),
-    ).toHaveLength(1)
+    expect(await screen.findAllByRole('link', { name: /매칭률/ })).toHaveLength(
+      1,
+    )
     expectFixedBar()
   })
 
