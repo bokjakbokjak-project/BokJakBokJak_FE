@@ -1,4 +1,10 @@
-import { fireEvent, render, screen, within } from '@testing-library/react'
+import {
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  within,
+} from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import AppRoutes from '../../app/AppRoutes'
@@ -28,11 +34,11 @@ describe('chat', () => {
   it('lists every sample room with its state', async () => {
     renderAt('/chat')
 
-    const rooms = await screen.findAllByRole('link', { name: /님과의 매칭이/ })
+    const rooms = await screen.findAllByRole('link', { name: /매칭률/ })
     expect(rooms).toHaveLength(8)
     expect(screen.getByText('민수정님과의 매칭이 완료되었어요')).toBeVisible()
     expect(screen.getByText('전혜윤님과의 매칭이 종료되었어요')).toBeVisible()
-    expect(screen.getByText('서유정님과의 매칭이 시작되었어요')).toBeVisible()
+    expect(screen.getByText('남윤경님과의 매칭이 시작되었어요')).toBeVisible()
     expect(
       screen.getByRole('link', { name: '채팅', current: 'page' }),
     ).toBeInTheDocument()
@@ -172,6 +178,33 @@ describe('chat', () => {
     ).toBeInTheDocument()
   })
 
+  it('shows the latest message and the unread count for new messages', async () => {
+    renderAt('/chat')
+
+    const room = await screen.findByRole('link', {
+      name: /^박지민님, 어제, 매칭률 67%, 새 메시지 2개, /,
+    })
+    expect(room).toHaveTextContent(
+      '저는 방에서 거의 안 먹어서 바로만 치워주시면 돼요',
+    )
+    expect(within(room).getByText('2')).toBeVisible()
+  })
+
+  it('clears the unread count once the room is opened', async () => {
+    renderAt('/chat')
+
+    fireEvent.click(
+      await screen.findByRole('link', { name: /^서유정님, .*새 메시지 1개/ }),
+    )
+    await screen.findByRole('heading', { name: '서유정님' })
+    cleanup()
+    renderAt('/chat')
+
+    const room = await screen.findByRole('link', { name: /^서유정님/ })
+    expect(room).not.toHaveAccessibleName(/새 메시지/)
+    expect(room).toHaveTextContent('서유정님과의 매칭이 시작되었어요')
+  })
+
   it('sends an unknown room back to the list', async () => {
     renderAt('/chat/unknown')
 
@@ -217,7 +250,7 @@ describe('chat list layout', () => {
   it('keeps all eight rooms in the scrolling list and the bar outside it', async () => {
     renderAt('/chat')
 
-    const rooms = await screen.findAllByRole('link', { name: /님과의 매칭이/ })
+    const rooms = await screen.findAllByRole('link', { name: /매칭률/ })
     expect(rooms).toHaveLength(8)
     rooms.forEach((room) =>
       expect(screen.getByTestId('chat-list-scroll')).toContainElement(room),
@@ -230,9 +263,9 @@ describe('chat list layout', () => {
     vi.spyOn(chatApi, 'listRooms').mockResolvedValue([first])
     renderAt('/chat')
 
-    expect(
-      await screen.findAllByRole('link', { name: /님과의 매칭이/ }),
-    ).toHaveLength(1)
+    expect(await screen.findAllByRole('link', { name: /매칭률/ })).toHaveLength(
+      1,
+    )
     expectFixedBar()
   })
 

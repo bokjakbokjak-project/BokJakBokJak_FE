@@ -54,6 +54,7 @@ function room(seed: RoomSeed): ChatRoom {
     listAvatar: 'sleep-mask',
     chatAvatar: 'sleep-mask',
     agendaVoted: false,
+    unreadCount: 0,
     items: [studyAgenda],
     ...seed,
   }
@@ -121,6 +122,7 @@ function createRooms(): ChatRoom[] {
       id: 'seoyujeong',
       partnerName: '서유정',
       candidateId: 'yujeong',
+      unreadCount: 1,
       matchRate: 83,
       items: [
         studyAgenda,
@@ -138,6 +140,7 @@ function createRooms(): ChatRoom[] {
       id: 'parkjimin',
       partnerName: '박지민',
       candidateId: 'jimin',
+      unreadCount: 2,
       matchRate: 67,
       updatedAt: '어제',
       listAvatar: 'yellow-hat',
@@ -255,5 +258,8 @@ export const mockChatApi: ChatApi = {
   },
   endRoom: async (id) => {
     findRoom(id).status = 'ended'
+  },
+  markRead: async (id) => {
+    findRoom(id).unreadCount = 0
   },
 }
