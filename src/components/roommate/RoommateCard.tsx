@@ -5,7 +5,7 @@ import type { RoommateCandidate } from '../../lib/roommate/roommateData'
 import { ROOMMATE_ROUTES } from '../../lib/roommate/routes'
 import MatchRing from './MatchRing'
 
-/** Recommendation card from Figma (1377:41075). The whole card opens the match analysis. */
+/** Recommendation card from Figma (1686:16341). The whole card opens the match analysis. */
 export default function RoommateCard({
   candidate,
 }: {
@@ -27,7 +27,7 @@ export default function RoommateCard({
           ROOMMATE CARD
         </p>
       </div>
-      <div className="absolute top-[34px] left-[13px] flex min-w-0 items-center gap-3 min-[390px]:gap-6">
+      <div className="absolute top-[34.5px] left-[13px] flex min-w-0 items-center gap-3 min-[390px]:gap-6">
         {/* The image includes the white outline and shadow around the 50px Figma box. */}
         <span className="relative size-[50px] shrink-0">
           <img
@@ -51,7 +51,7 @@ export default function RoommateCard({
       <MatchRing
         rate={matchRate}
         variant="list"
-        className="top-[36.6px] right-[15.35px]"
+        className="top-[32px] right-[12.75px]"
       />
     </Link>
   )
