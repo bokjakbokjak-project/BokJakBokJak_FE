@@ -1,14 +1,19 @@
-import { useEffect, useRef, useState, type FormEvent } from 'react'
+import {
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type ReactNode,
+} from 'react'
 import { Link, Navigate, useParams } from 'react-router'
-import menuIcon from '../../assets/chat/menu.svg'
+import menuIcon from '../../assets/chat/menu-round.svg'
+import sendIcon from '../../assets/chat/send-round.svg'
 import backArrow from '../../assets/question/back-arrow-brown.svg'
-import sendActive from '../../assets/chat/send-active.svg'
-import sendIdle from '../../assets/chat/send-idle.svg'
 import ChoiceDialog from '../../components/dialog/ChoiceDialog'
 import { chatApi, type ChatItem, type ChatRoom } from '../../lib/chat/chatApi'
 import { CHAT_ROUTES, fromChatState } from '../../lib/chat/routes'
 import { ROOMMATE_ROUTES } from '../../lib/roommate/routes'
-import { AI_AVATAR, CHAT_AVATARS, MY_CHAT_AVATAR } from './chatAvatars'
+import { AI_TILE, PARTNER_TILE } from './chatAvatars'
 import { useChatRoom } from './useChatRoom'
 
 type Sender = 'ai' | 'me' | 'partner' | 'system'
@@ -19,41 +24,81 @@ const senderOf = (item: ChatItem): Sender =>
 // Not in Figma. Shown when the server rejects a change (chat OPEN_QUESTIONS DE-C1).
 const ERROR_TEXT = '요청을 처리하지 못했어요. 잠시 후 다시 시도해주세요.'
 
+/** The chatbot's name is a placeholder in Figma (`챗봇이 이름`, `"00"`), chat OPEN_QUESTIONS DE-C6. */
+const BOT_NAME = 'AI 챗봇'
+
+const ROUND_BUTTON =
+  'relative size-7 shrink-0 rounded-full border-[1.5px] border-transparent transition-colors hover:border-question-outline hover:bg-brand-beige1 focus-visible:border-question-outline focus-visible:bg-brand-beige1'
+
+/** White bubble of the chatbot and the partner, open at the top left (Figma 1715:38156). */
+const LEFT_BUBBLE =
+  'rounded-tr-[12px] rounded-b-[12px] border border-gray-100 bg-white px-3 py-2 text-gray-black'
+
+/** `1 시험기간` in the data reads `1. 시험기간` on the card (Figma 1715:38135). */
+const agendaTitle = (title: string) => title.replace(/^(\d+)\s+/, '$1. ')
+
 function AiCard({
   title,
-  body,
-  status,
+  badge,
+  children,
 }: {
   title: string
-  body: string
-  status: string
+  badge?: { text: string; tone: 'open' | 'done' }
+  children: ReactNode
 }) {
   return (
-    <div className="flex flex-col gap-2 rounded-[22px] bg-chat-agenda p-4 text-gray-black">
-      <p className="text-[15px] leading-[1.5] font-bold">{title}</p>
-      <p className="text-[13px] leading-[1.5] font-medium break-keep whitespace-pre-line">
-        {body}
-      </p>
-      <p className="text-[12px] leading-[1.5] font-medium text-chat-muted">
-        {status}
-      </p>
+    <div className={`${LEFT_BUBBLE} flex w-[234px] max-w-full flex-col gap-2`}>
+      <div className="flex items-center justify-between gap-2 border-b border-gray-100 pb-2">
+        <p className="text-[14px] leading-[1.5] font-semibold">{title}</p>
+        {badge && (
+          <span
+            className={`flex h-[21px] shrink-0 items-center rounded-[4px] px-1.5 text-[11px] leading-[1.5] font-semibold ${badge.tone === 'open' ? 'bg-gray-100 text-gray-500' : 'bg-brand-brown1 text-white'}`}
+          >
+            {badge.text}
+          </span>
+        )}
+      </div>
+      <div className="text-[12px] leading-[1.5] break-keep whitespace-pre-line">
+        {children}
+      </div>
     </div>
   )
 }
 
 function ChatItemView({ item, room }: { item: ChatItem; room: ChatRoom }) {
   switch (item.kind) {
+    case 'intro':
+      return (
+        <AiCard title="안건 조율을 시작할께요!">
+          <p>
+            안녕하세요 이번 조율을 함께할 {BOT_NAME}입니다! AI 리포트를 기반으로
+            함께 조율할 내용을 선정하여 추천해드려요!
+          </p>
+          <p className="mt-[18px] font-semibold">[ 조율안건 ]</p>
+          <ol className="list-inside list-decimal pl-1">
+            {item.agendas.map((agenda) => (
+              <li key={agenda}>{agenda}</li>
+            ))}
+          </ol>
+        </AiCard>
+      )
     case 'agenda':
       return (
         <AiCard
-          title={item.title}
-          body={item.prompt}
-          status="아직 정하지 않았어요"
-        />
+          title={agendaTitle(item.title)}
+          badge={{ text: '미정', tone: 'open' }}
+        >
+          {item.prompt}
+        </AiCard>
       )
     case 'agreement':
       return (
-        <AiCard title={item.title} body={item.summary} status="확정 완료" />
+        <AiCard
+          title={agendaTitle(item.title)}
+          badge={{ text: '확정', tone: 'done' }}
+        >
+          {item.summary}
+        </AiCard>
       )
     case 'left':
       return (
@@ -65,9 +110,13 @@ function ChatItemView({ item, room }: { item: ChatItem; room: ChatRoom }) {
         </p>
       )
     case 'message':
-      return (
+      return item.from === 'me' ? (
+        <p className="max-w-[292px] self-end rounded-tl-[12px] rounded-b-[12px] border border-brand-cream3 bg-brand-cream2 px-4 py-2 text-[14px] leading-[1.5] break-keep whitespace-pre-line text-gray-black">
+          {item.text}
+        </p>
+      ) : (
         <p
-          className={`max-w-[300px] rounded-xl px-2.5 py-1.5 leading-[1.5] font-medium break-keep whitespace-pre-line text-gray-black ${item.from === 'me' ? 'self-end bg-brand-beige3 text-[14px]' : 'self-start bg-white text-[15px]'}`}
+          className={`${LEFT_BUBBLE} self-start text-[14px] leading-[1.5] break-keep whitespace-pre-line`}
         >
           {item.text}
         </p>
@@ -75,47 +124,26 @@ function ChatItemView({ item, room }: { item: ChatItem; room: ChatRoom }) {
   }
 }
 
-function SenderAvatar({ sender, room }: { sender: Sender; room: ChatRoom }) {
+/** 50px tile beside the first chatbot or partner item of a group (Figma 1715:38122, 1715:38143). */
+function SenderTile({ sender, room }: { sender: Sender; room: ChatRoom }) {
   if (sender === 'ai') {
-    return (
-      <>
-        <img src={AI_AVATAR} alt="" className="h-[53.5px] w-[62.5px]" />
-        <span className="sr-only">AI</span>
-      </>
-    )
+    return <img src={AI_TILE} alt="" className="size-[50px] shrink-0" />
   }
-  if (sender === 'me') {
-    return (
-      <>
-        <img src={MY_CHAT_AVATAR} alt="" className="size-[52px] self-end" />
-        <span className="sr-only">나</span>
-      </>
-    )
-  }
-  const avatar = (
-    <img src={CHAT_AVATARS[room.chatAvatar]} alt="" className="size-[52px]" />
-  )
-  if (!room.candidateId) {
-    return (
-      <>
-        <span className="self-start">{avatar}</span>
-        <span className="sr-only">{room.partnerName}님</span>
-      </>
-    )
-  }
+  const tile = <img src={PARTNER_TILE} alt="" className="size-[50px]" />
+  if (!room.candidateId) return <span className="shrink-0">{tile}</span>
   return (
     <Link
       to={ROOMMATE_ROUTES.analysis(room.candidateId)}
       state={fromChatState(room.id)}
       aria-label={`${room.partnerName}님 프로필 보기`}
-      className="self-start rounded-[20px]"
+      className="shrink-0 self-start rounded-[15px]"
     >
-      {avatar}
+      {tile}
     </Link>
   )
 }
 
-/** Figma 988:19036, 988:16735, 940:19880 and 1236:14142. */
+/** Figma 1715:38109, the redesign of 988:19036, 988:16735, 940:19880 and 1236:14142. */
 export default function ChatRoomPage() {
   const { roomId } = useParams()
   const { room, update } = useChatRoom(roomId)
@@ -166,25 +194,29 @@ export default function ChatRoomPage() {
   const canSend = draft.trim().length > 0 && !isPending && !isEnded
 
   return (
-    <div className="flex h-[calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom))] flex-col bg-brand-beige5 md:h-auto md:min-h-0 md:flex-1">
+    <div className="flex h-[calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom))] flex-col bg-brand-cream1 md:h-auto md:min-h-0 md:flex-1">
       <header className="shrink-0 pt-[max(0px,calc(47px-env(safe-area-inset-top)))]">
-        {/* Figma has no back button here. It was added on request, in the same style as the
-            other screens, and returns to the chat list. */}
-        <div className="flex h-14 items-center justify-between pr-[26px] pl-6">
-          <div className="flex min-w-0 items-center gap-2.5">
-            <Link
-              to={CHAT_ROUTES.list}
-              aria-label="채팅 목록으로 돌아가기"
-              className="flex size-7 shrink-0 items-center justify-center rounded-full border-[1.5px] border-transparent transition-colors hover:border-question-outline hover:bg-brand-beige1 focus-visible:border-question-outline focus-visible:bg-brand-beige1"
-            >
-              <img src={backArrow} alt="" />
-            </Link>
-            <h1 className="truncate text-[20px] leading-[1.5] font-bold text-gray-black">
-              {room.partnerName}님
-            </h1>
-          </div>
-          <Link to={CHAT_ROUTES.menu(room.id)} aria-label="채팅방 메뉴">
-            <img src={menuIcon} alt="" className="size-[26px]" />
+        <div className="relative flex h-14 items-center justify-between px-6">
+          <Link
+            to={CHAT_ROUTES.list}
+            aria-label="채팅 목록으로 돌아가기"
+            className={`${ROUND_BUTTON} flex items-center justify-center`}
+          >
+            <img src={backArrow} alt="" />
+          </Link>
+          <h1 className="absolute left-1/2 max-w-[calc(100%-136px)] -translate-x-1/2 truncate text-[18px] leading-[1.5] font-bold text-brand-brown1">
+            {room.partnerName}님
+          </h1>
+          <Link
+            to={CHAT_ROUTES.menu(room.id)}
+            aria-label="채팅방 메뉴"
+            className={ROUND_BUTTON}
+          >
+            <img
+              src={menuIcon}
+              alt=""
+              className="absolute -inset-[1.5px] size-7 max-w-none"
+            />
           </Link>
         </div>
       </header>
@@ -192,36 +224,48 @@ export default function ChatRoomPage() {
       <ol
         ref={listRef}
         aria-label="대화 내용"
-        className="scrollbar-none flex min-h-0 flex-1 flex-col overflow-y-auto px-6 pt-[3px] pb-6"
+        className="scrollbar-none flex min-h-0 flex-1 flex-col overflow-y-auto px-6 pt-[22px] pb-6"
       >
         {room.items.map((item, index) => {
           const sender = senderOf(item)
           const previous = room.items[index - 1]
           const startsGroup = !previous || senderOf(previous) !== sender
-          const showAvatar = startsGroup && sender !== 'system'
-          // Figma keeps 16px between messages and 24px around the AI cards and notices.
-          const groupGap =
-            item.kind === 'message' && previous?.kind === 'message'
-              ? 'mt-4'
-              : 'mt-6'
+          // Figma keeps 10px inside a group and 20px between groups.
+          const gap = index === 0 ? '' : startsGroup ? 'mt-5' : 'mt-2.5'
+          if (sender === 'me' || sender === 'system') {
+            return (
+              <li key={item.id} className={`flex flex-col ${gap}`}>
+                {sender === 'me' && <span className="sr-only">나</span>}
+                <ChatItemView item={item} room={room} />
+              </li>
+            )
+          }
           return (
-            <li
-              key={item.id}
-              className={`flex flex-col gap-[9px] ${index === 0 ? '' : startsGroup ? groupGap : 'mt-[9px]'}`}
-            >
-              {showAvatar && <SenderAvatar sender={sender} room={room} />}
-              <ChatItemView item={item} room={room} />
+            <li key={item.id} className={`flex gap-[9px] ${gap}`}>
+              {startsGroup ? (
+                <SenderTile sender={sender} room={room} />
+              ) : (
+                <span className="w-[50px] shrink-0" />
+              )}
+              <div className="flex min-w-0 flex-1 flex-col gap-[5px]">
+                {startsGroup && (
+                  <p className="text-[14px] leading-[1.5] font-medium text-black">
+                    {sender === 'ai' ? BOT_NAME : room.partnerName}
+                  </p>
+                )}
+                <ChatItemView item={item} room={room} />
+              </div>
             </li>
           )
         })}
       </ol>
 
-      <footer className="flex shrink-0 flex-col gap-4 px-6 pb-[max(0px,calc(24px-env(safe-area-inset-bottom)))]">
+      <footer className="flex shrink-0 flex-col gap-4 px-6 pb-[max(7px,calc(41px-env(safe-area-inset-bottom)))]">
         {room.status === 'active' && (
           <button
             type="button"
             disabled={isPending}
-            className={`h-10 self-center rounded-[62px] p-2.5 text-[14px] leading-[1.5] font-semibold ${room.agendaVoted ? 'bg-brand-brown2 text-white' : 'bg-brand-beige4 text-gray-black'}`}
+            className={`h-10 self-center rounded-[62px] px-[15px] py-2.5 text-[14px] leading-[1.5] font-semibold ${room.agendaVoted ? 'bg-brand-beige4 text-gray-black' : 'bg-brand-brown1 text-white'}`}
             ref={voteRef}
             // Voting asks first (Figma 1715:38389). Taking the vote back does not (CH-2).
             onClick={() =>
@@ -257,16 +301,16 @@ export default function ChatRoomPage() {
               placeholder="메세지 입력"
               value={draft}
               disabled={isEnded}
-              className="h-[37px] w-full rounded-[20px] border border-gray-100 bg-white pr-11 pl-3 text-[16px] leading-[1.5] text-gray-black outline-none placeholder:text-gray-500 focus-visible:border-brand-brown2 disabled:opacity-60"
+              className="h-[42px] w-full rounded-[20px] border border-gray-100 bg-white pr-12 pl-3 text-[16px] leading-[1.5] text-gray-black outline-none placeholder:text-gray-500 focus-visible:border-brand-brown2 disabled:opacity-60"
               onChange={(event) => setDraft(event.target.value)}
             />
             <button
               type="submit"
               aria-label="메시지 보내기"
               disabled={!canSend}
-              className="absolute top-1 right-[9px] flex size-7 items-center justify-center"
+              className="absolute top-[7px] right-3 size-7 disabled:opacity-40"
             >
-              <img src={canSend ? sendActive : sendIdle} alt="" />
+              <img src={sendIcon} alt="" />
             </button>
           </form>
         </div>

@@ -54,7 +54,7 @@ describe('chat', () => {
     expect(
       await screen.findByRole('heading', { name: '서유정님' }),
     ).toBeInTheDocument()
-    expect(screen.getByText('1 시험기간, 밤늦은 공부')).toBeInTheDocument()
+    expect(screen.getByText('1. 시험기간, 밤늦은 공부')).toBeInTheDocument()
   })
 
   it('sends a message only when there is text', async () => {
@@ -120,7 +120,7 @@ describe('chat', () => {
     expect(await screen.findByRole('status')).toHaveTextContent(
       '매칭이 확정되었습니다',
     )
-    expect(screen.getByText('2 배달 음식과 쓰레기 처리 확정!')).toBeVisible()
+    expect(screen.getByText('2. 배달 음식과 쓰레기 처리 확정!')).toBeVisible()
     expect(
       screen.queryByRole('button', { name: '다음 안건 진행하기' }),
     ).not.toBeInTheDocument()
@@ -227,6 +227,17 @@ describe('chat', () => {
     const room = await screen.findByRole('link', { name: /^서유정님/ })
     expect(room).not.toHaveAccessibleName(/새 메시지/)
     expect(room).toHaveTextContent('서유정님과의 매칭이 시작되었어요')
+  })
+
+  it('opens with the chatbot introduction and its agendas', async () => {
+    renderAt('/chat/jeonhyeyun')
+
+    const intro = await screen.findByText('안건 조율을 시작할께요!')
+    const card = intro.parentElement!.parentElement!
+    expect(within(card).getByText('[ 조율안건 ]')).toBeInTheDocument()
+    expect(within(card).getAllByRole('listitem')).toHaveLength(2)
+    expect(screen.getAllByText('AI 챗봇')[0]).toBeVisible()
+    expect(screen.getByText('미정')).toBeInTheDocument()
   })
 
   it('sends an unknown room back to the list', async () => {

@@ -11,6 +11,8 @@ export type ChatAvatar =
   'blue-cap' | 'sleep-mask' | 'sleep-mask-white' | 'yellow-hat'
 
 export type ChatItem =
+  /** The chatbot's opening card with the agendas it picked (Figma 1715:38127). */
+  | { id: string; kind: 'intro'; agendas: string[] }
   | { id: string; kind: 'agenda'; title: string; prompt: string }
   | { id: string; kind: 'agreement'; title: string; summary: string }
   | { id: string; kind: 'message'; from: 'me' | 'partner'; text: string }

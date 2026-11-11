@@ -1,7 +1,8 @@
-import chatAvatarAi from '../../assets/chat/chat-avatar-ai.png'
 import chatAvatarMe from '../../assets/chat/chat-avatar-me.png'
 import chatAvatarSleepMask from '../../assets/chat/chat-avatar-sleep-mask.png'
 import chatAvatarYellowHat from '../../assets/chat/chat-avatar-yellow-hat.png'
+import chatTileAi from '../../assets/chat/chat-tile-ai.png'
+import chatTilePartner from '../../assets/chat/chat-tile-partner.png'
 import listAvatarBlueCap from '../../assets/chat/list-avatar-blue-cap.png'
 import listAvatarSleepMaskWhite from '../../assets/chat/list-avatar-sleep-mask-white.png'
 import listAvatarSleepMask from '../../assets/chat/list-avatar-sleep-mask.png'
@@ -27,4 +28,11 @@ export const CHAT_AVATARS: Record<ChatAvatar, string> = {
 }
 
 export const MY_CHAT_AVATAR = chatAvatarMe
-export const AI_AVATAR = chatAvatarAi
+
+/**
+ * 50px framed tiles of the room redesign (Figma 1715:38122, 1715:38143). Figma draws the same
+ * partner character for every partner, so all partners use it until each user's character is
+ * decided (CH-3).
+ */
+export const AI_TILE = chatTileAi
+export const PARTNER_TILE = chatTilePartner
