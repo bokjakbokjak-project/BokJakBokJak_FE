@@ -1,6 +1,7 @@
 import { Navigate, useLocation, useParams } from 'react-router'
 import AnswerCard from '../../components/AnswerCard/AnswerCard'
 import ChatRequestFooter from '../../components/roommate/ChatRequestFooter'
+import { candidateCard } from '../../components/roommate/candidateCard'
 import ProfileHero from '../../components/roommate/ProfileHero'
 import RoommateHeader from '../../components/roommate/RoommateHeader'
 import RoommatePage from '../../components/roommate/RoommatePage'
@@ -35,7 +36,7 @@ export default function DetailProfilePage() {
         backState={getChatReturnPath(state) ? state : undefined}
         title="상세 프로필"
       />
-      <ProfileHero candidate={candidate} offset={9} />
+      <ProfileHero profile={candidateCard(candidate)} offset={9} />
       <RoommateSheet labelledBy="detail-summary-title">
         <div className="mx-auto w-full max-w-[390px] px-6 pt-[15px] pb-[35px]">
           <h2

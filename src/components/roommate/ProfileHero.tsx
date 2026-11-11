@@ -1,19 +1,19 @@
 import type { ReactNode } from 'react'
 import cardRibbon from '../../assets/roommate/card-ribbon.svg'
-import type { RoommateCandidate } from '../../lib/roommate/roommateData'
-import ProfileCard from './ProfileCard'
+import ProfileCard, { type ProfileCardData } from './ProfileCard'
 
 /**
  * The profile card with its tilted back card and ribbon, between the header and the cream panel
- * (Figma 1058:11977 on the analysis, 1377:36709 on the detail profile). The block is 293px tall
+ * (Figma 1058:11977 on the analysis, 1377:36709 on the detail profile, 1377:35844 on the survey
+ * result). The block is 293px tall
  * in both, so the panel starts at y=396. The detail profile draws the card 9px lower.
  */
 export default function ProfileHero({
-  candidate,
+  profile,
   offset = 0,
   children,
 }: {
-  candidate: RoommateCandidate
+  profile: ProfileCardData
   offset?: number
   /** Drawn behind the card, such as the `상세프로필 보기` tab. */
   children?: ReactNode
@@ -31,7 +31,7 @@ export default function ProfileHero({
         </div>
         {children}
         <div className="absolute inset-x-6 top-[13.58px]">
-          <ProfileCard candidate={candidate} />
+          <ProfileCard profile={profile} />
         </div>
       </div>
     </div>

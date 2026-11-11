@@ -14,11 +14,16 @@ const STAGE_STYLE = {
 /** The user's character in the rounded frame of the my page and the nickname screen. */
 export default function ProfileAvatar({
   priorities,
+  frame = 'rounded-[47.208px] bg-my-avatar',
 }: {
   priorities: readonly CategoryId[]
+  /** Corner and fill of the frame. The survey result card uses a squarer, yellow frame. */
+  frame?: string
 }) {
   return (
-    <div className="relative mx-auto size-[110.416px] shrink-0 overflow-clip rounded-[47.208px] border-[5.208px] border-white bg-my-avatar shadow-[2px_2px_0_0_var(--color-my-avatar-shadow)]">
+    <div
+      className={`relative mx-auto size-[110.416px] shrink-0 overflow-clip border-[5.208px] border-white shadow-[2px_2px_0_0_var(--color-my-avatar-shadow)] ${frame}`}
+    >
       <div className="absolute" style={STAGE_STYLE}>
         <CharacterPreview
           priorities={priorities}

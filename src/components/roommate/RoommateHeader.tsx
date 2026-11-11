@@ -1,3 +1,4 @@
+import type { ReactNode } from 'react'
 import { Link } from 'react-router'
 import arrowLeft from '../../assets/icons/arrow-left.svg'
 
@@ -6,6 +7,8 @@ type RoommateHeaderProps = {
   title: string
   /** Router state to keep on the way back, such as the chat room a visit started from. */
   backState?: unknown
+  /** Button at the right end, such as share on the survey result (Figma 1377:36159). */
+  action?: ReactNode
 }
 
 /** Back button and centered title from Figma (1057:13038 `룸메이트`, 1377:36705 `상세 프로필`). */
@@ -13,6 +16,7 @@ export default function RoommateHeader({
   backTo,
   title,
   backState,
+  action,
 }: RoommateHeaderProps) {
   return (
     <header className="relative z-20 h-14 shrink-0">
@@ -31,6 +35,7 @@ export default function RoommateHeader({
       <h1 className="absolute top-[13px] left-1/2 -translate-x-1/2 text-[20px] leading-[1.5] font-bold whitespace-nowrap text-brand-brown1">
         {title}
       </h1>
+      {action && <div className="absolute top-3.5 right-6 flex">{action}</div>}
     </header>
   )
 }
