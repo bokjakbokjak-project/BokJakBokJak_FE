@@ -3,6 +3,7 @@ import { MemoryRouter } from 'react-router'
 import { fromChatState } from '../../lib/chat/routes'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import AppRoutes from '../../app/AppRoutes'
+import MatchRing from '../../components/roommate/MatchRing'
 import { resetMockChatRooms } from '../../lib/chat/chatApi.mock'
 import {
   getCandidate,
@@ -26,6 +27,44 @@ const cards = () =>
 const chatButton = () => screen.getByRole('button', { name: '대화 요청하기' })
 
 describe('roommate list', () => {
+  it('fills each ring as far as the match rate', () => {
+    renderAt('/roommate')
+    const circumference = 2 * Math.PI * 25.575
+
+    for (const card of cards()) {
+      const rate = Number(card.textContent?.match(/(\d+)%매칭률/)?.[1])
+      const arc = within(card).getByTestId('match-ring-arc')
+      const [filled] = (arc.getAttribute('stroke-dasharray') ?? '')
+        .split(' ')
+        .map(Number)
+
+      expect(rate).toBeGreaterThan(0)
+      expect(filled / circumference).toBeCloseTo(rate / 100, 5)
+    }
+  })
+
+  it('draws no arc at 0% and a full ring without a dash at 100%', () => {
+    const { rerender } = render(
+      <MatchRing rate={0} variant="list" className="" />,
+    )
+    expect(screen.queryByTestId('match-ring-arc')).not.toBeInTheDocument()
+    expect(screen.getByText('매칭률 0%')).toHaveClass('sr-only')
+
+    rerender(<MatchRing rate={100} variant="list" className="" />)
+    expect(screen.getByTestId('match-ring-arc')).not.toHaveAttribute(
+      'stroke-dasharray',
+    )
+    expect(screen.getByText('매칭률 100%')).toBeInTheDocument()
+  })
+
+  it('reads the rate with its label on each card', () => {
+    renderAt('/roommate')
+
+    expect(
+      screen.getByRole('link', { name: /소프트웨어학과 매칭률 87%/ }),
+    ).toBeInTheDocument()
+  })
+
   it('shows the five Figma candidates in order', () => {
     renderAt('/roommate')
 
