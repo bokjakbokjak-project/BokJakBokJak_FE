@@ -2,16 +2,26 @@ import cardChevrons from '../../assets/roommate/card-chevrons.svg'
 import cardDivider from '../../assets/roommate/card-divider.svg'
 import cardOrnament from '../../assets/roommate/card-ornament.svg'
 import dot from '../../assets/roommate/dot.svg'
-import type { RoommateCandidate } from '../../lib/roommate/roommateData'
+import type { ReactNode } from 'react'
 import MatchRing from './MatchRing'
 
-/** The profile card of the analysis (1057:12863) and the detail profile (1377:36714). */
-export default function ProfileCard({
-  candidate,
-}: {
-  candidate: RoommateCandidate
-}) {
-  const { name, age, department, matchRate, avatar } = candidate
+export type ProfileCardData = {
+  name: string
+  age: number | null
+  department: string
+  /** Left out on the user's own profile, which has no match rate (Figma 1377:35850). */
+  matchRate?: number
+  /** Drawn in the 100px slot. Its image may spill over the slot for its outline. */
+  avatar: ReactNode
+}
+
+/**
+ * The profile card of the analysis (1057:12863), the detail profile (1377:36714) and the survey
+ * result (1377:35850).
+ */
+export default function ProfileCard({ profile }: { profile: ProfileCardData }) {
+  const { name, age, department, matchRate, avatar } = profile
+  const details = [age === null ? null : `${age}세`, department.trim() || null]
   return (
     <div className="relative h-[200px] overflow-hidden rounded-[12px] border-[1.5px] border-roommate-pink bg-brand-cream1">
       <img
@@ -33,11 +43,7 @@ export default function ProfileCard({
       <div className="absolute top-[62.25px] left-3 flex items-center gap-3 min-[390px]:left-[25.25px] min-[390px]:gap-[26px]">
         {/* The image includes the white outline and shadow around the 100px Figma box. */}
         <span className="relative size-[84px] shrink-0 min-[390px]:size-[100px]">
-          <img
-            src={avatar}
-            alt=""
-            className="absolute top-[-6.5%] left-[-6%] size-[112.5%] max-w-none rounded-[15.7%]"
-          />
+          {avatar}
         </span>
         <div className="flex flex-col gap-2 text-gray-500">
           <p className="text-[12px] leading-[normal] text-gray-300">프로필</p>
@@ -47,9 +53,14 @@ export default function ProfileCard({
               <span className="text-[14px] tracking-[0.28px]">님</span>
             </h2>
             <p className="flex items-center gap-[3px] text-[14px] leading-[1.5] font-medium whitespace-nowrap">
-              <span>{age}세</span>
-              <img src={dot} alt="" className="size-0.5" />
-              <span>{department}</span>
+              {details
+                .filter((detail) => detail !== null)
+                .map((detail, index) => (
+                  <span key={detail} className="contents">
+                    {index > 0 && <img src={dot} alt="" className="size-0.5" />}
+                    <span>{detail}</span>
+                  </span>
+                ))}
             </p>
           </div>
         </div>
@@ -67,11 +78,13 @@ export default function ProfileCard({
         alt=""
         className="absolute top-[188.25px] left-0 h-0.5 w-[calc(100%-74px)] max-w-none"
       />
-      <MatchRing
-        rate={matchRate}
-        variant="analysis"
-        className="top-[13.5px] right-[27.25px]"
-      />
+      {matchRate !== undefined && (
+        <MatchRing
+          rate={matchRate}
+          variant="analysis"
+          className="top-[13.5px] right-[27.25px]"
+        />
+      )}
     </div>
   )
 }

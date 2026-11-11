@@ -161,7 +161,7 @@ describe('situational survey', () => {
     answerAll()
 
     expect(
-      screen.getByRole('heading', { name: '사용자님의 정보' }),
+      screen.getByRole('heading', { name: '사용자님' }),
     ).toBeInTheDocument()
     expect(screen.getByText('자주 있어도 괜찮다')).toBeInTheDocument()
     expect(screen.getByText('흡연 여부는 상관없다')).toBeInTheDocument()
@@ -178,12 +178,12 @@ describe('situational survey', () => {
 
     advance(1999)
     expect(
-      screen.queryByRole('heading', { name: '사용자님의 정보' }),
+      screen.queryByRole('heading', { name: '사용자님' }),
     ).not.toBeInTheDocument()
 
     advance(1)
     expect(
-      screen.getByRole('heading', { name: '사용자님의 정보' }),
+      screen.getByRole('heading', { name: '사용자님' }),
     ).toBeInTheDocument()
   })
 

@@ -70,6 +70,7 @@
   /* My page frames (section 732:4459). Raw fills there, without a Figma style name. */
   --color-my-avatar: #ffcdab;
   --color-my-avatar-shadow: #fff3e3;
+  --color-card-avatar: #ffcf81; /* Survey result card character (Figma 1377:35855) */
   --color-my-menu-border: #f1ba8d;
   --color-my-label: #fef0e2;
 

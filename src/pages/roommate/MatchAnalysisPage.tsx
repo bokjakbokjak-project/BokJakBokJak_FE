@@ -3,6 +3,7 @@ import iconAdjust from '../../assets/roommate/analysis-adjust.png'
 import iconCheck from '../../assets/roommate/analysis-check.png'
 import iconGood from '../../assets/roommate/analysis-good.png'
 import ChatRequestFooter from '../../components/roommate/ChatRequestFooter'
+import { candidateCard } from '../../components/roommate/candidateCard'
 import ProfileHero from '../../components/roommate/ProfileHero'
 import RoommateHeader from '../../components/roommate/RoommateHeader'
 import RoommatePage from '../../components/roommate/RoommatePage'
@@ -53,7 +54,7 @@ export default function MatchAnalysisPage() {
         backTo={chatReturnPath ?? ROOMMATE_ROUTES.list}
         title="룸메이트"
       />
-      <ProfileHero candidate={candidate}>
+      <ProfileHero profile={candidateCard(candidate)}>
         <Link
           to={ROOMMATE_ROUTES.profile(candidate.id)}
           state={chatReturnPath ? state : undefined}

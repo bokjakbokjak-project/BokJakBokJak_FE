@@ -204,7 +204,7 @@ describe('state across screens', () => {
 
     const firstAnswer = getQuestionStep(0).question.options[0]
     expect(
-      screen.getByRole('heading', { name: '미리보기님의 정보' }),
+      screen.getByRole('heading', { name: '미리보기님' }),
     ).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: '홈화면으로 가기' }))
@@ -222,7 +222,7 @@ describe('state across screens', () => {
 
     clickLink('내 설문 다시보기 →')
     expect(
-      screen.getByRole('heading', { name: '미리보기님의 정보' }),
+      screen.getByRole('heading', { name: '미리보기님' }),
     ).toBeInTheDocument()
     expect(screen.getAllByText(firstAnswer).length).toBeGreaterThan(0)
 
@@ -241,7 +241,7 @@ describe('state across screens', () => {
     clickLink('홈')
 
     clickLink('내 설문 다시보기 →')
-    fireEvent.click(screen.getByRole('button', { name: '뒤로' }))
+    clickLink('이전')
 
     expect(
       screen.getByRole('heading', { name: /안녕하세요 미리보기님/ }),
@@ -254,13 +254,13 @@ describe('state across screens', () => {
 
     clickLink('내 설문 다시보기 →')
     expect(
-      screen.getByRole('heading', { name: '미리보기님의 정보' }),
+      screen.getByRole('heading', { name: '미리보기님' }),
     ).toBeInTheDocument()
     expect(
       screen.getAllByText(getQuestionStep(0).question.options[0]).length,
     ).toBeGreaterThan(0)
 
-    fireEvent.click(screen.getByRole('button', { name: '뒤로' }))
+    clickLink('이전')
     clickLink('룸메이트')
     expect(
       within(screen.getByTestId('roommate-list')).getAllByRole('link'),
@@ -272,7 +272,7 @@ describe('state across screens', () => {
     renderAt('/question')
     answerAll()
 
-    fireEvent.click(screen.getByRole('button', { name: '뒤로' }))
+    clickLink('이전')
 
     expect(screen.getByRole('button', { name: '다음으로' })).toBeEnabled()
     expect(
@@ -288,7 +288,7 @@ describe('state across screens', () => {
     clickLink('내 설문 다시보기 →')
     answerAll()
 
-    fireEvent.click(screen.getByRole('button', { name: '뒤로' }))
+    clickLink('이전')
 
     expect(screen.getByRole('button', { name: '다음으로' })).toBeEnabled()
   })
