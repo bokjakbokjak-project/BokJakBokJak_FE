@@ -122,6 +122,12 @@ export default function ChatRoomPage() {
   const [hasError, setHasError] = useState(false)
   const listRef = useRef<HTMLOListElement>(null)
 
+  // Opening the room reads it. Without a server this fails quietly and the count stays.
+  const openedRoomId = room?.id
+  useEffect(() => {
+    if (openedRoomId) chatApi.markRead(openedRoomId).catch(() => {})
+  }, [openedRoomId])
+
   const itemCount = room?.items.length ?? 0
   useEffect(() => {
     const list = listRef.current

@@ -29,6 +29,8 @@ export type ChatRoom = {
   chatAvatar: ChatAvatar
   /** Whether I pressed 다음 안건 진행하기 for the current agenda. */
   agendaVoted: boolean
+  /** Partner messages I have not read yet, shown as the red count on the list (Figma 1574:38000). */
+  unreadCount: number
   items: ChatItem[]
 }
 
@@ -39,6 +41,8 @@ export type ChatApi = {
   sendMessage: (id: string, text: string) => Promise<ChatRoom>
   setAgendaVote: (id: string, voted: boolean) => Promise<ChatRoom>
   endRoom: (id: string) => Promise<void>
+  /** Marks the room's messages as read, when the room is opened. */
+  markRead: (id: string) => Promise<void>
 }
 
 const notConnected = async (): Promise<never> => {
@@ -53,6 +57,7 @@ const serverChatApi: ChatApi = {
   sendMessage: notConnected,
   setAgendaVote: notConnected,
   endRoom: notConnected,
+  markRead: notConnected,
 }
 
 export const chatApi: ChatApi = canUseTemporaryFlow()
