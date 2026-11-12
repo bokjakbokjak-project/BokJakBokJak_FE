@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useId, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import menuChevron from '../../assets/my/menu-chevron.svg'
 import pencil from '../../assets/my/pencil.svg'
@@ -22,7 +22,8 @@ const MENU_ROW_CLASS =
 
 /**
  * Figma 1532:20013 (first screen) and 1532:19717 (the whole page). The content above the bottom
- * bar scrolls; the bar stays fixed. The PC frame is always 844px tall.
+ * bar scrolls; the bar stays fixed. The PC frame is always 844px tall. Unlike Figma, the answer
+ * summary is folded behind a third menu row (`상세 프로필 보기`), decided by the project owner.
  */
 export default function MyPage() {
   const navigate = useNavigate()
@@ -30,6 +31,9 @@ export default function MyPage() {
   const { answers, reset } = useQuestion()
   const notice = usePendingNotice()
   const [isConfirming, setIsConfirming] = useState(false)
+  // The answer summary starts folded and opens under its menu row, on this page (no route).
+  const [isSummaryOpen, setIsSummaryOpen] = useState(false)
+  const summaryId = useId()
   const retakeButtonRef = useRef<HTMLButtonElement>(null)
   const name = data.name.trim() || '사용자'
 
@@ -57,7 +61,7 @@ export default function MyPage() {
           />
           <main className="flex flex-1 flex-col">
             <div className="mt-[17.79px]">
-              <ProfileAvatar priorities={data.priorities} />
+              <ProfileAvatar priorities={data.priorities} centered />
             </div>
             <div className="relative mx-auto mt-[17.79px] max-w-[calc(100%-96px)]">
               <h2 className="text-center text-[20px] leading-[normal] font-bold tracking-[0.4px] break-all text-gray-500">
@@ -90,8 +94,25 @@ export default function MyPage() {
                 설문조사 다시 하기
                 <img src={menuChevron} alt="" className="size-6" />
               </button>
+              {/* Last, so opening it never moves the two rows above. */}
+              <button
+                type="button"
+                aria-expanded={isSummaryOpen}
+                aria-controls={summaryId}
+                className={MENU_ROW_CLASS}
+                onClick={() => setIsSummaryOpen((open) => !open)}
+              >
+                상세 프로필 보기
+                <img
+                  src={menuChevron}
+                  alt=""
+                  className={`size-6 ${isSummaryOpen ? '-rotate-90' : 'rotate-90'}`}
+                />
+              </button>
             </div>
             <section
+              id={summaryId}
+              hidden={!isSummaryOpen}
               aria-labelledby="answer-summary-title"
               className="relative mt-[33px] flex-1 rounded-t-[35px] bg-brand-cream1 shadow-[0_0_0_2px_var(--color-brand-brown2)]"
             >
