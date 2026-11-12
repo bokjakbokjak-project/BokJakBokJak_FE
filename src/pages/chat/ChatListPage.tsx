@@ -56,6 +56,11 @@ export default function ChatListPage() {
         alt=""
         className="absolute inset-x-0 top-0 -z-10 w-full"
       />
+      {/* QA 9: the blue sky at the top becomes the ivory of the home screen, with the same
+          cream fade the home screen lays over its room (HomePage). */}
+      <div className="absolute inset-x-0 top-0 -z-10 aspect-[390/844]">
+        <div className="absolute inset-x-0 top-0 h-[max(258px,30.569%)] bg-[linear-gradient(to_bottom,var(--color-brand-cream1)_67.842%,rgba(255,255,255,0)_96.918%)]" />
+      </div>
       <header className="pt-[max(0px,calc(55px-env(safe-area-inset-top)))]">
         <h1 className="flex h-14 items-center justify-center text-[18px] leading-[1.5] font-bold text-brand-brown1">
           채팅
