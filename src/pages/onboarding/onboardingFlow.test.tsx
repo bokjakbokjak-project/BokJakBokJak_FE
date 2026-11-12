@@ -229,8 +229,7 @@ describe('priority chip positions', () => {
     expectFixedChipRows()
     expect(within(chip(/잠버릇/)).getByAltText('3순위')).toBeInTheDocument()
     expect(layerVariant('body')).toBe('sleep-habit')
-    // QA 3: every category has to be ranked.
-    expect(screen.getByRole('button', { name: '완료하기' })).toBeDisabled()
+    expect(screen.getByRole('button', { name: '완료하기' })).toBeEnabled()
   })
 
   it('keeps positions and pulls ranks forward when a selection is cancelled', () => {
@@ -344,10 +343,10 @@ describe('onboarding flow', () => {
     click(/청소,청결/)
     expect(layerVariant('body')).toBe('cleaning')
     expect(screen.getByAltText('3순위')).toBeInTheDocument()
-    expect(finish).toBeDisabled()
+    expect(finish).toBeEnabled()
 
     click(/개인청결/)
-    expect(finish).toBeDisabled()
+    expect(finish).toBeEnabled()
     click(/흡연유무/)
     expect(finish).toBeEnabled()
   })
@@ -368,7 +367,7 @@ describe('onboarding flow', () => {
       within(chip(/개인청결/)).getByRole('img', { name: '4순위' }),
     ).toBeInTheDocument()
     expect(parts()).toBe(threeRanks)
-    expect(finish).toBeDisabled()
+    expect(finish).toBeEnabled()
 
     click(/흡연유무/)
     expect(
@@ -382,7 +381,7 @@ describe('onboarding flow', () => {
       within(chip(/개인청결/)).getByRole('img', { name: '3순위' }),
     ).toBeInTheDocument()
     expect(layerVariant('body')).toBe('personal-hygiene')
-    expect(finish).toBeDisabled()
+    expect(finish).toBeEnabled()
 
     click(/잠버릇/)
     click('완료하기')

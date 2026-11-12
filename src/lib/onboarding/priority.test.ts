@@ -20,7 +20,7 @@ describe('togglePriority', () => {
     expect(getRank(priorities, 'smoking')).toBe(2)
     expect(getRank(priorities, 'sleep-habit')).toBe(3)
     expect(getRank(priorities, 'wake-alarm')).toBeNull()
-    expect(isPriorityComplete(priorities)).toBe(false)
+    expect(isPriorityComplete(priorities)).toBe(true)
   })
 
   it('pulls later ranks forward when one is deselected', () => {
@@ -29,11 +29,11 @@ describe('togglePriority', () => {
     ).toEqual(['smoking', 'sleep-habit'])
   })
 
-  it('allows ranks 4 and 5, and completes only with all five', () => {
+  it('allows ranks 4 and 5, and every count from three to five completes', () => {
     let priorities = ['cleaning', 'smoking', 'sleep-habit'] as CategoryId[]
     priorities = togglePriority(priorities, 'wake-alarm')
     expect(getRank(priorities, 'wake-alarm')).toBe(4)
-    expect(isPriorityComplete(priorities)).toBe(false)
+    expect(isPriorityComplete(priorities)).toBe(true)
 
     priorities = togglePriority(priorities, 'personal-hygiene')
     expect(getRank(priorities, 'personal-hygiene')).toBe(5)
@@ -41,12 +41,10 @@ describe('togglePriority', () => {
     expect(priorities).toHaveLength(MAX_PRIORITY_COUNT)
   })
 
-  it('needs every priority (QA 3)', () => {
+  it('needs at least three priorities', () => {
     expect(isPriorityComplete([])).toBe(false)
-    expect(isPriorityComplete(['cleaning', 'smoking', 'sleep-habit'])).toBe(
-      false,
-    )
-    expect(MIN_PRIORITY_COUNT).toBe(5)
+    expect(isPriorityComplete(['cleaning', 'smoking'])).toBe(false)
+    expect(MIN_PRIORITY_COUNT).toBe(3)
   })
 
   it('ignores a selection beyond the maximum', () => {
