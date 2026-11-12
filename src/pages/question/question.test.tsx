@@ -203,6 +203,27 @@ describe('situational survey', () => {
     ).toBeInTheDocument()
   })
 
+  it('scrolls the card and the answers between the fixed header and home button', () => {
+    renderAt('/question')
+    answerAll()
+
+    const scroll = screen.getByTestId('result-scroll')
+    expect(scroll).toHaveClass('overflow-y-auto')
+    expect(scroll).toContainElement(
+      screen.getByRole('heading', { name: '사용자님' }),
+    )
+    expect(scroll).toContainElement(
+      screen.getByRole('heading', { name: '상세 답변 요약' }),
+    )
+    expect(scroll).not.toContainElement(
+      screen.getByRole('heading', { name: '상세 프로필' }),
+    )
+    expect(scroll).not.toContainElement(
+      screen.getByRole('button', { name: '홈화면으로 가기' }),
+    )
+    expect(screen.queryByTestId('roommate-scroll')).not.toBeInTheDocument()
+  })
+
   it('opens the share sheet and closes it with Escape', () => {
     renderAt('/question')
     answerAll()
