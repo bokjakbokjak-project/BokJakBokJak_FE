@@ -27,7 +27,8 @@ export default function RoommateCard({
           ROOMMATE CARD
         </p>
       </div>
-      <div className="absolute top-[34.5px] left-[13px] flex min-w-0 items-center gap-3 min-[390px]:gap-6">
+      {/* Stops before the match ring, so a long name is cut instead of running under it (QA 5). */}
+      <div className="absolute top-[34.5px] right-[74px] left-[13px] flex min-w-0 items-center gap-3 min-[390px]:gap-6">
         {/* The image includes the white outline and shadow around the 50px Figma box. */}
         <span className="relative size-[50px] shrink-0">
           <img
@@ -37,9 +38,12 @@ export default function RoommateCard({
           />
         </span>
         <div className="flex min-w-0 flex-col gap-1 text-gray-500">
-          <p className="flex items-center gap-0.5 leading-[normal] font-bold whitespace-nowrap">
-            <span className="text-[14px] tracking-[0.28px]">{name}</span>
-            <span className="text-[12px] tracking-[0.24px]">님</span>
+          {/* QA 5: the name is 16px on every screen size. */}
+          <p className="flex min-w-0 items-center gap-0.5 leading-[normal] font-bold whitespace-nowrap">
+            <span className="truncate text-[16px] tracking-[0.32px]">
+              {name}
+            </span>
+            <span className="shrink-0 text-[12px] tracking-[0.24px]">님</span>
           </p>
           <p className="flex items-center gap-0.5 text-[14px] leading-[1.5] font-medium whitespace-nowrap">
             <span>{age}세</span>

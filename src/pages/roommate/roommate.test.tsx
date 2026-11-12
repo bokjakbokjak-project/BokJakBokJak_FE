@@ -423,6 +423,24 @@ describe('chat request', () => {
   )
 })
 
+describe('detail profile layout', () => {
+  it('scrolls the card and the answers together, like the analysis card position', () => {
+    renderAt('/roommate/sujeong/profile')
+
+    const scroll = screen.getByTestId('roommate-scroll')
+    expect(scroll).toHaveClass('overflow-y-auto')
+    expect(scroll).toContainElement(
+      screen.getByRole('heading', { name: /민수정/ }),
+    )
+    expect(scroll).toContainElement(
+      screen.getByRole('heading', { name: '상세 답변 요약' }),
+    )
+    expect(scroll).not.toContainElement(
+      screen.getByRole('heading', { name: '상세 프로필' }),
+    )
+  })
+})
+
 describe('roommate screens opened from a chat room', () => {
   const chatState = fromChatState('jeonhyeyun')
 
