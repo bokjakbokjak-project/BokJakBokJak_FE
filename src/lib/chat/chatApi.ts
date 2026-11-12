@@ -55,8 +55,9 @@ const notConnected = async (): Promise<never> => {
 }
 
 // Connection point for the real API. There is no server yet, so there are no rooms and every
-// change fails instead of pretending that it was sent.
-const serverChatApi: ChatApi = {
+// change fails instead of pretending that it was sent. Use it in place of the Production sample
+// below once the server exists.
+export const serverChatApi: ChatApi = {
   listRooms: async () => [],
   getRoom: async () => null,
   sendMessage: notConnected,
@@ -66,6 +67,29 @@ const serverChatApi: ChatApi = {
   markRead: notConnected,
 }
 
-export const chatApi: ChatApi = canUseTemporaryFlow()
-  ? mockChatApi
-  : serverChatApi
+/**
+ * Rooms that Production shows until the chat server exists, so the deployed app is not empty
+ * (requested 2026-11-12, chat OPEN_QUESTIONS CH-1). The screens mark them as samples, and changes
+ * stay in memory like the development data.
+ */
+export const PRODUCTION_SAMPLE_ROOM_IDS: readonly string[] = [
+  'seoyujeong',
+  'parkjimin',
+]
+
+const productionSampleChatApi: ChatApi = {
+  ...mockChatApi,
+  listRooms: async () =>
+    (await mockChatApi.listRooms()).filter(({ id }) =>
+      PRODUCTION_SAMPLE_ROOM_IDS.includes(id),
+    ),
+  getRoom: async (id) =>
+    PRODUCTION_SAMPLE_ROOM_IDS.includes(id) ? mockChatApi.getRoom(id) : null,
+}
+
+/** True on Production, where the chat screens show the sample notice. */
+export const isChatSampleOnly = !canUseTemporaryFlow()
+
+export const chatApi: ChatApi = isChatSampleOnly
+  ? productionSampleChatApi
+  : mockChatApi

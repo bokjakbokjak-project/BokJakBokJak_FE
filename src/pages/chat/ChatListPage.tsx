@@ -2,9 +2,14 @@ import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import background from '../../assets/chat/list-background.png'
 import BottomNav from '../../components/BottomNav/BottomNav'
-import { chatApi, type ChatRoom } from '../../lib/chat/chatApi'
+import {
+  chatApi,
+  isChatSampleOnly,
+  type ChatRoom,
+} from '../../lib/chat/chatApi'
 import { CHAT_ROUTES } from '../../lib/chat/routes'
 import { LIST_AVATARS } from './chatAvatars'
+import SampleNotice from './SampleNotice'
 
 // Preview copy per room state, from the Figma list frames 1057:13344 and 1349:19651.
 const STATUS_TEXT: Record<ChatRoom['status'], string> = {
@@ -60,6 +65,7 @@ export default function ChatListPage() {
         data-testid="chat-list-scroll"
         className="scrollbar-none min-h-0 flex-1 overflow-y-auto px-6 pt-[19px] pb-6"
       >
+        {isChatSampleOnly && <SampleNotice className="mb-3" />}
         {rooms?.length === 0 && (
           <p className="mt-10 text-center text-[14px] text-gray-500">
             아직 채팅방이 없어요
