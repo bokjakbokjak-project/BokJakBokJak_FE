@@ -74,13 +74,38 @@ describe('chat', () => {
     expect(input).toHaveValue('')
   })
 
+  it('opens the agreement menu with the two choices', async () => {
+    renderAt('/chat/seoyujeong')
+
+    const toggle = await screen.findByRole('button', { name: '조율 확정 메뉴' })
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    fireEvent.click(toggle)
+
+    const menu = screen.getByRole('group', { name: '조율 확정 메뉴' })
+    const agenda = within(menu).getByRole('button', {
+      name: '다음안건 진행하기',
+    })
+    expect(agenda).toHaveFocus()
+    expect(
+      within(menu).getByRole('button', { name: '매칭확정하기' }),
+    ).toBeInTheDocument()
+
+    // Touching the input folds the menu (designer note 1858:18842).
+    fireEvent.focus(screen.getByRole('textbox', { name: '메시지 입력' }))
+    expect(screen.queryByRole('group')).not.toBeInTheDocument()
+
+    click('조율 확정 메뉴')
+    fireEvent.keyDown(screen.getByRole('group'), { key: 'Escape' })
+    expect(screen.queryByRole('group')).not.toBeInTheDocument()
+  })
+
   it('asks before voting for the next agenda', async () => {
     renderAt('/chat/seoyujeong')
 
-    const vote = await screen.findByRole('button', {
-      name: '다음 안건 진행하기',
-    })
-    fireEvent.click(vote)
+    fireEvent.click(
+      await screen.findByRole('button', { name: '조율 확정 메뉴' }),
+    )
+    click('다음안건 진행하기')
     const dialog = screen.getByRole('dialog', {
       name: '이대로 확정하시겠습니까?',
     })
@@ -90,9 +115,9 @@ describe('chat', () => {
 
     fireEvent.click(within(dialog).getByRole('button', { name: '취소하기' }))
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    expect(vote).toHaveAccessibleName('다음 안건 진행하기')
+    expect(screen.getByRole('group', { name: '조율 확정 메뉴' })).toBeVisible()
 
-    fireEvent.click(vote)
+    click('다음안건 진행하기')
     fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
@@ -101,20 +126,48 @@ describe('chat', () => {
     renderAt('/chat/seoyujeong')
 
     fireEvent.click(
-      await screen.findByRole('button', { name: '다음 안건 진행하기' }),
+      await screen.findByRole('button', { name: '조율 확정 메뉴' }),
     )
+    click('다음안건 진행하기')
     click('확정하기')
-    expect(
-      await screen.findByRole('button', { name: '안건 확정 취소하기' }),
-    ).toBeInTheDocument()
-
+    // The menu folds after a choice.
+    fireEvent.click(
+      await screen.findByRole('button', { name: '조율 확정 메뉴' }),
+    )
     click('안건 확정 취소하기')
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: '조율 확정 메뉴' }),
+    )
     expect(
-      await screen.findByRole('button', { name: '다음 안건 진행하기' }),
+      screen.getByRole('button', { name: '다음안건 진행하기' }),
     ).toBeInTheDocument()
   })
 
-  it('shows the confirmed match instead of the agenda button', async () => {
+  it('asks before confirming the match and keeps my choice', async () => {
+    renderAt('/chat/seoyujeong')
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: '조율 확정 메뉴' }),
+    )
+    click('매칭확정하기')
+    const dialog = screen.getByRole('dialog', {
+      name: '매칭을 확정하시겠습니까?',
+    })
+    expect(dialog).toHaveAccessibleDescription(
+      /^서로 확정하기를 선택할 시 최종\s*매칭이 완료됩니다$/,
+    )
+    fireEvent.click(within(dialog).getByRole('button', { name: '확정하기' }))
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: '조율 확정 메뉴' }),
+    )
+    expect(
+      screen.getByRole('button', { name: '매칭확정 취소하기' }),
+    ).toBeInTheDocument()
+  })
+
+  it('shows the confirmed match instead of the agreement menu', async () => {
     renderAt('/chat/minsujeong')
 
     expect(await screen.findByRole('status')).toHaveTextContent(
@@ -122,7 +175,7 @@ describe('chat', () => {
     )
     expect(screen.getByText('2. 배달 음식과 쓰레기 처리 확정!')).toBeVisible()
     expect(
-      screen.queryByRole('button', { name: '다음 안건 진행하기' }),
+      screen.queryByRole('button', { name: '조율 확정 메뉴' }),
     ).not.toBeInTheDocument()
   })
 
@@ -185,8 +238,11 @@ describe('chat', () => {
   it('shows the waiting vote when I already asked for the next agenda', async () => {
     renderAt('/chat/iseoyun')
 
+    fireEvent.click(
+      await screen.findByRole('button', { name: '조율 확정 메뉴' }),
+    )
     expect(
-      await screen.findByRole('button', { name: '안건 확정 취소하기' }),
+      screen.getByRole('button', { name: '안건 확정 취소하기' }),
     ).toBeInTheDocument()
   })
 
