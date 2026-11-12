@@ -38,7 +38,8 @@ export default function RoommateCard({
         </span>
         <div className="flex min-w-0 flex-col gap-1 text-gray-500">
           <p className="flex items-center gap-0.5 leading-[normal] font-bold whitespace-nowrap">
-            <span className="text-[14px] tracking-[0.28px]">{name}</span>
+            {/* 16px on phones and PC alike (designer note, Figma 1686:16361). */}
+            <span className="text-[16px] tracking-[0.32px]">{name}</span>
             <span className="text-[12px] tracking-[0.24px]">님</span>
           </p>
           <p className="flex items-center gap-0.5 text-[14px] leading-[1.5] font-medium whitespace-nowrap">

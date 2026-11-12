@@ -65,6 +65,20 @@ describe('roommate list', () => {
     ).toBeInTheDocument()
   })
 
+  it('shows every candidate name at 16px (Figma 1686:16361)', () => {
+    renderAt('/roommate')
+    fireEvent.click(screen.getByRole('button', { name: '리스트 더보기' }))
+
+    const names = getCandidates().slice(0, cards().length)
+    expect(names.length).toBeGreaterThan(5)
+    for (const [index, card] of cards().entries()) {
+      expect(within(card).getByText(names[index].name)).toHaveClass(
+        'text-[16px]',
+        'tracking-[0.32px]',
+      )
+    }
+  })
+
   it('shows the five Figma candidates in order', () => {
     renderAt('/roommate')
 
