@@ -817,6 +817,21 @@ describe('mission notice', () => {
     expect(mission()).not.toBeInTheDocument()
   })
 
+  it('asks to rank all five habits (Figma 1041:30715)', () => {
+    renderPriorityStep()
+
+    expect(mission()).toHaveTextContent(
+      '내가 가장 중요하게 생각하는생활습관 5개의 순위를 매겨주세요!선택한 우선순위에 따라 내 캐릭터 외형이 바뀌어요!',
+    )
+    expect(mission()).not.toHaveTextContent('생활습관을 선택해주세요')
+    expect(
+      screen.getByRole('heading', {
+        level: 1,
+        name: '내가 가장 중요하게 생각하는 생활습관 5개의 순위를 매겨주세요',
+      }),
+    ).toBeInTheDocument()
+  })
+
   it('shows again from the info button, for the same time', () => {
     vi.useFakeTimers()
     renderPriorityStep()
