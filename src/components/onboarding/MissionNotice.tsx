@@ -12,8 +12,10 @@ type MissionNoticeProps = {
 }
 
 /**
- * Mission notice from Figma (1041:29241), centered in the frame. Figma defines no way to close
- * it early. Tapping or pressing Escape closes it, so a keyboard user is not held by the timer.
+ * Mission notice from Figma (1041:29241), centered in the frame. The copy follows the revised
+ * notice 1041:30715, which asks to rank all five habits instead of choosing some. Figma defines
+ * no way to close it early. Tapping or pressing Escape closes it, so a keyboard user is not held
+ * by the timer.
  */
 export default function MissionNotice({
   triggerRef,
@@ -54,7 +56,7 @@ export default function MissionNotice({
             <p className="text-[18px] leading-[1.4] font-bold tracking-[0.36px]">
               내가 가장 중요하게 생각하는
               <br />
-              생활습관을 선택해주세요!
+              생활습관 5개의 순위를 매겨주세요!
             </p>
             <p className="relative top-px text-[13px] leading-[1.5]">
               선택한 우선순위에 따라 내 캐릭터 외형이 바뀌어요!
