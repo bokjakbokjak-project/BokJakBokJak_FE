@@ -8,6 +8,7 @@ import {
 } from 'react'
 import { createPortal } from 'react-dom'
 import { useModalLayer } from '../../lib/onboarding/useModalLayer'
+import PrimaryButton from './PrimaryButton'
 
 // Figma shows 2003-2007 only. The real range is not decided, so this is provisional.
 export const MIN_BIRTH_YEAR = 1980
@@ -94,7 +95,8 @@ export default function YearPickerSheet({
           aria-modal="true"
           aria-label="연도 선택"
           tabIndex={-1}
-          className="absolute bottom-0 h-[376px] w-full max-w-[390px] rounded-t-[29px] bg-brand-cream1 shadow-[0_0_7.3px_0_rgba(0,0,0,0.25)] outline-none"
+          // Figma 1041:27362: 407px tall, so its button lands exactly on the page's bottom button.
+          className="absolute bottom-0 h-[407px] w-full max-w-[390px] rounded-t-[29px] bg-brand-cream1 shadow-[0_0_7.3px_0_rgba(0,0,0,0.25)] outline-none"
           onClick={(event) => event.stopPropagation()}
           onKeyDown={handleKeyDown}
         >
@@ -131,13 +133,13 @@ export default function YearPickerSheet({
               )
             })}
           </div>
-          <button
-            type="button"
-            className="absolute top-[291px] left-[29px] h-[65px] w-[342px] max-w-[calc(100%-48px)] rounded-[10px] bg-brand-brown1 text-center text-[20px] leading-[1.5] font-semibold text-white"
-            onClick={() => onSelect(year)}
-          >
-            선택하기
-          </button>
+          {/* Same place as the step's bottom button (OnboardingScreen): 24px from each side and
+              max(44px, safe area) from the bottom, so opening the sheet does not move it. */}
+          <div className="absolute inset-x-6 bottom-[max(44px,env(safe-area-inset-bottom))]">
+            <PrimaryButton onClick={() => onSelect(year)}>
+              선택하기
+            </PrimaryButton>
+          </div>
         </div>
       </div>
     </div>,
