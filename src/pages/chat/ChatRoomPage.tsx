@@ -1,11 +1,13 @@
 import {
   useEffect,
+  useId,
   useRef,
   useState,
   type FormEvent,
   type ReactNode,
 } from 'react'
 import { Link, Navigate, useParams } from 'react-router'
+import chevronUp from '../../assets/chat/chevron-up.svg'
 import menuIcon from '../../assets/chat/menu-round.svg'
 import sendIcon from '../../assets/chat/send-round.svg'
 import backArrow from '../../assets/question/back-arrow-brown.svg'
@@ -151,8 +153,17 @@ export default function ChatRoomPage() {
   const [isPending, setIsPending] = useState(false)
   const [hasError, setHasError] = useState(false)
   const listRef = useRef<HTMLOListElement>(null)
-  const voteRef = useRef<HTMLButtonElement>(null)
-  const [isConfirming, setIsConfirming] = useState(false)
+  const menuButtonRef = useRef<HTMLButtonElement>(null)
+  const agendaRef = useRef<HTMLButtonElement>(null)
+  const matchRef = useRef<HTMLButtonElement>(null)
+  const menuId = useId()
+  const [isMenuOpen, setIsMenuOpen] = useState(false)
+  const [confirming, setConfirming] = useState<'agenda' | 'match' | null>(null)
+
+  // The open menu takes focus so its two choices are next for the keyboard.
+  useEffect(() => {
+    if (isMenuOpen) agendaRef.current?.focus()
+  }, [isMenuOpen])
 
   // Opening the room reads it. Without a server this fails quietly and the count stays.
   const openedRoomId = room?.id
@@ -188,6 +199,17 @@ export default function ChatRoomPage() {
     const text = draft.trim()
     if (!text || isPending) return
     if (await run(() => chatApi.sendMessage(room.id, text))) setDraft('')
+  }
+
+  const closeMenu = (returnFocus = false) => {
+    setIsMenuOpen(false)
+    if (returnFocus) requestAnimationFrame(() => menuButtonRef.current?.focus())
+  }
+
+  /** Runs a menu choice and folds the menu back, as Figma shows only the closed bar after. */
+  const choose = async (action: () => Promise<ChatRoom>) => {
+    setConfirming(null)
+    if (await run(action)) closeMenu(true)
   }
 
   const isEnded = room.status === 'ended'
@@ -261,22 +283,65 @@ export default function ChatRoomPage() {
       </ol>
 
       <footer className="flex shrink-0 flex-col gap-4 px-6 pb-[max(7px,calc(41px-env(safe-area-inset-bottom)))]">
-        {room.status === 'active' && (
-          <button
-            type="button"
-            disabled={isPending}
-            className={`h-10 self-center rounded-[62px] px-[15px] py-2.5 text-[14px] leading-[1.5] font-semibold ${room.agendaVoted ? 'bg-brand-beige4 text-gray-black' : 'bg-brand-brown1 text-white'}`}
-            ref={voteRef}
-            // Voting asks first (Figma 1715:38389). Taking the vote back does not (CH-2).
-            onClick={() =>
-              room.agendaVoted
-                ? run(() => chatApi.setAgendaVote(room.id, false))
-                : setIsConfirming(true)
-            }
-          >
-            {room.agendaVoted ? '안건 확정 취소하기' : '다음 안건 진행하기'}
-          </button>
-        )}
+        {room.status === 'active' &&
+          (isMenuOpen ? (
+            // Figma 1858:18577. A channel menu that stays until a choice is made, the input is
+            // focused (designer note 1858:18842) or Escape is pressed.
+            <div
+              id={menuId}
+              role="group"
+              aria-label="조율 확정 메뉴"
+              className="flex items-center rounded-[12px] bg-brand-brown1 p-2.5"
+              onKeyDown={(event) => {
+                if (event.key === 'Escape') closeMenu(true)
+              }}
+            >
+              <button
+                ref={agendaRef}
+                type="button"
+                disabled={isPending}
+                className="h-11 min-w-0 flex-1 px-5 text-[16px] leading-[1.5] font-semibold whitespace-nowrap text-white"
+                // Voting asks first (Figma 1715:38389). Taking the vote back does not (CH-2).
+                onClick={() =>
+                  room.agendaVoted
+                    ? choose(() => chatApi.setAgendaVote(room.id, false))
+                    : setConfirming('agenda')
+                }
+              >
+                {room.agendaVoted ? '안건 확정 취소하기' : '다음안건 진행하기'}
+              </button>
+              <span
+                aria-hidden
+                className="h-[27px] w-px shrink-0 bg-white/20"
+              />
+              <button
+                ref={matchRef}
+                type="button"
+                disabled={isPending}
+                className="h-11 min-w-0 flex-1 px-5 text-[16px] leading-[1.5] font-semibold whitespace-nowrap text-white"
+                onClick={() =>
+                  room.matchVoted
+                    ? choose(() => chatApi.setMatchVote(room.id, false))
+                    : setConfirming('match')
+                }
+              >
+                {room.matchVoted ? '매칭확정 취소하기' : '매칭확정하기'}
+              </button>
+            </div>
+          ) : (
+            // Figma 1715:38109.
+            <button
+              ref={menuButtonRef}
+              type="button"
+              aria-expanded={false}
+              aria-controls={menuId}
+              className="flex h-[46px] items-center justify-center gap-1 rounded-full bg-brand-brown1 px-[15px] py-2.5 text-[16px] leading-[1.5] text-white"
+              onClick={() => setIsMenuOpen(true)}
+            >
+              조율 확정 메뉴
+              <img src={chevronUp} alt="" className="size-6" />
+            </button>
+          ))}
         {room.status === 'matched' && (
           <p
             role="status"
@@ -303,6 +368,8 @@ export default function ChatRoomPage() {
               disabled={isEnded}
               className="h-[42px] w-full rounded-[20px] border border-gray-100 bg-white pr-12 pl-3 text-[16px] leading-[1.5] text-gray-black outline-none placeholder:text-gray-500 focus-visible:border-brand-brown2 disabled:opacity-60"
               onChange={(event) => setDraft(event.target.value)}
+              // Designer note 1858:18842: touching the input hides the menu.
+              onFocus={() => closeMenu()}
             />
             <button
               type="submit"
@@ -315,7 +382,7 @@ export default function ChatRoomPage() {
           </form>
         </div>
       </footer>
-      {isConfirming && (
+      {confirming === 'agenda' && (
         <ChoiceDialog
           title="이대로 확정하시겠습니까?"
           message={
@@ -323,12 +390,21 @@ export default function ChatRoomPage() {
           }
           cancelLabel="취소하기"
           confirmLabel="확정하기"
-          triggerRef={voteRef}
-          onCancel={() => setIsConfirming(false)}
-          onConfirm={() => {
-            setIsConfirming(false)
-            run(() => chatApi.setAgendaVote(room.id, true))
-          }}
+          triggerRef={agendaRef}
+          onCancel={() => setConfirming(null)}
+          onConfirm={() => choose(() => chatApi.setAgendaVote(room.id, true))}
+        />
+      )}
+      {confirming === 'match' && (
+        // Figma 1858:18674.
+        <ChoiceDialog
+          title="매칭을 확정하시겠습니까?"
+          message={'서로 확정하기를 선택할 시 최종\n매칭이 완료됩니다'}
+          cancelLabel="취소하기"
+          confirmLabel="확정하기"
+          triggerRef={matchRef}
+          onCancel={() => setConfirming(null)}
+          onConfirm={() => choose(() => chatApi.setMatchVote(room.id, true))}
         />
       )}
     </div>

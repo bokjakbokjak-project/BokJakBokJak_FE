@@ -60,6 +60,7 @@ function room(seed: RoomSeed): ChatRoom {
     listAvatar: 'sleep-mask',
     chatAvatar: 'sleep-mask',
     agendaVoted: false,
+    matchVoted: false,
     unreadCount: 0,
     items: [intro, studyAgenda],
     ...seed,
@@ -266,6 +267,12 @@ export const mockChatApi: ChatApi = {
   setAgendaVote: async (id, voted) => {
     const room = findRoom(id)
     room.agendaVoted = voted
+    return structuredClone(room)
+  },
+  // Only my choice is kept. The partner's choice and the final match need the server (CH-2).
+  setMatchVote: async (id, voted) => {
+    const room = findRoom(id)
+    room.matchVoted = voted
     return structuredClone(room)
   },
   endRoom: async (id) => {
