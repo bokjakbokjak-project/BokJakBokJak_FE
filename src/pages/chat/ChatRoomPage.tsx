@@ -12,10 +12,16 @@ import menuIcon from '../../assets/chat/menu-round.svg'
 import sendIcon from '../../assets/chat/send-round.svg'
 import backArrow from '../../assets/question/back-arrow-brown.svg'
 import ChoiceDialog from '../../components/dialog/ChoiceDialog'
-import { chatApi, type ChatItem, type ChatRoom } from '../../lib/chat/chatApi'
+import {
+  chatApi,
+  isChatSampleOnly,
+  type ChatItem,
+  type ChatRoom,
+} from '../../lib/chat/chatApi'
 import { CHAT_ROUTES, fromChatState } from '../../lib/chat/routes'
 import { ROOMMATE_ROUTES } from '../../lib/roommate/routes'
 import { AI_TILE, PARTNER_TILE } from './chatAvatars'
+import SampleNotice from './SampleNotice'
 import { useChatRoom } from './useChatRoom'
 
 type Sender = 'ai' | 'me' | 'partner' | 'system'
@@ -242,6 +248,7 @@ export default function ChatRoomPage() {
           </Link>
         </div>
       </header>
+      {isChatSampleOnly && <SampleNotice className="mx-6 mt-2 shrink-0" />}
 
       <ol
         ref={listRef}
