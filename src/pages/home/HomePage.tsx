@@ -93,11 +93,12 @@ export default function HomePage({
               <CharacterPreview
                 priorities={data.priorities}
                 showRug={false}
+                greet
                 className="relative w-full"
               />
             </div>
             <div
-              className="absolute aspect-[173/78]"
+              className="absolute aspect-[173/78] motion-safe:animate-bubble-float"
               style={{
                 left: toWidthPercent(variant.bubbleLeft),
                 top: toHeightPercent(254),
