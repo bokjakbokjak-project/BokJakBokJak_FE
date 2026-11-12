@@ -17,7 +17,18 @@ function renderAt(path: string) {
 const nav = () => screen.getByRole('navigation', { name: '하단 메뉴' })
 const button = (name: string | RegExp) => screen.getByRole('button', { name })
 const link = (name: string | RegExp) => screen.getByRole('link', { name })
-const card = (title: string) => screen.getByRole('region', { name: title })
+/** The answer summary starts folded; opens it once when a test reads a card. */
+function openSummary() {
+  const toggle = screen.queryByRole('button', {
+    name: '상세 프로필 보기',
+    expanded: false,
+  })
+  if (toggle) fireEvent.click(toggle)
+}
+const card = (title: string) => {
+  openSummary()
+  return screen.getByRole('region', { name: title })
+}
 const layer = (part: string) =>
   screen
     .getByRole('img', { name: /캐릭터/ })
@@ -91,6 +102,81 @@ describe('my page', () => {
     )
     expect(within(nav()).getByRole('link', { name: '홈' })).not.toHaveAttribute(
       'aria-current',
+    )
+  })
+
+  it('folds the answer summary behind the last menu row', () => {
+    openSeededMyPage()
+    const toggle = button('상세 프로필 보기')
+    const summaryId = toggle.getAttribute('aria-controls') as string
+    const summary = document.getElementById(summaryId) as HTMLElement
+
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    expect(summary).not.toBeVisible()
+    expect(screen.queryByRole('region', { name: '잠버릇' })).toBeNull()
+
+    fireEvent.click(toggle)
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    expect(summary).toBeVisible()
+    expect(
+      within(summary).getByRole('heading', { name: '상세 답변 요약' }),
+    ).toBeInTheDocument()
+    for (const title of [
+      '잠버릇',
+      '기상알람',
+      '청소 청결',
+      '개인 청결',
+      '흡연유무',
+    ]) {
+      expect(
+        within(summary).getByRole('region', { name: title }),
+      ).toBeInTheDocument()
+    }
+    expect(screen.getAllByText(selfOption(0, 0)).length).toBeGreaterThan(0)
+
+    fireEvent.click(toggle)
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    expect(summary).not.toBeVisible()
+  })
+
+  it('keeps the menu order and the other rows working while the summary is open', () => {
+    vi.useFakeTimers()
+    openSeededMyPage()
+    const rows = within(
+      button('상세 프로필 보기').parentElement as HTMLElement,
+    ).getAllByRole('button')
+
+    expect(rows.map((row) => row.textContent)).toEqual([
+      '로그아웃 하기',
+      '설문조사 다시 하기',
+      '상세 프로필 보기',
+    ])
+
+    fireEvent.click(button('상세 프로필 보기'))
+    fireEvent.click(button('로그아웃 하기'))
+    expect(within(nav()).getByRole('status')).toHaveTextContent(
+      '아직 준비 중입니다.',
+    )
+
+    fireEvent.click(button('설문조사 다시 하기'))
+    expect(
+      screen.getByRole('alertdialog', { name: /처음부터 다시 설정/ }),
+    ).toBeInTheDocument()
+  })
+
+  it('centers the character as in Figma Profile2, only on the my page', () => {
+    openSeededMyPage()
+    const stage = screen.getByTestId('profile-avatar-stage')
+    const scale = 104 / 250
+
+    expect(parseFloat(stage.style.left)).toBeCloseTo(-2 - 20 * scale, 3)
+    expect(parseFloat(stage.style.width)).toBeCloseTo(302 * scale, 3)
+
+    fireEvent.click(link('닉네임 수정'))
+    const editStage = screen.getByTestId('profile-avatar-stage')
+    expect(parseFloat(editStage.style.left)).toBeCloseTo(
+      -5.21 - (20 * 104.951) / 250,
+      3,
     )
   })
 
