@@ -23,12 +23,13 @@
 
 /*
  * Home greeting (not in Figma, requested 2026-11-12, home OPEN_QUESTIONS DE-H7). The character
- * opens with Figma's face_normal eyes (715:1599), then smiles with a small nod at 1.2s. The bubble
- * floats the whole time. Reduced motion shows the resting smile without movement.
+ * opens with Figma's face_normal eyes (715:1599), then smiles at 1.2s while the head nods three
+ * times from 1s, 0.5s each. The bubble floats the whole time. Reduced motion shows the resting
+ * smile without movement.
  */
 @theme {
   --animate-greet-eyes: greet-eyes 1.6s ease-in-out forwards;
-  --animate-greet-nod: greet-nod 1.6s ease-in-out;
+  --animate-greet-nod: greet-nod 0.5s ease-in-out 1s 3;
   --animate-bubble-float: bubble-float 3s ease-in-out infinite;
 
   @keyframes greet-eyes {
@@ -44,14 +45,11 @@
 
   @keyframes greet-nod {
     0%,
-    62% {
-      transform: translateY(0);
-    }
-    80% {
-      transform: translateY(2.5%);
-    }
     100% {
       transform: translateY(0);
+    }
+    50% {
+      transform: translateY(2.5%);
     }
   }
 
