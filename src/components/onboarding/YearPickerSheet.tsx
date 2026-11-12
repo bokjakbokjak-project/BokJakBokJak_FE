@@ -94,7 +94,7 @@ export default function YearPickerSheet({
           aria-modal="true"
           aria-label="연도 선택"
           tabIndex={-1}
-          className="absolute bottom-0 h-[376px] w-full max-w-[390px] rounded-t-[29px] bg-brand-cream1 shadow-[0_0_7.3px_0_rgba(0,0,0,0.25)] outline-none"
+          className="absolute bottom-0 h-[calc(356px+max(56px,env(safe-area-inset-bottom)))] w-full max-w-[390px] rounded-t-[29px] bg-brand-cream1 shadow-[0_0_7.3px_0_rgba(0,0,0,0.25)] outline-none"
           onClick={(event) => event.stopPropagation()}
           onKeyDown={handleKeyDown}
         >
@@ -131,9 +131,12 @@ export default function YearPickerSheet({
               )
             })}
           </div>
+          {/* Figma 575:2021 draws the sheet 376px tall with the button 20px above its edge, so the
+              button jumped below the page button while the sheet was open (QA 1). The sheet keeps
+              its Figma layout and grows so the button sits exactly on the page button. */}
           <button
             type="button"
-            className="absolute top-[291px] left-[29px] h-[65px] w-[342px] max-w-[calc(100%-48px)] rounded-[10px] bg-brand-brown1 text-center text-[20px] leading-[1.5] font-semibold text-white"
+            className="absolute inset-x-6 top-[291px] mx-auto h-[65px] max-w-[342px] rounded-[10px] bg-brand-brown1 text-center text-[20px] leading-[1.5] font-semibold text-white"
             onClick={() => onSelect(year)}
           >
             선택하기

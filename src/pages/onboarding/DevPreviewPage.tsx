@@ -26,7 +26,13 @@ const DORMITORY: Partial<OnboardingData> = {
   roomCapacity: 2,
 }
 const PRIORITIES: Partial<OnboardingData> = {
-  priorities: ['sleep-habit', 'wake-alarm', 'cleaning'],
+  priorities: [
+    'sleep-habit',
+    'wake-alarm',
+    'cleaning',
+    'personal-hygiene',
+    'smoking',
+  ],
 }
 
 /** Development-only index of the onboarding screens. Not part of the production build. */

@@ -60,7 +60,7 @@ export default function CompletePage() {
       </div>
       {/* Rows of three and two, like the priority step. A wrapping row would break early,
           because each card is 0.1px wider than a third. */}
-      <div className="relative mx-auto flex w-full max-w-[390px] shrink-0 flex-col gap-[17px] px-6 pb-[50px]">
+      <div className="relative mx-auto flex w-full max-w-[390px] shrink-0 flex-col gap-[17px] px-6 pb-[38px]">
         {cardRows.map((row) => (
           <ul key={row[0].rank} className="flex justify-center gap-3">
             {row.map(({ id, rank }) => (

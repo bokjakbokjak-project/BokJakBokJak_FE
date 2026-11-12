@@ -20,7 +20,7 @@ describe('togglePriority', () => {
     expect(getRank(priorities, 'smoking')).toBe(2)
     expect(getRank(priorities, 'sleep-habit')).toBe(3)
     expect(getRank(priorities, 'wake-alarm')).toBeNull()
-    expect(isPriorityComplete(priorities)).toBe(true)
+    expect(isPriorityComplete(priorities)).toBe(false)
   })
 
   it('pulls later ranks forward when one is deselected', () => {
@@ -29,11 +29,11 @@ describe('togglePriority', () => {
     ).toEqual(['smoking', 'sleep-habit'])
   })
 
-  it('allows ranks 4 and 5, and every count from three to five completes', () => {
+  it('allows ranks 4 and 5, and completes only with all five', () => {
     let priorities = ['cleaning', 'smoking', 'sleep-habit'] as CategoryId[]
     priorities = togglePriority(priorities, 'wake-alarm')
     expect(getRank(priorities, 'wake-alarm')).toBe(4)
-    expect(isPriorityComplete(priorities)).toBe(true)
+    expect(isPriorityComplete(priorities)).toBe(false)
 
     priorities = togglePriority(priorities, 'personal-hygiene')
     expect(getRank(priorities, 'personal-hygiene')).toBe(5)
@@ -41,10 +41,12 @@ describe('togglePriority', () => {
     expect(priorities).toHaveLength(MAX_PRIORITY_COUNT)
   })
 
-  it('needs at least three priorities', () => {
+  it('needs every priority (QA 3)', () => {
     expect(isPriorityComplete([])).toBe(false)
-    expect(isPriorityComplete(['cleaning', 'smoking'])).toBe(false)
-    expect(MIN_PRIORITY_COUNT).toBe(3)
+    expect(isPriorityComplete(['cleaning', 'smoking', 'sleep-habit'])).toBe(
+      false,
+    )
+    expect(MIN_PRIORITY_COUNT).toBe(5)
   })
 
   it('ignores a selection beyond the maximum', () => {
@@ -85,15 +87,21 @@ describe('character parts', () => {
     ).toEqual(getPartVariants(['cleaning', 'smoking', 'wake-alarm']))
   })
 
-  it('keeps the Figma layer order and has no separate face layer', () => {
-    expect(getCharacterLayers([]).map((layer) => layer.key)).toEqual([
-      'rug',
-      'tail',
-      'leg',
-      'body',
-      'head',
-      'hand',
-      'shadow',
-    ])
+  it('draws the shadow behind the character and has no separate face layer', () => {
+    for (const priorities of [
+      [],
+      ['sleep-habit', 'cleaning', 'smoking'],
+      ['wake-alarm', 'personal-hygiene', 'cleaning'],
+    ] as const) {
+      expect(getCharacterLayers(priorities).map((layer) => layer.key)).toEqual([
+        'rug',
+        'shadow',
+        'tail',
+        'leg',
+        'body',
+        'head',
+        'hand',
+      ])
+    }
   })
 })

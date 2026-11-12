@@ -117,19 +117,21 @@ function partLayer(part: PartName, variant: PartVariant): CharacterLayer {
   }
 }
 
-/** Layers from back to front, in the Figma order. */
+/** Layers from back to front. Figma's order, except the shadow (QA 2). */
 export function getCharacterLayers(
   priorities: readonly CategoryId[],
 ): CharacterLayer[] {
   const variants = getPartVariants(priorities)
   return [
     { key: 'rug', src: rugSrc, x: 0, y: 191, width: 302, height: 151 },
+    // The shadow sits on the rug, behind the character and its props (QA 2). Figma drew it last,
+    // which put it over props that reach the floor.
+    { key: 'shadow', src: shadowSrc, x: 108, y: 253, width: 73, height: 19 },
     { key: 'tail', src: tailSrc, x: 162.95, y: 225.03, width: 43, height: 36 },
     { key: 'leg', src: legSrc, x: 126, y: 237.67, width: 38, height: 28 },
     partLayer('body', variants.body),
     partLayer('head', variants.head),
     partLayer('hand', variants.hand),
-    { key: 'shadow', src: shadowSrc, x: 108, y: 253, width: 73, height: 19 },
   ]
 }
 

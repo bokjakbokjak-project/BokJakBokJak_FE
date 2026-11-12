@@ -32,8 +32,9 @@ const STEP_LABEL_POSITION = {
 
 const CONTENT_WIDTH_CLASS = 'mx-auto w-full max-w-[390px]'
 
-// Figma places this button at x=24, y=735 in every 390x844 step: 342x65, 44px above the bottom.
-const FOOTER_CLASS = `${CONTENT_WIDTH_CLASS} relative z-20 shrink-0 px-6 pb-[max(0px,calc(44px-env(safe-area-inset-bottom)))]`
+// The latest Figma steps place this button at x=24, y=723 of 390x844: 342x65, 56px above the
+// bottom (575:1772, 733:2893). The year sheet puts its button in the same place (QA 1).
+const FOOTER_CLASS = `${CONTENT_WIDTH_CLASS} relative z-20 shrink-0 px-6 pb-[max(0px,calc(56px-env(safe-area-inset-bottom)))]`
 
 /**
  * Shared frame of steps 1-4. The top padding reserves the 47px status bar area of the

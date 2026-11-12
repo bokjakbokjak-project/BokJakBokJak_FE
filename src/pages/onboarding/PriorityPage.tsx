@@ -74,14 +74,14 @@ export default function PriorityPage() {
           <CharacterPreview priorities={priorities} />
         </div>
       </div>
-      <div className="absolute inset-x-0 bottom-0 z-10 h-[calc(361px+max(0px,calc(44px-env(safe-area-inset-bottom))))] rounded-t-[35px] bg-brand-cream1 shadow-[0_0_0_2px_var(--color-brand-brown2),0_-5px_0_2px_rgba(110,81,73,0.1)]">
+      <div className="absolute inset-x-0 bottom-0 z-10 h-[calc(349px+max(0px,calc(56px-env(safe-area-inset-bottom))))] rounded-t-[35px] bg-brand-cream1 shadow-[0_0_0_2px_var(--color-brand-brown2),0_-5px_0_2px_rgba(110,81,73,0.1)]">
         <img
           src={panelDecor}
           alt=""
           className="absolute top-[15px] left-1/2 h-[27px] w-[116.003px] max-w-none -translate-x-1/2"
         />
       </div>
-      <div className="relative z-20 mx-auto flex w-full max-w-[390px] shrink-0 flex-col gap-[17px] px-6 pt-[73px] pb-[42px]">
+      <div className="relative z-20 mx-auto flex w-full max-w-[390px] shrink-0 flex-col gap-[17px] px-6 pt-[73px] pb-[30px]">
         {CATEGORY_ROWS.map((row) => (
           <div
             key={row.join()}
