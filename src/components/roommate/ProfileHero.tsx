@@ -5,22 +5,21 @@ import ProfileCard, { type ProfileCardData } from './ProfileCard'
 /**
  * The profile card with its tilted back card and ribbon, between the header and the cream panel
  * (Figma 1058:11977 on the analysis, 1377:36709 on the detail profile, 1377:35844 on the survey
- * result). The block is 293px tall
- * in both, so the panel starts at y=396. The detail profile draws the card 9px lower.
+ * result). The block is 293px tall, so the panel starts at y=396. Figma drew the card 9px lower
+ * on the detail profile; QA 12 called that a design error, so every screen uses the analysis
+ * position.
  */
 export default function ProfileHero({
   profile,
-  offset = 0,
   children,
 }: {
   profile: ProfileCardData
-  offset?: number
   /** Drawn behind the card, such as the `상세프로필 보기` tab. */
   children?: ReactNode
 }) {
   return (
     <div className="relative mx-auto h-[293px] w-full max-w-[390px] shrink-0">
-      <div className="absolute inset-0" style={{ top: offset }}>
+      <div className="absolute inset-0">
         <img
           src={cardRibbon}
           alt=""

@@ -1,14 +1,15 @@
 import {
   useEffect,
-  useId,
   useRef,
   useState,
   type FormEvent,
   type ReactNode,
+  type RefObject,
 } from 'react'
-import { Link, Navigate, useParams } from 'react-router'
-import chevronUp from '../../assets/chat/chevron-up.svg'
-import menuIcon from '../../assets/chat/menu-round.svg'
+import { Link, Navigate, useNavigate, useParams } from 'react-router'
+import cardArrow from '../../assets/chat/card-arrow-right.svg'
+import cardCheck from '../../assets/chat/card-check-circle.svg'
+import exitIcon from '../../assets/chat/exit-round.svg'
 import sendIcon from '../../assets/chat/send-round.svg'
 import backArrow from '../../assets/question/back-arrow-brown.svg'
 import ChoiceDialog from '../../components/dialog/ChoiceDialog'
@@ -42,6 +43,17 @@ const ROUND_BUTTON =
 const LEFT_BUBBLE =
   'rounded-tr-[12px] rounded-b-[12px] border border-gray-100 bg-white px-3 py-2 text-gray-black'
 
+/** Figma 1952:40401: a 35px gray row with a 20px icon and the label. */
+const CARD_BUTTON =
+  'flex h-[35px] w-full items-center justify-center gap-[5px] rounded-[5px] bg-[#f3f3f3] text-[14px] leading-[1.5] font-medium text-gray-black disabled:opacity-60'
+
+/**
+ * Text wraps once the text box reaches 258px, the Figma bubble text width (QA 7). Korean words
+ * stay whole, and a run without spaces such as a URL still breaks instead of overflowing.
+ */
+const BUBBLE_TEXT =
+  'text-[14px] leading-[1.5] break-keep [overflow-wrap:anywhere] whitespace-pre-wrap'
+
 /** `1 시험기간` in the data reads `1. 시험기간` on the card (Figma 1715:38135). */
 const agendaTitle = (title: string) => title.replace(/^(\d+)\s+/, '$1. ')
 
@@ -49,10 +61,12 @@ function AiCard({
   title,
   badge,
   children,
+  actions,
 }: {
   title: string
   badge?: { text: string; tone: 'open' | 'done' }
   children: ReactNode
+  actions?: ReactNode
 }) {
   return (
     <div className={`${LEFT_BUBBLE} flex w-[234px] max-w-full flex-col gap-2`}>
@@ -69,11 +83,20 @@ function AiCard({
       <div className="text-[12px] leading-[1.5] break-keep whitespace-pre-line">
         {children}
       </div>
+      {actions}
     </div>
   )
 }
 
-function ChatItemView({ item, room }: { item: ChatItem; room: ChatRoom }) {
+function ChatItemView({
+  item,
+  room,
+  actions,
+}: {
+  item: ChatItem
+  room: ChatRoom
+  actions?: ReactNode
+}) {
   switch (item.kind) {
     case 'intro':
       return (
@@ -95,6 +118,7 @@ function ChatItemView({ item, room }: { item: ChatItem; room: ChatRoom }) {
         <AiCard
           title={agendaTitle(item.title)}
           badge={{ text: '미정', tone: 'open' }}
+          actions={actions}
         >
           {item.prompt}
         </AiCard>
@@ -104,6 +128,7 @@ function ChatItemView({ item, room }: { item: ChatItem; room: ChatRoom }) {
         <AiCard
           title={agendaTitle(item.title)}
           badge={{ text: '확정', tone: 'done' }}
+          actions={actions}
         >
           {item.summary}
         </AiCard>
@@ -119,12 +144,16 @@ function ChatItemView({ item, room }: { item: ChatItem; room: ChatRoom }) {
       )
     case 'message':
       return item.from === 'me' ? (
-        <p className="max-w-[292px] self-end rounded-tl-[12px] rounded-b-[12px] border border-brand-cream3 bg-brand-cream2 px-4 py-2 text-[14px] leading-[1.5] break-keep whitespace-pre-line text-gray-black">
+        // 258px of text, 16px padding on each side and the 1px border.
+        <p
+          className={`max-w-[min(292px,100%)] self-end rounded-tl-[12px] rounded-b-[12px] border border-brand-cream3 bg-brand-cream2 px-4 py-2 text-gray-black ${BUBBLE_TEXT}`}
+        >
           {item.text}
         </p>
       ) : (
+        // 258px of text, 12px padding on each side and the 1px border.
         <p
-          className={`${LEFT_BUBBLE} self-start text-[14px] leading-[1.5] break-keep whitespace-pre-line`}
+          className={`${LEFT_BUBBLE} max-w-[min(284px,100%)] self-start ${BUBBLE_TEXT}`}
         >
           {item.text}
         </p>
@@ -151,25 +180,66 @@ function SenderTile({ sender, room }: { sender: Sender; room: ChatRoom }) {
   )
 }
 
+/**
+ * The two choices inside the current agenda card (Figma 1715:38109, 1858:17915). They replace the
+ * agreement menu bar (QA 6).
+ */
+function CardActions({
+  room,
+  isPending,
+  agendaRef,
+  matchRef,
+  onAgenda,
+  onMatch,
+}: {
+  room: ChatRoom
+  isPending: boolean
+  agendaRef: RefObject<HTMLButtonElement | null>
+  matchRef: RefObject<HTMLButtonElement | null>
+  onAgenda: () => void
+  onMatch: () => void
+}) {
+  return (
+    <div className="mt-2 flex flex-col gap-[5px]">
+      <button
+        ref={agendaRef}
+        type="button"
+        disabled={isPending}
+        className={CARD_BUTTON}
+        onClick={onAgenda}
+      >
+        <img src={cardArrow} alt="" className="size-5" />
+        {room.agendaVoted ? '안건 확정 취소하기' : '다음안건으로'}
+      </button>
+      <button
+        ref={matchRef}
+        type="button"
+        disabled={isPending}
+        className={CARD_BUTTON}
+        onClick={onMatch}
+      >
+        <img src={cardCheck} alt="" className="size-5" />
+        {room.matchVoted ? '매칭확정 취소하기' : '매칭확정 하기'}
+      </button>
+    </div>
+  )
+}
+
 /** Figma 1715:38109, the redesign of 988:19036, 988:16735, 940:19880 and 1236:14142. */
 export default function ChatRoomPage() {
+  const navigate = useNavigate()
   const { roomId } = useParams()
   const { room, update } = useChatRoom(roomId)
   const [draft, setDraft] = useState('')
   const [isPending, setIsPending] = useState(false)
   const [hasError, setHasError] = useState(false)
   const listRef = useRef<HTMLOListElement>(null)
-  const menuButtonRef = useRef<HTMLButtonElement>(null)
   const agendaRef = useRef<HTMLButtonElement>(null)
   const matchRef = useRef<HTMLButtonElement>(null)
-  const menuId = useId()
-  const [isMenuOpen, setIsMenuOpen] = useState(false)
-  const [confirming, setConfirming] = useState<'agenda' | 'match' | null>(null)
-
-  // The open menu takes focus so its two choices are next for the keyboard.
-  useEffect(() => {
-    if (isMenuOpen) agendaRef.current?.focus()
-  }, [isMenuOpen])
+  const exitRef = useRef<HTMLButtonElement>(null)
+  const [confirming, setConfirming] = useState<
+    'agenda' | 'match' | 'exit' | null
+  >(null)
 
   // Opening the room reads it. Without a server this fails quietly and the count stays.
   const openedRoomId = room?.id
@@ -207,19 +277,58 @@ export default function ChatRoomPage() {
     if (await run(() => chatApi.sendMessage(room.id, text))) setDraft('')
   }
 
-  const closeMenu = (returnFocus = false) => {
-    setIsMenuOpen(false)
-    if (returnFocus) requestAnimationFrame(() => menuButtonRef.current?.focus())
+  const choose = (action: () => Promise<ChatRoom>) => {
+    setConfirming(null)
+    void run(action)
   }
 
-  /** Runs a menu choice and folds the menu back, as Figma shows only the closed bar after. */
-  const choose = async (action: () => Promise<ChatRoom>) => {
-    setConfirming(null)
-    if (await run(action)) closeMenu(true)
+  // `나가기` ends the room with the existing end request and returns to the list. An ended
+  // room has nothing to end, so it only leaves (chat OPEN_QUESTIONS CH-2).
+  const exit = async () => {
+    if (room.status === 'ended') {
+      navigate(CHAT_ROUTES.list)
+      return
+    }
+    setIsPending(true)
+    setHasError(false)
+    try {
+      await chatApi.endRoom(room.id)
+      navigate(CHAT_ROUTES.list)
+    } catch {
+      setConfirming(null)
+      setHasError(true)
+      setIsPending(false)
+    }
   }
 
   const isEnded = room.status === 'ended'
   const canSend = draft.trim().length > 0 && !isPending && !isEnded
+  // The choices sit in the latest agenda or agreement card while the room is open.
+  const currentCardId =
+    room.status === 'active'
+      ? room.items.findLast(
+          (item) => item.kind === 'agenda' || item.kind === 'agreement',
+        )?.id
+      : undefined
+  const actions = (
+    <CardActions
+      room={room}
+      isPending={isPending}
+      agendaRef={agendaRef}
+      matchRef={matchRef}
+      // Voting asks first (Figma 1715:38389). Taking a vote back does not (CH-2).
+      onAgenda={() =>
+        room.agendaVoted
+          ? choose(() => chatApi.setAgendaVote(room.id, false))
+          : setConfirming('agenda')
+      }
+      onMatch={() =>
+        room.matchVoted
+          ? choose(() => chatApi.setMatchVote(room.id, false))
+          : setConfirming('match')
+      }
+    />
+  )
 
   return (
     <div className="flex h-[calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom))] flex-col bg-brand-cream1 md:h-auto md:min-h-0 md:flex-1">
@@ -235,17 +344,21 @@ export default function ChatRoomPage() {
           <h1 className="absolute left-1/2 max-w-[calc(100%-136px)] -translate-x-1/2 truncate text-[18px] leading-[1.5] font-bold text-brand-brown1">
             {room.partnerName}님
           </h1>
-          <Link
-            to={CHAT_ROUTES.menu(room.id)}
-            aria-label="채팅방 메뉴"
-            className={ROUND_BUTTON}
+          {/* QA 8: one icon replaces the menu screen (Figma log-out 1952:40302). The partner's
+              profile stays on their picture in the conversation. */}
+          <button
+            ref={exitRef}
+            type="button"
+            aria-label="채팅 종료하기"
+            className="relative size-7 shrink-0"
+            onClick={() => setConfirming('exit')}
           >
             <img
-              src={menuIcon}
+              src={exitIcon}
               alt=""
-              className="absolute -inset-[1.5px] size-7 max-w-none"
+              className="absolute -inset-[0.75px] size-[29.5px] max-w-none"
             />
-          </Link>
+          </button>
         </div>
       </header>
       {isChatSampleOnly && <SampleNotice className="mx-6 mt-2 shrink-0" />}
@@ -261,11 +374,18 @@ export default function ChatRoomPage() {
           const startsGroup = !previous || senderOf(previous) !== sender
           // Figma keeps 10px inside a group and 20px between groups.
           const gap = index === 0 ? '' : startsGroup ? 'mt-5' : 'mt-2.5'
+          const view = (
+            <ChatItemView
+              item={item}
+              room={room}
+              actions={item.id === currentCardId ? actions : undefined}
+            />
+          )
           if (sender === 'me' || sender === 'system') {
             return (
               <li key={item.id} className={`flex flex-col ${gap}`}>
                 {sender === 'me' && <span className="sr-only">나</span>}
-                <ChatItemView item={item} room={room} />
+                {view}
               </li>
             )
           }
@@ -282,7 +402,7 @@ export default function ChatRoomPage() {
                     {sender === 'ai' ? BOT_NAME : room.partnerName}
                   </p>
                 )}
-                <ChatItemView item={item} room={room} />
+                {view}
               </div>
             </li>
           )
@@ -290,65 +410,6 @@ export default function ChatRoomPage() {
       </ol>
 
       <footer className="flex shrink-0 flex-col gap-4 px-6 pb-[max(7px,calc(41px-env(safe-area-inset-bottom)))]">
-        {room.status === 'active' &&
-          (isMenuOpen ? (
-            // Figma 1858:18577. A channel menu that stays until a choice is made, the input is
-            // focused (designer note 1858:18842) or Escape is pressed.
-            <div
-              id={menuId}
-              role="group"
-              aria-label="조율 확정 메뉴"
-              className="flex items-center rounded-[12px] bg-brand-brown1 p-2.5"
-              onKeyDown={(event) => {
-                if (event.key === 'Escape') closeMenu(true)
-              }}
-            >
-              <button
-                ref={agendaRef}
-                type="button"
-                disabled={isPending}
-                className="h-11 min-w-0 flex-1 px-5 text-[16px] leading-[1.5] font-semibold whitespace-nowrap text-white"
-                // Voting asks first (Figma 1715:38389). Taking the vote back does not (CH-2).
-                onClick={() =>
-                  room.agendaVoted
-                    ? choose(() => chatApi.setAgendaVote(room.id, false))
-                    : setConfirming('agenda')
-                }
-              >
-                {room.agendaVoted ? '안건 확정 취소하기' : '다음안건 진행하기'}
-              </button>
-              <span
-                aria-hidden
-                className="h-[27px] w-px shrink-0 bg-white/20"
-              />
-              <button
-                ref={matchRef}
-                type="button"
-                disabled={isPending}
-                className="h-11 min-w-0 flex-1 px-5 text-[16px] leading-[1.5] font-semibold whitespace-nowrap text-white"
-                onClick={() =>
-                  room.matchVoted
-                    ? choose(() => chatApi.setMatchVote(room.id, false))
-                    : setConfirming('match')
-                }
-              >
-                {room.matchVoted ? '매칭확정 취소하기' : '매칭확정하기'}
-              </button>
-            </div>
-          ) : (
-            // Figma 1715:38109.
-            <button
-              ref={menuButtonRef}
-              type="button"
-              aria-expanded={false}
-              aria-controls={menuId}
-              className="flex h-[46px] items-center justify-center gap-1 rounded-full bg-brand-brown1 px-[15px] py-2.5 text-[16px] leading-[1.5] text-white"
-              onClick={() => setIsMenuOpen(true)}
-            >
-              조율 확정 메뉴
-              <img src={chevronUp} alt="" className="size-6" />
-            </button>
-          ))}
         {room.status === 'matched' && (
           <p
             role="status"
@@ -375,8 +436,6 @@ export default function ChatRoomPage() {
               disabled={isEnded}
               className="h-[42px] w-full rounded-[20px] border border-gray-100 bg-white pr-12 pl-3 text-[16px] leading-[1.5] text-gray-black outline-none placeholder:text-gray-500 focus-visible:border-brand-brown2 disabled:opacity-60"
               onChange={(event) => setDraft(event.target.value)}
-              // Designer note 1858:18842: touching the input hides the menu.
-              onFocus={() => closeMenu()}
             />
             <button
               type="submit"
@@ -412,6 +471,18 @@ export default function ChatRoomPage() {
           triggerRef={matchRef}
           onCancel={() => setConfirming(null)}
           onConfirm={() => choose(() => chatApi.setMatchVote(room.id, true))}
+        />
+      )}
+      {confirming === 'exit' && (
+        // Figma 1952:40268.
+        <ChoiceDialog
+          title="정말로 채팅을 종료하시겠습니까?"
+          message={'채팅을 종료하면 모든 채팅내역이\n사라지게 됩니다'}
+          cancelLabel="취소하기"
+          confirmLabel="나가기"
+          triggerRef={exitRef}
+          onCancel={() => setConfirming(null)}
+          onConfirm={exit}
         />
       )}
     </div>

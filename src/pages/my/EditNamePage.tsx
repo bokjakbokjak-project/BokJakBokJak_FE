@@ -39,7 +39,11 @@ export default function EditNamePage() {
         <ProfileHeader onBack={leave} />
         <main className="flex flex-col">
           <div className="mt-[17.79px]">
-            <ProfileAvatar priorities={data.priorities} />
+            <ProfileAvatar
+              priorities={data.priorities}
+              frame="rounded-[35.208px] bg-card-avatar"
+              strokeOutside
+            />
           </div>
           <div className="mt-[35.79px] px-6 pb-6">
             <Field label="닉네임" htmlFor="my-name">

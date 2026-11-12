@@ -85,15 +85,21 @@ describe('character parts', () => {
     ).toEqual(getPartVariants(['cleaning', 'smoking', 'wake-alarm']))
   })
 
-  it('keeps the Figma layer order and has no separate face layer', () => {
-    expect(getCharacterLayers([]).map((layer) => layer.key)).toEqual([
-      'rug',
-      'tail',
-      'leg',
-      'body',
-      'head',
-      'hand',
-      'shadow',
-    ])
+  it('draws the shadow behind the character and has no separate face layer', () => {
+    for (const priorities of [
+      [],
+      ['sleep-habit', 'cleaning', 'smoking'],
+      ['wake-alarm', 'personal-hygiene', 'cleaning'],
+    ] as const) {
+      expect(getCharacterLayers(priorities).map((layer) => layer.key)).toEqual([
+        'rug',
+        'shadow',
+        'tail',
+        'leg',
+        'body',
+        'head',
+        'hand',
+      ])
+    }
   })
 })

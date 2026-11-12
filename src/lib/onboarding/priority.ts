@@ -1,8 +1,13 @@
 import { CATEGORY_IDS, type CategoryId } from './categories'
 
-/** Decided on 2026-11-09: at least three priorities, up to all five categories. */
+/**
+ * Decided on 2026-11-09 and kept by the project owner on 2026-11-13 (QA 3): at least three
+ * priorities, up to all five categories. Only ranks 1-3 change the character.
+ */
 export const MIN_PRIORITY_COUNT = 3
 export const MAX_PRIORITY_COUNT = CATEGORY_IDS.length
+/** Ranks that change the character's head, hand and body. */
+export const CHARACTER_RANK_COUNT = 3
 
 export type Rank = 1 | 2 | 3 | 4 | 5
 

@@ -10,8 +10,8 @@ import ConfirmDialog from '../../components/my/ConfirmDialog'
 import ProfileAvatar from '../../components/my/ProfileAvatar'
 import ProfileHeader from '../../components/my/ProfileHeader'
 import { DIAMOND_BACKGROUND } from '../../lib/diamondBackground'
-import { HOME_ROUTES } from '../../lib/home/routes'
 import { getAnswerSummary } from '../../lib/answerSummary'
+import { HOME_ROUTES } from '../../lib/home/routes'
 import { FROM_MY_STATE, MY_ROUTES } from '../../lib/my/routes'
 import { useOnboarding } from '../../lib/onboarding/onboardingState'
 import { ONBOARDING_ROUTES } from '../../lib/onboarding/routes'
@@ -21,9 +21,10 @@ const MENU_ROW_CLASS =
   'flex w-full items-center justify-between bg-brand-cream1 px-4 py-[15px] text-left text-[16px] leading-[1.5] font-medium tracking-[-0.32px] text-brand-brown3'
 
 /**
- * Figma 1532:20013 (first screen) and 1532:19717 (the whole page). The content above the bottom
- * bar scrolls; the bar stays fixed. The PC frame is always 844px tall. Unlike Figma, the answer
- * summary is folded behind a third menu row (`상세 프로필 보기`), decided by the project owner.
+ * Figma 1931:27101, which replaced 1532:20013: the centered character and name, then one list
+ * of rows. The content above the bottom bar scrolls; the bar stays fixed. The PC frame is always
+ * 844px tall. Unlike Figma, `상세 프로필 보기` is the last row and folds the answer summary open
+ * on this page instead of opening another screen, decided by the project owner.
  */
 export default function MyPage() {
   const navigate = useNavigate()
@@ -59,24 +60,31 @@ export default function MyPage() {
           <ProfileHeader
             onBack={() => navigate(HOME_ROUTES.home, { replace: true })}
           />
+          {/* Figma 1931:27101: the character and name centered, then one list of three rows. */}
           <main className="flex flex-1 flex-col">
-            <div className="mt-[17.79px]">
-              <ProfileAvatar priorities={data.priorities} centered />
+            {/* Figma 1931:27101 puts the 100px frame at y=135 and the name at y=250; the white
+                stroke sits outside the frame, so the box starts 5.208px earlier. */}
+            <div className="mt-[26.792px] flex flex-col items-center gap-[9.792px]">
+              <ProfileAvatar
+                priorities={data.priorities}
+                frame="rounded-[35.208px] bg-card-avatar"
+                strokeOutside
+              />
+              <div className="flex max-w-[calc(100%-48px)] items-center gap-px">
+                <h2 className="text-center text-[20px] leading-[normal] font-bold tracking-[0.4px] break-all text-gray-500">
+                  {name}
+                </h2>
+                <Link
+                  to={MY_ROUTES.editName}
+                  state={FROM_MY_STATE}
+                  aria-label="닉네임 수정"
+                  className="relative size-6 shrink-0 before:absolute before:-inset-2"
+                >
+                  <img src={pencil} alt="" className="size-6" />
+                </Link>
+              </div>
             </div>
-            <div className="relative mx-auto mt-[17.79px] max-w-[calc(100%-96px)]">
-              <h2 className="text-center text-[20px] leading-[normal] font-bold tracking-[0.4px] break-all text-gray-500">
-                {name}
-              </h2>
-              <Link
-                to={MY_ROUTES.editName}
-                state={FROM_MY_STATE}
-                aria-label="닉네임 수정"
-                className="absolute bottom-1 left-full ml-0.5 size-4 before:absolute before:-inset-2"
-              >
-                <img src={pencil} alt="" className="size-4" />
-              </Link>
-            </div>
-            <div className="mx-6 mt-[33px] overflow-hidden rounded-[15px] border border-my-menu-border">
+            <div className="mx-6 mt-8 overflow-hidden rounded-[12px] border border-my-menu-border">
               <button
                 type="button"
                 className={MENU_ROW_CLASS}
@@ -85,6 +93,7 @@ export default function MyPage() {
                 로그아웃 하기
                 <img src={menuChevron} alt="" className="size-6" />
               </button>
+              <div aria-hidden className="mx-4 h-0.5 bg-brand-beige1" />
               <button
                 ref={retakeButtonRef}
                 type="button"
@@ -94,6 +103,7 @@ export default function MyPage() {
                 설문조사 다시 하기
                 <img src={menuChevron} alt="" className="size-6" />
               </button>
+              <div aria-hidden className="mx-4 h-0.5 bg-brand-beige1" />
               {/* Last, so opening it never moves the two rows above. */}
               <button
                 type="button"

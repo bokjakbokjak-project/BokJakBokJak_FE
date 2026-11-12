@@ -164,20 +164,20 @@ describe('my page', () => {
     ).toBeInTheDocument()
   })
 
-  it('centers the character as in Figma Profile2, only on the my page', () => {
+  it('centers the character as in Figma Profile2 on the my page and the nickname screen', () => {
+    // Profile2 draws the 104px head at x=-2 of the 100px frame, with the stroke outside it.
+    const centeredLeft = -2 - 20 * (104 / 250)
+    const stageLeft = () =>
+      parseFloat(
+        (screen.getByTestId('profile-avatar').firstElementChild as HTMLElement)
+          .style.left,
+      )
     openSeededMyPage()
-    const stage = screen.getByTestId('profile-avatar-stage')
-    const scale = 104 / 250
-
-    expect(parseFloat(stage.style.left)).toBeCloseTo(-2 - 20 * scale, 3)
-    expect(parseFloat(stage.style.width)).toBeCloseTo(302 * scale, 3)
+    expect(stageLeft()).toBeCloseTo(centeredLeft, 3)
+    expect(screen.getByTestId('profile-avatar')).toHaveClass('size-[110.416px]')
 
     fireEvent.click(link('닉네임 수정'))
-    const editStage = screen.getByTestId('profile-avatar-stage')
-    expect(parseFloat(editStage.style.left)).toBeCloseTo(
-      -5.21 - (20 * 104.951) / 250,
-      3,
-    )
+    expect(stageLeft()).toBeCloseTo(centeredLeft, 3)
   })
 
   it('shows the nickname, the character, and the real answers', () => {

@@ -74,38 +74,28 @@ describe('chat', () => {
     expect(input).toHaveValue('')
   })
 
-  it('opens the agreement menu with the two choices', async () => {
-    renderAt('/chat/seoyujeong')
+  it('puts the two choices inside the current agenda card only (QA 6)', async () => {
+    renderAt('/chat/parkjimin')
 
-    const toggle = await screen.findByRole('button', { name: '조율 확정 메뉴' })
-    expect(toggle).toHaveAttribute('aria-expanded', 'false')
-    fireEvent.click(toggle)
-
-    const menu = screen.getByRole('group', { name: '조율 확정 메뉴' })
-    const agenda = within(menu).getByRole('button', {
-      name: '다음안건 진행하기',
+    const choices = await screen.findAllByRole('button', {
+      name: '다음안건으로',
     })
-    expect(agenda).toHaveFocus()
+    expect(choices).toHaveLength(1)
     expect(
-      within(menu).getByRole('button', { name: '매칭확정하기' }),
-    ).toBeInTheDocument()
-
-    // Touching the input folds the menu (designer note 1858:18842).
-    fireEvent.focus(screen.getByRole('textbox', { name: '메시지 입력' }))
-    expect(screen.queryByRole('group')).not.toBeInTheDocument()
-
-    click('조율 확정 메뉴')
-    fireEvent.keyDown(screen.getByRole('group'), { key: 'Escape' })
-    expect(screen.queryByRole('group')).not.toBeInTheDocument()
+      screen.getAllByRole('button', { name: '매칭확정 하기' }),
+    ).toHaveLength(1)
+    // The room's latest card is the second agenda, after the agreed first one.
+    const card = choices[0].parentElement?.parentElement as HTMLElement
+    expect(card).toHaveTextContent('2. 배달 음식과 쓰레기 처리')
+    expect(
+      screen.queryByRole('button', { name: '조율 확정 메뉴' }),
+    ).not.toBeInTheDocument()
   })
 
   it('asks before voting for the next agenda', async () => {
     renderAt('/chat/seoyujeong')
 
-    fireEvent.click(
-      await screen.findByRole('button', { name: '조율 확정 메뉴' }),
-    )
-    click('다음안건 진행하기')
+    fireEvent.click(await screen.findByRole('button', { name: '다음안건으로' }))
     const dialog = screen.getByRole('dialog', {
       name: '이대로 확정하시겠습니까?',
     })
@@ -115,9 +105,8 @@ describe('chat', () => {
 
     fireEvent.click(within(dialog).getByRole('button', { name: '취소하기' }))
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    expect(screen.getByRole('group', { name: '조율 확정 메뉴' })).toBeVisible()
 
-    click('다음안건 진행하기')
+    click('다음안건으로')
     fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
@@ -125,22 +114,14 @@ describe('chat', () => {
   it('toggles the agenda vote', async () => {
     renderAt('/chat/seoyujeong')
 
-    fireEvent.click(
-      await screen.findByRole('button', { name: '조율 확정 메뉴' }),
-    )
-    click('다음안건 진행하기')
+    fireEvent.click(await screen.findByRole('button', { name: '다음안건으로' }))
     click('확정하기')
-    // The menu folds after a choice.
     fireEvent.click(
-      await screen.findByRole('button', { name: '조율 확정 메뉴' }),
+      await screen.findByRole('button', { name: '안건 확정 취소하기' }),
     )
-    click('안건 확정 취소하기')
 
-    fireEvent.click(
-      await screen.findByRole('button', { name: '조율 확정 메뉴' }),
-    )
     expect(
-      screen.getByRole('button', { name: '다음안건 진행하기' }),
+      await screen.findByRole('button', { name: '다음안건으로' }),
     ).toBeInTheDocument()
   })
 
@@ -148,9 +129,8 @@ describe('chat', () => {
     renderAt('/chat/seoyujeong')
 
     fireEvent.click(
-      await screen.findByRole('button', { name: '조율 확정 메뉴' }),
+      await screen.findByRole('button', { name: '매칭확정 하기' }),
     )
-    click('매칭확정하기')
     const dialog = screen.getByRole('dialog', {
       name: '매칭을 확정하시겠습니까?',
     })
@@ -159,11 +139,8 @@ describe('chat', () => {
     )
     fireEvent.click(within(dialog).getByRole('button', { name: '확정하기' }))
 
-    fireEvent.click(
-      await screen.findByRole('button', { name: '조율 확정 메뉴' }),
-    )
     expect(
-      screen.getByRole('button', { name: '매칭확정 취소하기' }),
+      await screen.findByRole('button', { name: '매칭확정 취소하기' }),
     ).toBeInTheDocument()
   })
 
@@ -179,27 +156,46 @@ describe('chat', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('locks an ended room', async () => {
+  it('locks an ended room and only leaves it from the exit icon', async () => {
     renderAt('/chat/jeonhyeyun')
 
     expect(await screen.findByText(/님이 방을 나갔습니다/)).toBeVisible()
     expect(screen.getByRole('textbox', { name: '메시지 입력' })).toBeDisabled()
+    expect(screen.queryByRole('button', { name: '다음안건으로' })).toBeNull()
 
-    fireEvent.click(screen.getByRole('link', { name: '채팅방 메뉴' }))
+    click('채팅 종료하기')
+    click('나가기')
     expect(
-      await screen.findByRole('button', { name: '채팅방 종료하기' }),
-    ).toBeDisabled()
+      await screen.findByText('전혜윤님과의 매칭이 종료되었어요'),
+    ).toBeVisible()
   })
 
-  it('ends a room from the menu', async () => {
-    renderAt('/chat/namyungyeong/menu')
+  it('ends a room from the exit icon after asking (QA 8)', async () => {
+    renderAt('/chat/namyungyeong')
 
-    expect(await screen.findByText('님과의 채팅')).toBeInTheDocument()
-    click('채팅방 종료하기')
+    fireEvent.click(
+      await screen.findByRole('button', { name: '채팅 종료하기' }),
+    )
+    const dialog = screen.getByRole('dialog', {
+      name: '정말로 채팅을 종료하시겠습니까?',
+    })
+    fireEvent.click(within(dialog).getByRole('button', { name: '취소하기' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
 
+    click('채팅 종료하기')
+    click('나가기')
     expect(
       await screen.findByText('남윤경님과의 매칭이 종료되었어요'),
     ).toBeVisible()
+  })
+
+  it('has no menu screen any more and sends its old address to the room', async () => {
+    renderAt('/chat/namyungyeong/menu')
+
+    expect(
+      await screen.findByRole('heading', { name: '남윤경님' }),
+    ).toBeInTheDocument()
+    expect(screen.queryByText('대화방에서 나가기')).not.toBeInTheDocument()
   })
 
   it('opens the partner profile and returns to the room', async () => {
@@ -238,11 +234,8 @@ describe('chat', () => {
   it('shows the waiting vote when I already asked for the next agenda', async () => {
     renderAt('/chat/iseoyun')
 
-    fireEvent.click(
-      await screen.findByRole('button', { name: '조율 확정 메뉴' }),
-    )
     expect(
-      screen.getByRole('button', { name: '안건 확정 취소하기' }),
+      await screen.findByRole('button', { name: '안건 확정 취소하기' }),
     ).toBeInTheDocument()
   })
 
@@ -294,6 +287,31 @@ describe('chat', () => {
     expect(within(card).getAllByRole('listitem')).toHaveLength(2)
     expect(screen.getAllByText('AI 챗봇')[0]).toBeVisible()
     expect(screen.getByText('미정')).toBeInTheDocument()
+  })
+
+  it('wraps long messages inside the 258px text width (QA 7)', async () => {
+    renderAt('/chat/seoyujeong')
+    const long = 'https://bok-jak-bok-jak-fe.vercel.app/' + 'a'.repeat(120)
+
+    fireEvent.change(
+      await screen.findByRole('textbox', { name: '메시지 입력' }),
+      { target: { value: long } },
+    )
+    click('메시지 보내기')
+
+    const bubble = await screen.findByText(long)
+    expect(bubble).toHaveClass(
+      'max-w-[min(292px,100%)]',
+      '[overflow-wrap:anywhere]',
+      'whitespace-pre-wrap',
+    )
+    const partner = screen.getByText(
+      '저도 새벽 3시전에는 방 불을 껐으면 합니다!',
+    )
+    expect(partner).toHaveClass(
+      'max-w-[min(284px,100%)]',
+      '[overflow-wrap:anywhere]',
+    )
   })
 
   it('sends an unknown room back to the list', async () => {

@@ -9,8 +9,11 @@ export type ProfileCardData = {
   name: string
   age: number | null
   department: string
-  /** Left out on the user's own profile, which has no match rate (Figma 1377:35850). */
-  matchRate?: number
+  /**
+   * Left out on the user's own profile, which has no match rate (Figma 1377:35850). Null shows
+   * `??` on a shared result (Figma 1952:40101).
+   */
+  matchRate?: number | null
   /** Drawn in the 100px slot. Its image may spill over the slot for its outline. */
   avatar: ReactNode
 }
@@ -23,13 +26,15 @@ export default function ProfileCard({ profile }: { profile: ProfileCardData }) {
   const { name, age, department, matchRate, avatar } = profile
   const details = [age === null ? null : `${age}세`, department.trim() || null]
   return (
-    <div className="relative h-[200px] overflow-hidden rounded-[12px] border-[1.5px] border-roommate-pink bg-brand-cream1">
+    // QA 14: the cream fill stays inside the border (bg-clip-padding), and the pink band takes
+    // the inner corner radius from the clipping, so no cream shows at the rounded corners.
+    <div className="relative h-[200px] overflow-hidden rounded-[12px] border-[1.5px] border-roommate-pink bg-brand-cream1 bg-clip-padding">
       <img
         src={cardOrnament}
         alt=""
         className="absolute top-[69.25px] left-[151.25px] h-[91px] w-[160px] max-w-none"
       />
-      <div className="absolute inset-x-0 top-0 h-[43.5px] rounded-t-[12px] bg-roommate-pink" />
+      <div className="absolute inset-x-0 top-0 h-[43.5px] bg-roommate-pink" />
       <div className="absolute top-[14.25px] left-[24.25px] flex items-center gap-2.5">
         <p className="text-[12px] leading-[1.5] font-semibold text-brand-brown3">
           ROOMMATE CARD

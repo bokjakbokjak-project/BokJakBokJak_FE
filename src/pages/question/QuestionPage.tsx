@@ -147,11 +147,21 @@ function SituationScreen({
       className={`absolute inset-0 z-20 isolate overflow-hidden bg-question-surface ${DISSOLVE_CLASS} ${isVisible ? 'visible opacity-100' : 'invisible opacity-0'}`}
     >
       {topic.situationScene ? (
-        <img
-          src={topic.situationScene.src}
-          alt=""
-          className="absolute inset-0 -z-10 size-full object-cover object-bottom"
-        />
+        <>
+          <img
+            src={topic.situationScene.src}
+            alt=""
+            className="absolute inset-0 -z-10 size-full object-cover object-bottom"
+          />
+          {/* QA 4: the light STEP frames (1528:26236, 1377:28501) fade the scene into the page
+              color behind the text, and the exported image does not include it. */}
+          {tone === 'light' && (
+            <div
+              data-testid="situation-bottom-fade"
+              className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-[292px] bg-[linear-gradient(to_top,var(--color-question-surface)_70%,rgba(255,255,255,0)_100%)]"
+            />
+          )}
+        </>
       ) : (
         <>
           <img

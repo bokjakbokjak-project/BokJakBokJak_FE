@@ -344,6 +344,11 @@ describe('onboarding flow', () => {
     expect(layerVariant('body')).toBe('cleaning')
     expect(screen.getByAltText('3순위')).toBeInTheDocument()
     expect(finish).toBeEnabled()
+
+    click(/개인청결/)
+    expect(finish).toBeEnabled()
+    click(/흡연유무/)
+    expect(finish).toBeEnabled()
   })
 
   it('allows ranks 4 and 5 without changing the character', () => {
@@ -376,7 +381,9 @@ describe('onboarding flow', () => {
       within(chip(/개인청결/)).getByRole('img', { name: '3순위' }),
     ).toBeInTheDocument()
     expect(layerVariant('body')).toBe('personal-hygiene')
+    expect(finish).toBeEnabled()
 
+    click(/잠버릇/)
     click('완료하기')
     const items = screen.getAllByRole('listitem')
     expect(items.map((item) => item.textContent?.replace(/\d/g, ''))).toEqual([
@@ -384,6 +391,7 @@ describe('onboarding flow', () => {
       '청소,청결',
       '개인청결',
       '흡연유무',
+      '잠버릇',
     ])
     items.forEach((item, index) => {
       expect(
@@ -415,13 +423,23 @@ describe('onboarding flow', () => {
     click(/잠버릇/)
     click(/흡연유무/)
     click(/청소,청결/)
+    click(/기상알람/)
+    click(/개인청결/)
     click('완료하기')
 
     expect(
       screen.getByRole('heading', { name: /등록완료!/ }),
     ).toBeInTheDocument()
-    const chips = screen.getAllByRole('listitem').map((el) => el.textContent)
-    expect(chips).toEqual(['잠버릇', '흡연유무', '청소,청결'])
+    const chips = screen
+      .getAllByRole('listitem')
+      .map((el) => el.textContent?.replace(/\d/g, ''))
+    expect(chips).toEqual([
+      '잠버릇',
+      '흡연유무',
+      '청소,청결',
+      '기상알람',
+      '개인청결',
+    ])
     expect(layerVariant('head')).toBe('sleep-habit')
     expect(layerVariant('hand')).toBe('smoking')
     expect(layerVariant('body')).toBe('cleaning')
@@ -466,6 +484,8 @@ describe('onboarding flow', () => {
     click(/개인청결/)
     click(/기상알람/)
     click(/잠버릇/)
+    click(/청소,청결/)
+    click(/흡연유무/)
     click('완료하기')
     expectHeading(/등록완료!/)
     expect(layerVariant('head')).toBe('personal-hygiene')
@@ -487,7 +507,13 @@ describe('onboarding step guard', () => {
     dormitory: '기숙사',
     roomType: 'A',
     roomCapacity: 2,
-    priorities: ['sleep-habit', 'cleaning', 'smoking'],
+    priorities: [
+      'sleep-habit',
+      'cleaning',
+      'smoking',
+      'wake-alarm',
+      'personal-hygiene',
+    ],
   }
 
   it.each([
@@ -668,6 +694,8 @@ describe('survey connection', () => {
     click(/잠버릇/)
     click(/기상알람/)
     click(/청소,청결/)
+    click(/개인청결/)
+    click(/흡연유무/)
     click('완료하기')
     expectHeading(/등록완료!/)
 
@@ -705,6 +733,8 @@ describe('bottom button', () => {
     click(/잠버릇/)
     click(/기상알람/)
     click(/청소,청결/)
+    click(/개인청결/)
+    click(/흡연유무/)
     click('완료하기')
     expectInFooter('시작하기!')
   })

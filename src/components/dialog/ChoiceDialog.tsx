@@ -1,13 +1,17 @@
 import { useId, useRef, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
+import closeIcon from '../../assets/share/close-x.svg'
 import { useModalLayer } from '../../lib/onboarding/useModalLayer'
 
 type ChoiceDialogProps = {
+  /** Line breaks are kept. */
   title: string
   /** Line breaks are kept. */
-  message: string
-  /** Left, light button. Escape and a click outside do the same. */
-  cancelLabel: string
+  message?: string
+  /** Left, light button. Without it the brown button takes the whole row (Figma 1377:36531). */
+  cancelLabel?: string
+  /** Adds the round X of Figma 1952:40103. It, Escape and a click outside call `onCancel`. */
+  closeLabel?: string
   /** Right, brown button. */
   confirmLabel: string
   triggerRef: RefObject<HTMLElement | null>
@@ -18,7 +22,7 @@ type ChoiceDialogProps = {
 }
 
 const BUTTON_CLASS =
-  'flex h-[42px] w-[116px] shrink-0 items-center justify-center rounded-full text-[16px] leading-[1.5] font-semibold'
+  'flex h-[42px] shrink-0 items-center justify-center rounded-full text-[16px] leading-[1.5] font-semibold'
 
 /**
  * The 285×196 cream dialog with two round buttons on the 0.75 dimmed layer, shared by the chat
@@ -29,6 +33,7 @@ export default function ChoiceDialog({
   title,
   message,
   cancelLabel,
+  closeLabel,
   confirmLabel,
   triggerRef,
   onCancel,
@@ -54,39 +59,53 @@ export default function ChoiceDialog({
           role="dialog"
           aria-modal="true"
           aria-labelledby={titleId}
-          aria-describedby={messageId}
+          aria-describedby={message ? messageId : undefined}
           tabIndex={-1}
-          className={`flex h-[196px] w-[285px] max-w-[calc(100%-32px)] flex-col gap-9 rounded-[12px] border-2 border-brand-brown3 bg-brand-cream1 px-[23px] pt-[25px] pb-[18px] shadow-[0_4px_25px_0_rgba(0,0,0,0.25)] outline-none ${offsetClass}`}
+          className={`relative flex h-[196px] w-[285px] max-w-[calc(100%-32px)] flex-col gap-9 rounded-[12px] border-2 border-brand-brown3 bg-brand-cream1 px-[23px] pt-[25px] pb-[18px] shadow-[0_4px_25px_0_rgba(0,0,0,0.25)] outline-none ${offsetClass}`}
           onClick={(event) => event.stopPropagation()}
           onKeyDown={(event) => {
             if (event.key === 'Escape') onCancel()
           }}
         >
+          {closeLabel && (
+            <button
+              type="button"
+              aria-label={closeLabel}
+              className="absolute top-[14px] right-[14px] size-7 rounded-full border-[1.5px] border-brand-brown3 bg-brand-beige1 p-[0.36px]"
+              onClick={onCancel}
+            >
+              <img src={closeIcon} alt="" className="size-6" />
+            </button>
+          )}
           <div className="flex flex-col gap-0.5 leading-[1.5]">
             <h2
               id={titleId}
-              className="text-[18px] font-semibold tracking-[-0.36px] text-brand-brown1"
+              className={`text-[18px] font-semibold tracking-[-0.36px] break-keep whitespace-pre-line text-brand-brown1 ${closeLabel ? 'pr-8' : ''}`}
             >
               {title}
             </h2>
-            <p
-              id={messageId}
-              className="text-[14px] tracking-[-0.28px] whitespace-pre-line text-gray-400"
-            >
-              {message}
-            </p>
+            {message && (
+              <p
+                id={messageId}
+                className="text-[14px] tracking-[-0.28px] whitespace-pre-line text-gray-400"
+              >
+                {message}
+              </p>
+            )}
           </div>
-          <div className="flex gap-1.5">
+          <div className="mt-auto flex gap-1.5">
+            {cancelLabel && (
+              <button
+                type="button"
+                className={`${BUTTON_CLASS} w-[116px] border border-brand-cream3 bg-brand-cream2 text-brand-brown1`}
+                onClick={onCancel}
+              >
+                {cancelLabel}
+              </button>
+            )}
             <button
               type="button"
-              className={`${BUTTON_CLASS} border border-brand-cream3 bg-brand-cream2 text-brand-brown1`}
-              onClick={onCancel}
-            >
-              {cancelLabel}
-            </button>
-            <button
-              type="button"
-              className={`${BUTTON_CLASS} bg-brand-brown1 text-white`}
+              className={`${BUTTON_CLASS} ${cancelLabel ? 'w-[116px]' : 'w-full'} bg-brand-brown1 text-white`}
               onClick={onConfirm}
             >
               {confirmLabel}

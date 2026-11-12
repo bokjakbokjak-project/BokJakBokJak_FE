@@ -1,6 +1,3 @@
-import chatAvatarMe from '../../assets/chat/chat-avatar-me.png'
-import chatAvatarSleepMask from '../../assets/chat/chat-avatar-sleep-mask.png'
-import chatAvatarYellowHat from '../../assets/chat/chat-avatar-yellow-hat.png'
 import chatTileAi from '../../assets/chat/chat-tile-ai.png'
 import chatTilePartner from '../../assets/chat/chat-tile-partner.png'
 import listAvatarBlueCap from '../../assets/chat/list-avatar-blue-cap.png'
@@ -18,16 +15,6 @@ export const LIST_AVATARS: Record<ChatAvatar, string> = {
   'sleep-mask-white': listAvatarSleepMaskWhite,
   'yellow-hat': listAvatarYellowHat,
 }
-
-/** 52px tiles in the room. The blue cap is mine, so partners never use it there. */
-export const CHAT_AVATARS: Record<ChatAvatar, string> = {
-  'blue-cap': chatAvatarMe,
-  'sleep-mask': chatAvatarSleepMask,
-  'sleep-mask-white': chatAvatarSleepMask,
-  'yellow-hat': chatAvatarYellowHat,
-}
-
-export const MY_CHAT_AVATAR = chatAvatarMe
 
 /**
  * 50px framed tiles of the room redesign (Figma 1715:38122, 1715:38143). Figma draws the same
