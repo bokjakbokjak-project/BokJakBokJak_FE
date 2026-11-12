@@ -38,7 +38,7 @@ export default function RoommateCard({
           />
         </span>
         <div className="flex min-w-0 flex-col gap-1 text-gray-500">
-          {/* QA 5: the name is 16px on every screen size. */}
+          {/* 16px on phones and PC alike (designer note, Figma 1686:16361; QA 5). */}
           <p className="flex min-w-0 items-center gap-0.5 leading-[normal] font-bold whitespace-nowrap">
             <span className="truncate text-[16px] tracking-[0.32px]">
               {name}

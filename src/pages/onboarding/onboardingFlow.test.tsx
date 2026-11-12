@@ -302,6 +302,28 @@ describe('onboarding flow', () => {
     expect(screen.getByRole('button', { name: '2006' })).toBeInTheDocument()
   })
 
+  // jsdom has no layout. The browser check measured both buttons at the same place; this keeps
+  // the sheet on the rule that puts it there (Figma 1041:27362).
+  it('places 선택하기 where the step puts its bottom button', () => {
+    renderProfileStep()
+    const footer = screen.getByTestId('onboarding-footer')
+
+    click('출생년도를 선택해주세요')
+    const sheet = screen.getByRole('dialog', { name: '연도 선택' })
+    const select = within(sheet).getByRole('button', { name: '선택하기' })
+
+    expect(sheet).toHaveClass('bottom-0', 'h-[407px]')
+    expect(select.parentElement).toHaveClass(
+      'inset-x-6',
+      'bottom-[max(44px,env(safe-area-inset-bottom))]',
+    )
+    expect(footer).toHaveClass(
+      'px-6',
+      'pb-[max(0px,calc(44px-env(safe-area-inset-bottom)))]',
+    )
+    expect(select).toHaveClass('h-[65px]', 'w-full')
+  })
+
   it('updates ranks and the character on every selection', () => {
     renderPriorityStep()
     const finish = screen.getByRole('button', { name: '완료하기' })
@@ -824,6 +846,21 @@ describe('mission notice', () => {
 
     pass(1)
     expect(mission()).not.toBeInTheDocument()
+  })
+
+  it('asks to rank all five habits (Figma 1041:30715)', () => {
+    renderPriorityStep()
+
+    expect(mission()).toHaveTextContent(
+      '내가 가장 중요하게 생각하는생활습관 5개의 순위를 매겨주세요!선택한 우선순위에 따라 내 캐릭터 외형이 바뀌어요!',
+    )
+    expect(mission()).not.toHaveTextContent('생활습관을 선택해주세요')
+    expect(
+      screen.getByRole('heading', {
+        level: 1,
+        name: '내가 가장 중요하게 생각하는 생활습관 5개의 순위를 매겨주세요',
+      }),
+    ).toBeInTheDocument()
   })
 
   it('shows again from the info button, for the same time', () => {
