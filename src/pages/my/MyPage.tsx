@@ -2,32 +2,30 @@ import { useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import menuChevron from '../../assets/my/menu-chevron.svg'
 import pencil from '../../assets/my/pencil.svg'
-import panelDecor from '../../assets/onboarding/panel-decor.svg'
 import BottomNav from '../../components/BottomNav/BottomNav'
 import { usePendingNotice } from '../../components/BottomNav/usePendingNotice'
-import AnswerCard from '../../components/AnswerCard/AnswerCard'
 import ConfirmDialog from '../../components/my/ConfirmDialog'
 import ProfileAvatar from '../../components/my/ProfileAvatar'
 import ProfileHeader from '../../components/my/ProfileHeader'
 import { DIAMOND_BACKGROUND } from '../../lib/diamondBackground'
 import { HOME_ROUTES } from '../../lib/home/routes'
-import { getAnswerSummary } from '../../lib/answerSummary'
 import { FROM_MY_STATE, MY_ROUTES } from '../../lib/my/routes'
 import { useOnboarding } from '../../lib/onboarding/onboardingState'
 import { ONBOARDING_ROUTES } from '../../lib/onboarding/routes'
+import { QUESTION_ROUTES } from '../question/questionData'
 import { useQuestion } from '../question/questionState'
 
 const MENU_ROW_CLASS =
   'flex w-full items-center justify-between bg-brand-cream1 px-4 py-[15px] text-left text-[16px] leading-[1.5] font-medium tracking-[-0.32px] text-brand-brown3'
 
 /**
- * Figma 1532:20013 (first screen) and 1532:19717 (the whole page). The content above the bottom
- * bar scrolls; the bar stays fixed. The PC frame is always 844px tall.
+ * Figma 1931:27101, which replaced 1532:20013. The content above the bottom bar scrolls; the bar
+ * stays fixed. The PC frame is always 844px tall.
  */
 export default function MyPage() {
   const navigate = useNavigate()
   const { data, update } = useOnboarding()
-  const { answers, reset } = useQuestion()
+  const { reset } = useQuestion()
   const notice = usePendingNotice()
   const [isConfirming, setIsConfirming] = useState(false)
   const retakeButtonRef = useRef<HTMLButtonElement>(null)
@@ -55,32 +53,35 @@ export default function MyPage() {
           <ProfileHeader
             onBack={() => navigate(HOME_ROUTES.home, { replace: true })}
           />
-          <main className="flex flex-1 flex-col">
-            <div className="mt-[17.79px]">
+          {/* Figma 1931:27101: the character and name centered, then one list of three rows. The
+              answers moved to the detail profile behind the first row (QA 10). */}
+          <main className="flex flex-1 flex-col pb-10">
+            <div className="mt-8 flex flex-col items-center gap-[15px]">
               <ProfileAvatar priorities={data.priorities} />
+              <div className="flex max-w-[calc(100%-48px)] items-center gap-px">
+                <h2 className="text-center text-[20px] leading-[normal] font-bold tracking-[0.4px] break-all text-gray-500">
+                  {name}
+                </h2>
+                <Link
+                  to={MY_ROUTES.editName}
+                  state={FROM_MY_STATE}
+                  aria-label="닉네임 수정"
+                  className="relative size-6 shrink-0 before:absolute before:-inset-2"
+                >
+                  <img src={pencil} alt="" className="size-6" />
+                </Link>
+              </div>
             </div>
-            <div className="relative mx-auto mt-[17.79px] max-w-[calc(100%-96px)]">
-              <h2 className="text-center text-[20px] leading-[normal] font-bold tracking-[0.4px] break-all text-gray-500">
-                {name}
-              </h2>
+            <div className="mx-6 mt-8 overflow-hidden rounded-[12px] border border-my-menu-border">
               <Link
-                to={MY_ROUTES.editName}
+                to={QUESTION_ROUTES.profile}
                 state={FROM_MY_STATE}
-                aria-label="닉네임 수정"
-                className="absolute bottom-1 left-full ml-0.5 size-4 before:absolute before:-inset-2"
-              >
-                <img src={pencil} alt="" className="size-4" />
-              </Link>
-            </div>
-            <div className="mx-6 mt-[33px] overflow-hidden rounded-[15px] border border-my-menu-border">
-              <button
-                type="button"
                 className={MENU_ROW_CLASS}
-                onClick={notice.show}
               >
-                로그아웃 하기
+                상세 프로필 보기
                 <img src={menuChevron} alt="" className="size-6" />
-              </button>
+              </Link>
+              <div aria-hidden className="mx-4 h-0.5 bg-brand-beige1" />
               <button
                 ref={retakeButtonRef}
                 type="button"
@@ -90,30 +91,16 @@ export default function MyPage() {
                 설문조사 다시 하기
                 <img src={menuChevron} alt="" className="size-6" />
               </button>
+              <div aria-hidden className="mx-4 h-0.5 bg-brand-beige1" />
+              <button
+                type="button"
+                className={MENU_ROW_CLASS}
+                onClick={notice.show}
+              >
+                로그아웃 하기
+                <img src={menuChevron} alt="" className="size-6" />
+              </button>
             </div>
-            <section
-              aria-labelledby="answer-summary-title"
-              className="relative mt-[33px] flex-1 rounded-t-[35px] bg-brand-cream1 shadow-[0_0_0_2px_var(--color-brand-brown2)]"
-            >
-              <img
-                src={panelDecor}
-                alt=""
-                className="absolute top-[15px] left-1/2 h-[27px] w-[116.003px] max-w-none -translate-x-1/2"
-              />
-              <div className="mx-auto w-full max-w-[390px] px-6 pt-[57px] pb-[44px]">
-                <h2
-                  id="answer-summary-title"
-                  className="text-center text-[20px] leading-[1.5] font-bold tracking-[-0.4px] text-gray-500"
-                >
-                  상세 답변 요약
-                </h2>
-                <div className="mt-[15px] flex flex-col gap-3">
-                  {getAnswerSummary(answers).map((card) => (
-                    <AnswerCard key={card.category} card={card} />
-                  ))}
-                </div>
-              </div>
-            </section>
           </main>
         </div>
       </div>

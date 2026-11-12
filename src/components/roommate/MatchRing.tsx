@@ -45,7 +45,8 @@ function ListRing({ rate }: { rate: number }) {
 }
 
 type MatchRingProps = {
-  rate: number
+  /** Null shows `??`, for a shared result whose reader has no match rate (Figma 1952:40101). */
+  rate: number | null
   variant: 'list' | 'analysis'
   className: string
 }
@@ -55,7 +56,7 @@ export default function MatchRing({
   variant,
   className,
 }: MatchRingProps) {
-  if (variant === 'list') {
+  if (variant === 'list' && rate !== null) {
     return (
       <div className={`absolute size-[55px] ${className}`}>
         <ListRing rate={rate} />
@@ -85,7 +86,7 @@ export default function MatchRing({
         className="absolute inset-[-5.8%] block max-w-none"
       />
       <p className="absolute top-[12px] left-[12px] text-[24px] leading-[1.5] font-bold tracking-[0.44px] whitespace-nowrap text-gray-500">
-        {rate}
+        {rate ?? '??'}
         <span className="text-[16px]">%</span>
       </p>
       <p className="absolute top-[43.23px] left-[16px] text-[12.329px] leading-[normal] whitespace-pre text-gray-300">

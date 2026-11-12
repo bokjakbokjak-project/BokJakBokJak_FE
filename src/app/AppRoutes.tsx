@@ -1,6 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router'
 import MobileLayout from '../components/MobileLayout/MobileLayout'
 import { CHAT_ROUTE_PATTERNS } from '../lib/chat/routes'
+import { SHARE_ROUTE } from '../lib/share/profileShare'
 import DemoNotice from '../components/onboarding/DemoNotice'
 import OnboardingStepGuard from '../components/onboarding/OnboardingStepGuard'
 import OnboardingSurface from '../components/onboarding/OnboardingSurface'
@@ -32,6 +33,7 @@ import { QUESTION_ROUTES } from '../pages/question/questionData'
 import RoommateProvider from '../lib/roommate/RoommateProvider'
 import { ROOMMATE_ROUTES } from '../lib/roommate/routes'
 import DetailProfilePage from '../pages/roommate/DetailProfilePage'
+import SharedProfilePage from '../pages/share/SharedProfilePage'
 import MatchAnalysisPage from '../pages/roommate/MatchAnalysisPage'
 import RoommateListPage from '../pages/roommate/RoommateListPage'
 
@@ -157,6 +159,8 @@ export default function AppRoutes() {
               </Route>
             </Route>
           </Route>
+          {/* Opened by anyone with a share link, so it needs none of the session state. */}
+          <Route path={SHARE_ROUTE} element={<SharedProfilePage />} />
           <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>

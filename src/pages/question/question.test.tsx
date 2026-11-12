@@ -224,15 +224,27 @@ describe('situational survey', () => {
     expect(screen.queryByTestId('roommate-scroll')).not.toBeInTheDocument()
   })
 
-  it('opens the share sheet and closes it with Escape', () => {
+  it('copies the share link and confirms it (QA 11)', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText },
+      configurable: true,
+    })
     renderAt('/question')
     answerAll()
 
-    fireEvent.click(screen.getByRole('button', { name: '공유하기' }))
-    const sheet = screen.getByRole('dialog', { name: '공유하기' })
-    expect(sheet).toHaveFocus()
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: '공유하기' }))
+    })
 
-    fireEvent.keyDown(sheet, { key: 'Escape' })
+    expect(writeText).toHaveBeenCalledWith(
+      expect.stringMatching(/^http:\/\/localhost(:\d+)?\/share#.+/),
+    )
+    const dialog = screen.getByRole('dialog', { name: '링크 복사 완료!' })
+    expect(dialog).toHaveAccessibleDescription(
+      /^링크를 공유하고 다른 룸메이트들과\s*설문 결과를 비교해보세요$/,
+    )
+    fireEvent.click(within(dialog).getByRole('button', { name: '확인' }))
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 })

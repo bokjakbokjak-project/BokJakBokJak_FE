@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router'
 import share from '../../assets/question/share-small.svg'
 import AnswerCard from '../../components/AnswerCard/AnswerCard'
+import ChoiceDialog from '../../components/dialog/ChoiceDialog'
 import ProfileAvatar from '../../components/my/ProfileAvatar'
 import ProfileHero from '../../components/roommate/ProfileHero'
 import RoommateHeader from '../../components/roommate/RoommateHeader'
@@ -9,42 +10,11 @@ import RoommatePage from '../../components/roommate/RoommatePage'
 import RoommateSheet from '../../components/roommate/RoommateSheet'
 import { getAnswerSummary } from '../../lib/answerSummary'
 import { HOME_ROUTES, isFromHome } from '../../lib/home/routes'
+import { isFromMy, MY_ROUTES } from '../../lib/my/routes'
 import { useOnboarding } from '../../lib/onboarding/onboardingState'
+import { createShareUrl } from '../../lib/share/profileShare'
 import { QUESTION_COUNT, QUESTION_ROUTES } from './questionData'
 import { useQuestion } from './questionState'
-
-/** Figma 988:15484 and 988:15789. The sheet is a placeholder until share options are decided. */
-function ShareSheet({ onClose }: { onClose: () => void }) {
-  const sheetRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    sheetRef.current?.focus()
-  }, [])
-
-  return (
-    <div
-      className="fixed inset-x-0 top-[100px] bottom-0 z-30 flex justify-center"
-      onClick={onClose}
-    >
-      <div className="relative w-full overflow-hidden bg-white/40 backdrop-blur-[4px]">
-        <div
-          ref={sheetRef}
-          role="dialog"
-          aria-modal="true"
-          aria-label="공유하기"
-          tabIndex={-1}
-          className="absolute inset-x-0 bottom-0 h-[359px] bg-white pt-[127px] text-center text-[16px] text-gray-black outline-none"
-          onClick={(event) => event.stopPropagation()}
-          onKeyDown={(event) => {
-            if (event.key === 'Escape') onClose()
-          }}
-        >
-          공유하기
-        </div>
-      </div>
-    </div>
-  )
-}
 
 /**
  * Age from the birth year chosen in onboarding, counted as this year minus the birth year. The
@@ -55,9 +25,8 @@ function ageOf(birthYear: number | null) {
 }
 
 /**
- * The user's own character in the 100px card slot. `ProfileAvatar` draws its white outline inside
- * a 110.4px box, so it starts 5.2px outside the slot, and shrinks with the 84px slot on narrow
- * screens.
+ * The user's own character in the 100px card slot, drawn like the my page (QA 10). It shrinks
+ * with the 84px slot on narrow screens.
  */
 function MyCardAvatar({
   priorities,
@@ -65,7 +34,7 @@ function MyCardAvatar({
   priorities: Parameters<typeof ProfileAvatar>[0]['priorities']
 }) {
   return (
-    <span className="absolute -top-[5.208px] -left-[5.208px] origin-[5.208px_5.208px] scale-[0.84] min-[390px]:scale-100">
+    <span className="absolute inset-0 origin-top-left scale-[0.84] min-[390px]:scale-100">
       <ProfileAvatar
         priorities={priorities}
         frame="rounded-[12.5px] bg-card-avatar"
@@ -84,10 +53,37 @@ export default function QuestionProfilePage() {
   const location = useLocation()
   const { answers } = useQuestion()
   const { data } = useOnboarding()
-  const [isSharing, setIsSharing] = useState(false)
+  const shareButtonRef = useRef<HTMLButtonElement>(null)
+  // `copied` is Figma 1377:36531. `failed` is not in Figma: the link is shown to copy by hand.
+  const [shareState, setShareState] = useState<
+    | { status: 'idle' }
+    | { status: 'copied' }
+    | { status: 'failed'; url: string }
+  >({ status: 'idle' })
 
   if (Object.keys(answers).length < QUESTION_COUNT) {
     return <Navigate to={QUESTION_ROUTES.survey} replace />
+  }
+
+  const name = data.name.trim() || '사용자'
+
+  // QA 11: sharing copies the link to the shared result (QA 15) and confirms it.
+  const copyShareLink = async () => {
+    const url = createShareUrl(
+      {
+        name,
+        department: data.department,
+        priorities: data.priorities,
+        answers,
+      },
+      window.location.origin,
+    )
+    try {
+      await navigator.clipboard.writeText(url)
+      setShareState({ status: 'copied' })
+    } catch {
+      setShareState({ status: 'failed', url })
+    }
   }
 
   return (
@@ -108,16 +104,20 @@ export default function QuestionProfilePage() {
     >
       <RoommateHeader
         backTo={
-          isFromHome(location.state) ? HOME_ROUTES.home : QUESTION_ROUTES.survey
+          isFromHome(location.state)
+            ? HOME_ROUTES.home
+            : isFromMy(location.state)
+              ? MY_ROUTES.my
+              : QUESTION_ROUTES.survey
         }
         title="상세 프로필"
         action={
           <button
+            ref={shareButtonRef}
             type="button"
             aria-label="공유하기"
-            aria-expanded={isSharing}
             className="size-7 rounded-full border-[1.5px] border-transparent transition-colors hover:border-brand-brown3 hover:bg-brand-beige1 focus-visible:border-brand-brown3 focus-visible:bg-brand-beige1"
-            onClick={() => setIsSharing((current) => !current)}
+            onClick={copyShareLink}
           >
             <img src={share} alt="" className="-m-[1.5px] block size-7" />
           </button>
@@ -127,10 +127,10 @@ export default function QuestionProfilePage() {
         data-testid="result-scroll"
         className="scrollbar-none flex min-h-0 flex-1 flex-col overflow-y-auto"
       >
+        {/* QA 12: the card sits where the roommate analysis has it. */}
         <ProfileHero
-          offset={9}
           profile={{
-            name: data.name.trim() || '사용자',
+            name,
             age: ageOf(data.birthYear),
             department: data.department,
             avatar: <MyCardAvatar priorities={data.priorities} />,
@@ -152,7 +152,28 @@ export default function QuestionProfilePage() {
           </div>
         </RoommateSheet>
       </div>
-      {isSharing && <ShareSheet onClose={() => setIsSharing(false)} />}
+      {shareState.status === 'copied' && (
+        <ChoiceDialog
+          title="링크 복사 완료!"
+          message={
+            '링크를 공유하고 다른 룸메이트들과\n설문 결과를 비교해보세요'
+          }
+          confirmLabel="확인"
+          triggerRef={shareButtonRef}
+          onCancel={() => setShareState({ status: 'idle' })}
+          onConfirm={() => setShareState({ status: 'idle' })}
+        />
+      )}
+      {shareState.status === 'failed' && (
+        <ChoiceDialog
+          title="링크를 복사하지 못했어요"
+          message={shareState.url}
+          confirmLabel="확인"
+          triggerRef={shareButtonRef}
+          onCancel={() => setShareState({ status: 'idle' })}
+          onConfirm={() => setShareState({ status: 'idle' })}
+        />
+      )}
     </RoommatePage>
   )
 }
