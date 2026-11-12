@@ -17,7 +17,18 @@ function renderAt(path: string) {
 const nav = () => screen.getByRole('navigation', { name: '하단 메뉴' })
 const button = (name: string | RegExp) => screen.getByRole('button', { name })
 const link = (name: string | RegExp) => screen.getByRole('link', { name })
-const card = (title: string) => screen.getByRole('region', { name: title })
+/** The answer summary starts folded; opens it once when a test reads a card. */
+function openSummary() {
+  const toggle = screen.queryByRole('button', {
+    name: '상세 프로필 보기',
+    expanded: false,
+  })
+  if (toggle) fireEvent.click(toggle)
+}
+const card = (title: string) => {
+  openSummary()
+  return screen.getByRole('region', { name: title })
+}
 const layer = (part: string) =>
   screen
     .getByRole('img', { name: /캐릭터/ })
@@ -28,11 +39,6 @@ const layer = (part: string) =>
 function openSeededMyPage() {
   renderAt('/dev/onboarding')
   fireEvent.click(button('/my (샘플 설문 답변)'))
-}
-
-/** The answers moved from the my page to the detail profile behind its first row (QA 10). */
-function openDetailProfile() {
-  fireEvent.click(link('상세 프로필 보기'))
 }
 
 const selfOption = (topic: number, option: number) =>
@@ -99,7 +105,82 @@ describe('my page', () => {
     )
   })
 
-  it('shows the nickname, the character, and the three rows of Figma 1931:27101', () => {
+  it('folds the answer summary behind the last menu row', () => {
+    openSeededMyPage()
+    const toggle = button('상세 프로필 보기')
+    const summaryId = toggle.getAttribute('aria-controls') as string
+    const summary = document.getElementById(summaryId) as HTMLElement
+
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    expect(summary).not.toBeVisible()
+    expect(screen.queryByRole('region', { name: '잠버릇' })).toBeNull()
+
+    fireEvent.click(toggle)
+    expect(toggle).toHaveAttribute('aria-expanded', 'true')
+    expect(summary).toBeVisible()
+    expect(
+      within(summary).getByRole('heading', { name: '상세 답변 요약' }),
+    ).toBeInTheDocument()
+    for (const title of [
+      '잠버릇',
+      '기상알람',
+      '청소 청결',
+      '개인 청결',
+      '흡연유무',
+    ]) {
+      expect(
+        within(summary).getByRole('region', { name: title }),
+      ).toBeInTheDocument()
+    }
+    expect(screen.getAllByText(selfOption(0, 0)).length).toBeGreaterThan(0)
+
+    fireEvent.click(toggle)
+    expect(toggle).toHaveAttribute('aria-expanded', 'false')
+    expect(summary).not.toBeVisible()
+  })
+
+  it('keeps the menu order and the other rows working while the summary is open', () => {
+    vi.useFakeTimers()
+    openSeededMyPage()
+    const rows = within(
+      button('상세 프로필 보기').parentElement as HTMLElement,
+    ).getAllByRole('button')
+
+    expect(rows.map((row) => row.textContent)).toEqual([
+      '로그아웃 하기',
+      '설문조사 다시 하기',
+      '상세 프로필 보기',
+    ])
+
+    fireEvent.click(button('상세 프로필 보기'))
+    fireEvent.click(button('로그아웃 하기'))
+    expect(within(nav()).getByRole('status')).toHaveTextContent(
+      '아직 준비 중입니다.',
+    )
+
+    fireEvent.click(button('설문조사 다시 하기'))
+    expect(
+      screen.getByRole('alertdialog', { name: /처음부터 다시 설정/ }),
+    ).toBeInTheDocument()
+  })
+
+  it('centers the character as in Figma Profile2 on the my page and the nickname screen', () => {
+    // Profile2 draws the 104px head at x=-2 of the 100px frame, with the stroke outside it.
+    const centeredLeft = -2 - 20 * (104 / 250)
+    const stageLeft = () =>
+      parseFloat(
+        (screen.getByTestId('profile-avatar').firstElementChild as HTMLElement)
+          .style.left,
+      )
+    openSeededMyPage()
+    expect(stageLeft()).toBeCloseTo(centeredLeft, 3)
+    expect(screen.getByTestId('profile-avatar')).toHaveClass('size-[110.416px]')
+
+    fireEvent.click(link('닉네임 수정'))
+    expect(stageLeft()).toBeCloseTo(centeredLeft, 3)
+  })
+
+  it('shows the nickname, the character, and the real answers', () => {
     openSeededMyPage()
 
     expect(
@@ -108,15 +189,6 @@ describe('my page', () => {
     expect(layer('head')).toBe('sleep-habit')
     expect(layer('hand')).toBe('wake-alarm')
     expect(layer('body')).toBe('cleaning')
-    expect(link('상세 프로필 보기')).toBeInTheDocument()
-    expect(button('설문조사 다시 하기')).toBeInTheDocument()
-    expect(button('로그아웃 하기')).toBeInTheDocument()
-    expect(screen.queryByRole('region', { name: '잠버릇' })).toBeNull()
-  })
-
-  it('opens the real answers on the detail profile and comes back', () => {
-    openSeededMyPage()
-    openDetailProfile()
 
     const titles = ['잠버릇', '기상알람', '청소 청결', '개인 청결', '흡연유무']
     titles.forEach((title) => expect(card(title)).toBeInTheDocument())
@@ -127,14 +199,10 @@ describe('my page', () => {
     expect(
       within(sleep).queryByRole('button', { name: /다음 질문/ }),
     ).not.toBeInTheDocument()
-
-    fireEvent.click(link('이전'))
-    expect(screen.getByRole('heading', { name: '프로필' })).toBeInTheDocument()
   })
 
   it('pages through the questions of one card without moving the others', () => {
     openSeededMyPage()
-    openDetailProfile()
     const alarm = card('기상알람')
     const cleaning = card('청소 청결')
     const previous = within(alarm).getByRole('button', { name: /이전 질문/ })
@@ -157,14 +225,12 @@ describe('my page', () => {
     expect(alarm).toHaveTextContent(selfOption(1, 0))
   })
 
-  it('sends the detail profile to the survey without survey answers', () => {
+  it('shows a safe empty state without survey answers', () => {
     renderAt('/my')
 
     expect(screen.getByRole('heading', { name: '사용자' })).toBeInTheDocument()
-    openDetailProfile()
-    expect(
-      screen.getByRole('heading', { name: /밤에 함께 자고 있는데/ }),
-    ).toBeInTheDocument()
+    expect(card('잠버릇')).toHaveTextContent('아직 답하지 않았어요')
+    expect(card('잠버릇')).not.toHaveTextContent(selfOption(0, 0))
   })
 
   it('shows the not-ready notice for log out without leaving or clearing anything', () => {
@@ -178,7 +244,7 @@ describe('my page', () => {
     expect(
       screen.getByRole('heading', { name: '미리보기' }),
     ).toBeInTheDocument()
-    expect(layer('head')).toBe('sleep-habit')
+    expect(card('잠버릇')).toHaveTextContent(selfOption(0, 0))
     act(() => vi.advanceTimersByTime(3000))
     expect(status).toBeEmptyDOMElement()
   })
@@ -203,9 +269,8 @@ describe('my page', () => {
     expect(
       screen.getByRole('heading', { name: '미리보기' }),
     ).toBeInTheDocument()
-    expect(layer('head')).toBe('sleep-habit')
-    openDetailProfile()
     expect(card('흡연유무')).toHaveTextContent(selfOption(7, 0))
+    expect(layer('head')).toBe('sleep-habit')
   })
 
   it('keeps everything when moving to the roommate list and back', () => {
@@ -217,7 +282,6 @@ describe('my page', () => {
     expect(
       screen.getByRole('heading', { name: '미리보기' }),
     ).toBeInTheDocument()
-    openDetailProfile()
     expect(card('흡연유무')).toHaveTextContent(selfOption(7, 0))
   })
 })
@@ -258,6 +322,7 @@ describe('nickname', () => {
     expect(
       screen.getByRole('heading', { name: '복작복작' }),
     ).toBeInTheDocument()
+    expect(card('잠버릇')).toHaveTextContent(selfOption(0, 0))
     expect(layer('head')).toBe('sleep-habit')
 
     fireEvent.click(link('홈'))
@@ -323,9 +388,8 @@ describe('retaking the survey', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: '취소' }))
 
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
-    expect(layer('head')).toBe('sleep-habit')
-    openDetailProfile()
     expect(card('잠버릇')).toHaveTextContent(selfOption(0, 0))
+    expect(layer('head')).toBe('sleep-habit')
   })
 
   it('starts again from the priority step and shows the new answers afterwards', () => {
@@ -348,8 +412,7 @@ describe('retaking the survey', () => {
     fireEvent.click(button(/개인청결/))
     expect(finish).toBeDisabled()
     fireEvent.click(button(/잠버릇/))
-    // QA 3: all five have to be ranked.
-    expect(finish).toBeDisabled()
+    expect(finish).toBeEnabled()
     const threeRanks = ['head', 'hand', 'body'].map(layer).join()
     expect(threeRanks).toBe('smoking,personal-hygiene,sleep-habit')
 
@@ -381,7 +444,6 @@ describe('retaking the survey', () => {
       screen.getByRole('heading', { name: '미리보기' }),
     ).toBeInTheDocument()
     expect(layer('head')).toBe('smoking')
-    openDetailProfile()
     const lastSelf = QUESTION_TOPICS[0].self.options.at(-1) as string
     expect(card('잠버릇')).toHaveTextContent(lastSelf)
     expect(card('잠버릇')).not.toHaveTextContent(selfOption(0, 0))

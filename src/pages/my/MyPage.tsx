@@ -1,33 +1,40 @@
-import { useRef, useState } from 'react'
+import { useId, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import menuChevron from '../../assets/my/menu-chevron.svg'
 import pencil from '../../assets/my/pencil.svg'
+import panelDecor from '../../assets/onboarding/panel-decor.svg'
 import BottomNav from '../../components/BottomNav/BottomNav'
 import { usePendingNotice } from '../../components/BottomNav/usePendingNotice'
+import AnswerCard from '../../components/AnswerCard/AnswerCard'
 import ConfirmDialog from '../../components/my/ConfirmDialog'
 import ProfileAvatar from '../../components/my/ProfileAvatar'
 import ProfileHeader from '../../components/my/ProfileHeader'
 import { DIAMOND_BACKGROUND } from '../../lib/diamondBackground'
+import { getAnswerSummary } from '../../lib/answerSummary'
 import { HOME_ROUTES } from '../../lib/home/routes'
 import { FROM_MY_STATE, MY_ROUTES } from '../../lib/my/routes'
 import { useOnboarding } from '../../lib/onboarding/onboardingState'
 import { ONBOARDING_ROUTES } from '../../lib/onboarding/routes'
-import { QUESTION_ROUTES } from '../question/questionData'
 import { useQuestion } from '../question/questionState'
 
 const MENU_ROW_CLASS =
   'flex w-full items-center justify-between bg-brand-cream1 px-4 py-[15px] text-left text-[16px] leading-[1.5] font-medium tracking-[-0.32px] text-brand-brown3'
 
 /**
- * Figma 1931:27101, which replaced 1532:20013. The content above the bottom bar scrolls; the bar
- * stays fixed. The PC frame is always 844px tall.
+ * Figma 1931:27101, which replaced 1532:20013: the centered character and name, then one list
+ * of rows. The content above the bottom bar scrolls; the bar stays fixed. The PC frame is always
+ * 844px tall. Unlike Figma, `상세 프로필 보기` is the last row and folds the answer summary open
+ * on this page instead of opening another screen, decided by the project owner.
  */
 export default function MyPage() {
   const navigate = useNavigate()
   const { data, update } = useOnboarding()
-  const { reset } = useQuestion()
+  const { answers, reset } = useQuestion()
   const notice = usePendingNotice()
   const [isConfirming, setIsConfirming] = useState(false)
+  // The answer summary starts folded and opens under its menu row, on this page (no route).
+  const [isSummaryOpen, setIsSummaryOpen] = useState(false)
+  const summaryId = useId()
   const retakeButtonRef = useRef<HTMLButtonElement>(null)
   const name = data.name.trim() || '사용자'
 
@@ -53,11 +60,16 @@ export default function MyPage() {
           <ProfileHeader
             onBack={() => navigate(HOME_ROUTES.home, { replace: true })}
           />
-          {/* Figma 1931:27101: the character and name centered, then one list of three rows. The
-              answers moved to the detail profile behind the first row (QA 10). */}
-          <main className="flex flex-1 flex-col pb-10">
-            <div className="mt-8 flex flex-col items-center gap-[15px]">
-              <ProfileAvatar priorities={data.priorities} />
+          {/* Figma 1931:27101: the character and name centered, then one list of three rows. */}
+          <main className="flex flex-1 flex-col">
+            {/* Figma 1931:27101 puts the 100px frame at y=135 and the name at y=250; the white
+                stroke sits outside the frame, so the box starts 5.208px earlier. */}
+            <div className="mt-[26.792px] flex flex-col items-center gap-[9.792px]">
+              <ProfileAvatar
+                priorities={data.priorities}
+                frame="rounded-[35.208px] bg-card-avatar"
+                strokeOutside
+              />
               <div className="flex max-w-[calc(100%-48px)] items-center gap-px">
                 <h2 className="text-center text-[20px] leading-[normal] font-bold tracking-[0.4px] break-all text-gray-500">
                   {name}
@@ -73,14 +85,14 @@ export default function MyPage() {
               </div>
             </div>
             <div className="mx-6 mt-8 overflow-hidden rounded-[12px] border border-my-menu-border">
-              <Link
-                to={QUESTION_ROUTES.profile}
-                state={FROM_MY_STATE}
+              <button
+                type="button"
                 className={MENU_ROW_CLASS}
+                onClick={notice.show}
               >
-                상세 프로필 보기
+                로그아웃 하기
                 <img src={menuChevron} alt="" className="size-6" />
-              </Link>
+              </button>
               <div aria-hidden className="mx-4 h-0.5 bg-brand-beige1" />
               <button
                 ref={retakeButtonRef}
@@ -92,15 +104,47 @@ export default function MyPage() {
                 <img src={menuChevron} alt="" className="size-6" />
               </button>
               <div aria-hidden className="mx-4 h-0.5 bg-brand-beige1" />
+              {/* Last, so opening it never moves the two rows above. */}
               <button
                 type="button"
+                aria-expanded={isSummaryOpen}
+                aria-controls={summaryId}
                 className={MENU_ROW_CLASS}
-                onClick={notice.show}
+                onClick={() => setIsSummaryOpen((open) => !open)}
               >
-                로그아웃 하기
-                <img src={menuChevron} alt="" className="size-6" />
+                상세 프로필 보기
+                <img
+                  src={menuChevron}
+                  alt=""
+                  className={`size-6 ${isSummaryOpen ? '-rotate-90' : 'rotate-90'}`}
+                />
               </button>
             </div>
+            <section
+              id={summaryId}
+              hidden={!isSummaryOpen}
+              aria-labelledby="answer-summary-title"
+              className="relative mt-[33px] flex-1 rounded-t-[35px] bg-brand-cream1 shadow-[0_0_0_2px_var(--color-brand-brown2)]"
+            >
+              <img
+                src={panelDecor}
+                alt=""
+                className="absolute top-[15px] left-1/2 h-[27px] w-[116.003px] max-w-none -translate-x-1/2"
+              />
+              <div className="mx-auto w-full max-w-[390px] px-6 pt-[57px] pb-[44px]">
+                <h2
+                  id="answer-summary-title"
+                  className="text-center text-[20px] leading-[1.5] font-bold tracking-[-0.4px] text-gray-500"
+                >
+                  상세 답변 요약
+                </h2>
+                <div className="mt-[15px] flex flex-col gap-3">
+                  {getAnswerSummary(answers).map((card) => (
+                    <AnswerCard key={card.category} card={card} />
+                  ))}
+                </div>
+              </div>
+            </section>
           </main>
         </div>
       </div>
