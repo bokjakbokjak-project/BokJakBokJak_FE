@@ -76,7 +76,8 @@ function MyCardAvatar({
 
 /**
  * Survey result, Figma 1377:35804. It shows the user's own card and answers in the layout of the
- * roommate detail profile. The card has no match rate, and only the answers scroll.
+ * roommate detail profile. The card has no match rate. The header and the home button stay in
+ * place, and the card and the answers scroll together between them (requested 2026-11-12).
  */
 export default function QuestionProfilePage() {
   const navigate = useNavigate()
@@ -122,30 +123,35 @@ export default function QuestionProfilePage() {
           </button>
         }
       />
-      <ProfileHero
-        offset={9}
-        profile={{
-          name: data.name.trim() || '사용자',
-          age: ageOf(data.birthYear),
-          department: data.department,
-          avatar: <MyCardAvatar priorities={data.priorities} />,
-        }}
-      />
-      <RoommateSheet labelledBy="result-summary-title">
-        <div className="mx-auto w-full max-w-[390px] px-6 pt-[15px] pb-[35px]">
-          <h2
-            id="result-summary-title"
-            className="text-center text-[20px] leading-[1.5] font-bold tracking-[-0.4px] text-gray-500"
-          >
-            상세 답변 요약
-          </h2>
-          <div className="mt-[15px] flex flex-col gap-3">
-            {getAnswerSummary(answers).map((card) => (
-              <AnswerCard key={card.category} card={card} />
-            ))}
+      <div
+        data-testid="result-scroll"
+        className="scrollbar-none flex min-h-0 flex-1 flex-col overflow-y-auto"
+      >
+        <ProfileHero
+          offset={9}
+          profile={{
+            name: data.name.trim() || '사용자',
+            age: ageOf(data.birthYear),
+            department: data.department,
+            avatar: <MyCardAvatar priorities={data.priorities} />,
+          }}
+        />
+        <RoommateSheet labelledBy="result-summary-title" scrolls={false}>
+          <div className="mx-auto w-full max-w-[390px] px-6 pt-[15px] pb-[35px]">
+            <h2
+              id="result-summary-title"
+              className="text-center text-[20px] leading-[1.5] font-bold tracking-[-0.4px] text-gray-500"
+            >
+              상세 답변 요약
+            </h2>
+            <div className="mt-[15px] flex flex-col gap-3">
+              {getAnswerSummary(answers).map((card) => (
+                <AnswerCard key={card.category} card={card} />
+              ))}
+            </div>
           </div>
-        </div>
-      </RoommateSheet>
+        </RoommateSheet>
+      </div>
       {isSharing && <ShareSheet onClose={() => setIsSharing(false)} />}
     </RoommatePage>
   )
