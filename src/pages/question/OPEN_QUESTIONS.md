@@ -4,12 +4,12 @@
 
 | ID    | 상태      | 주제                             | 근거                                                |
 | ----- | --------- | -------------------------------- | --------------------------------------------------- |
-| BE-1  | 미확인    | Google 인증 및 세션 계약         | `src/pages/onboarding/LoginPage.tsx`                |
+| BE-1  | 반영 완료 | Google 인증 및 세션 계약         | `src/pages/onboarding/LoginPage.tsx`                |
 | BE-6  | 미확인    | 온보딩 저장과 완료 처리          | `src/pages/onboarding/CompletePage.tsx`             |
 | BE-8  | 미확인    | 입력값 검증 정책                 | `src/lib/onboarding/onboardingState.ts`             |
 | BE-4  | 미확인    | 생활습관 우선순위 전달 형식      | `src/lib/onboarding/priority.ts`                    |
 | BE-5  | 미확인    | 기숙사 검색·생성 API             | `src/lib/onboarding/dormitoryApi.ts`                |
-| BE-3  | 미확인    | 인증과 단계 가드                 | `src/components/onboarding/OnboardingStepGuard.tsx` |
+| BE-3  | 확인 중   | 인증과 단계 가드                 | `src/components/onboarding/OnboardingStepGuard.tsx` |
 | BE-7  | 미확인    | 저장 완료 이후 처리              | `src/pages/onboarding/CompletePage.tsx`             |
 | PL-1  | 미확인    | 방 인원 지원 범위                | `src/pages/onboarding/DormitoryPage.tsx`            |
 | PL-3  | 미확인    | 우선순위 선택 정책               | `src/lib/onboarding/priority.ts`                    |
@@ -30,9 +30,10 @@
 
 ## BE-1: Google 인증 및 세션 계약
 
-- 현재: Google 버튼은 인증 없이 학교 정보 화면으로 이동하며 로그인 상태와 토큰을 만들지 않는다.
-- 질문: 인증 시작·콜백 경로, 세션 전달 방식, 실패 처리, 기존 가입자 분기는 어떻게 정의하는가?
-- 답변 전: 현재 임시 이동을 유지하고 실제 인증 성공으로 설명하지 않는다.
+- 계약: Notion 세호 담당 명세(로그인·토큰 재발급·로그아웃). Google Identity Services의 ID 토큰을 `POST /api/auth/login`에 `id_token`으로 보내고, 응답의 `next_step`(ONBOARDING·SURVEY·HOME)으로 이동한다. 실서버는 snake_case로 받고 돌려준다(2026-11-13 확인). Swagger 스키마의 camelCase 표기와 다르다.
+- 현재: `VITE_API_MODE=server`일 때만 실제 로그인을 쓴다(`src/lib/api`, `src/lib/auth`). 이 값이 없으면 버튼은 예전처럼 인증 없이 학교 정보 화면으로 이동하며 토큰을 만들지 않는다.
+- 토큰: 액세스 토큰은 메모리에만, 리프레시 토큰은 sessionStorage에 둔다. 새로고침하면 리프레시 토큰으로 세션을 복구하고, 탭을 닫으면 다시 로그인한다.
+- 확인: 2026-11-13 등록된 학교 Google 계정으로 `http://localhost:5173`에서 실제 로그인 성공(프로젝트 담당자 확인). 신규 계정이라 `next_step=ONBOARDING`만 실제로 확인했고, SURVEY·HOME 이동은 자동 테스트로만 검증했다.
 
 ## BE-6: 온보딩 저장과 완료 처리
 
@@ -130,7 +131,7 @@
 
 아래 항목은 기존 주석의 ID와 주제를 보존한 확인 질문이다. 원본 질문 문서가 발견되면 의미와 세부 내용을 대조한다.
 
-- **BE-3:** 현재 단계 가드는 입력 완료 여부만 검사한다. 인증 연동 후 비로그인 사용자와 세션 만료를 어떻게 처리하는가? 답변 전에는 입력 가드를 인증으로 취급하지 않는다.
+- **BE-3:** 단계 가드는 입력 완료 여부만 검사한다. 인증은 서버 모드에서 `src/components/auth/RequireAuth.tsx`가 따로 검사한다: 로그인 화면(`/`)과 공유 화면(`/share`)을 뺀 모든 화면은 세션이 없으면 로그인 화면으로 보낸다. 로그인하거나 세션이 끝나면(로그아웃·재발급 실패) 화면을 다시 마운트해 이전 세션의 메모리 입력을 지운다. 새로고침 후 서버에 닿지 못해 세션을 확인하지 못하면 보호 화면을 열지 않고 로그인 화면으로 보낸다(저장된 토큰은 남겨 다음 새로고침에서 다시 확인). 로그인한 사용자가 `/`를 열면 로그인 화면을 그대로 보여준다(로그인 응답 외에는 `next_step`을 알 방법이 없음).
 - **BE-7:** 저장 성공 이후 이동과 실패 시 재시도는 어떻게 처리하는가? `CompletePage.tsx`가 BE-6과 함께 참조한다. 답변 전에는 저장 성공을 가정하지 않는다.
 - **PL-1:** 기숙사 방 인원의 지원 범위는 무엇인가? 현재 선택지를 유지하고 임의로 제한하지 않는다.
 - **PL-3:** 선택 개수는 최소 3개, 최대 5개다(2026-11-09 결정, 2026-11-13 QA 3 검토 후 프로젝트 담당자가 유지). 캐릭터 외형은 1~3순위만 반영한다. 미션 안내는 Figma `1041:30715`의 `생활습관 5개의 순위를 매겨주세요!`를 따른다(#60). 해제 시 뒤 순위를 앞당기는 규칙은 아직 확정되지 않았다.
