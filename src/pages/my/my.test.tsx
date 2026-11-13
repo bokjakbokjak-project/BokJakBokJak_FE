@@ -17,13 +17,10 @@ function renderAt(path: string) {
 const nav = () => screen.getByRole('navigation', { name: '하단 메뉴' })
 const button = (name: string | RegExp) => screen.getByRole('button', { name })
 const link = (name: string | RegExp) => screen.getByRole('link', { name })
-/** The answer summary starts folded; opens it once when a test reads a card. */
+/** The answers are on the detail profile behind the last row; opens it when a test reads a card. */
 function openSummary() {
-  const toggle = screen.queryByRole('button', {
-    name: '상세 프로필 보기',
-    expanded: false,
-  })
-  if (toggle) fireEvent.click(toggle)
+  const row = screen.queryByRole('link', { name: '상세 프로필 보기' })
+  if (row) fireEvent.click(row)
 }
 const card = (title: string) => {
   openSummary()
@@ -105,21 +102,12 @@ describe('my page', () => {
     )
   })
 
-  it('folds the answer summary behind the last menu row', () => {
+  it('opens the detail profile from the last menu row and comes back', () => {
     openSeededMyPage()
-    const toggle = button('상세 프로필 보기')
-    const summaryId = toggle.getAttribute('aria-controls') as string
-    const summary = document.getElementById(summaryId) as HTMLElement
 
-    expect(toggle).toHaveAttribute('aria-expanded', 'false')
-    expect(summary).not.toBeVisible()
-    expect(screen.queryByRole('region', { name: '잠버릇' })).toBeNull()
-
-    fireEvent.click(toggle)
-    expect(toggle).toHaveAttribute('aria-expanded', 'true')
-    expect(summary).toBeVisible()
+    fireEvent.click(link('상세 프로필 보기'))
     expect(
-      within(summary).getByRole('heading', { name: '상세 답변 요약' }),
+      screen.getByRole('heading', { name: '상세 프로필' }),
     ).toBeInTheDocument()
     for (const title of [
       '잠버릇',
@@ -128,23 +116,19 @@ describe('my page', () => {
       '개인 청결',
       '흡연유무',
     ]) {
-      expect(
-        within(summary).getByRole('region', { name: title }),
-      ).toBeInTheDocument()
+      expect(screen.getByRole('region', { name: title })).toBeInTheDocument()
     }
-    expect(screen.getAllByText(selfOption(0, 0)).length).toBeGreaterThan(0)
 
-    fireEvent.click(toggle)
-    expect(toggle).toHaveAttribute('aria-expanded', 'false')
-    expect(summary).not.toBeVisible()
+    fireEvent.click(link('이전'))
+    expect(screen.getByRole('heading', { name: '프로필' })).toBeInTheDocument()
+    expect(screen.queryByRole('region', { name: '잠버릇' })).toBeNull()
   })
 
-  it('keeps the menu order and the other rows working while the summary is open', () => {
+  it('keeps the menu order and the other rows working', () => {
     vi.useFakeTimers()
     openSeededMyPage()
-    const rows = within(
-      button('상세 프로필 보기').parentElement as HTMLElement,
-    ).getAllByRole('button')
+    const list = link('상세 프로필 보기').parentElement as HTMLElement
+    const rows = [...list.querySelectorAll('a, button')]
 
     expect(rows.map((row) => row.textContent)).toEqual([
       '로그아웃 하기',
@@ -152,7 +136,6 @@ describe('my page', () => {
       '상세 프로필 보기',
     ])
 
-    fireEvent.click(button('상세 프로필 보기'))
     fireEvent.click(button('로그아웃 하기'))
     expect(within(nav()).getByRole('status')).toHaveTextContent(
       '아직 준비 중입니다.',
@@ -225,12 +208,14 @@ describe('my page', () => {
     expect(alarm).toHaveTextContent(selfOption(1, 0))
   })
 
-  it('shows a safe empty state without survey answers', () => {
+  it('sends the detail profile to the survey without survey answers', () => {
     renderAt('/my')
 
     expect(screen.getByRole('heading', { name: '사용자' })).toBeInTheDocument()
-    expect(card('잠버릇')).toHaveTextContent('아직 답하지 않았어요')
-    expect(card('잠버릇')).not.toHaveTextContent(selfOption(0, 0))
+    fireEvent.click(link('상세 프로필 보기'))
+    expect(
+      screen.getByRole('heading', { name: /밤에 함께 자고 있는데/ }),
+    ).toBeInTheDocument()
   })
 
   it('shows the not-ready notice for log out without leaving or clearing anything', () => {
@@ -244,7 +229,7 @@ describe('my page', () => {
     expect(
       screen.getByRole('heading', { name: '미리보기' }),
     ).toBeInTheDocument()
-    expect(card('잠버릇')).toHaveTextContent(selfOption(0, 0))
+    expect(layer('head')).toBe('sleep-habit')
     act(() => vi.advanceTimersByTime(3000))
     expect(status).toBeEmptyDOMElement()
   })
@@ -322,7 +307,6 @@ describe('nickname', () => {
     expect(
       screen.getByRole('heading', { name: '복작복작' }),
     ).toBeInTheDocument()
-    expect(card('잠버릇')).toHaveTextContent(selfOption(0, 0))
     expect(layer('head')).toBe('sleep-habit')
 
     fireEvent.click(link('홈'))

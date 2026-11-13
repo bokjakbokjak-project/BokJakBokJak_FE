@@ -1,14 +1,33 @@
-import ringLarge from '../../assets/roommate/ring-large.svg'
+/** Ring geometry: the drawing size, the stroke's center radius and the stroke width. */
+type RingShape = { size: number; radius: number; stroke: number }
 
 /**
- * The list ring (Figma 1686:17731): a 55px box with a 48.4px ring whose pink arc covers the match
- * rate on a gray track. Figma draws the arc from 3 o'clock clockwise (its default arc start), and
- * the 2.75px stroke takes the drawing to 53.9px, centered in the box.
+ * The list ring (Figma 1686:17731): a 55px box with a 48.4px ring on a gray track. The 2.75px
+ * stroke takes the drawing to 53.9px, centered in the box.
  */
-const LIST_RING = { size: 53.9, radius: 25.575, stroke: 2.75 }
+const LIST_RING: RingShape = { size: 53.9, radius: 25.575, stroke: 2.75 }
 
-function ListRing({ rate }: { rate: number }) {
-  const { size, radius, stroke } = LIST_RING
+/**
+ * The analysis and detail profile ring (Figma 1057:12891): a 69px box whose 4px stroke reaches
+ * 77px. Figma draws it as a full pink circle; it fills by the rate like the list (2026-11-13).
+ */
+const LARGE_RING: RingShape = { size: 77, radius: 36.5, stroke: 4 }
+
+/**
+ * Every ring starts at 12 o'clock and fills counterclockwise, to the left (requested 2026-11-13).
+ * An SVG circle's stroke starts at 3 o'clock and runs clockwise, so the arc is turned a quarter
+ * back and mirrored left to right.
+ */
+function RateRing({
+  rate,
+  shape,
+  className,
+}: {
+  rate: number
+  shape: RingShape
+  className: string
+}) {
+  const { size, radius, stroke } = shape
   const center = size / 2
   const length = 2 * Math.PI * radius
   const ratio = Math.min(Math.max(rate, 0), 100) / 100
@@ -17,7 +36,7 @@ function ListRing({ rate }: { rate: number }) {
     <svg
       aria-hidden="true"
       viewBox={`0 0 ${size} ${size}`}
-      className="absolute top-[0.55px] left-[0.275px] size-[53.9px] overflow-visible"
+      className={`absolute overflow-visible ${className}`}
     >
       <circle
         cx={center}
@@ -36,7 +55,8 @@ function ListRing({ rate }: { rate: number }) {
           fill="none"
           stroke="var(--color-roommate-ring)"
           strokeWidth={stroke}
-          // A full ring has no dash, so no seam can show at 3 o'clock.
+          transform={`translate(${size} 0) scale(-1 1) rotate(-90 ${center} ${center})`}
+          // A full ring has no dash, so no seam can show at the start.
           strokeDasharray={ratio < 1 ? `${filled} ${length}` : undefined}
         />
       )}
@@ -59,7 +79,11 @@ export default function MatchRing({
   if (variant === 'list' && rate !== null) {
     return (
       <div className={`absolute size-[55px] ${className}`}>
-        <ListRing rate={rate} />
+        <RateRing
+          rate={rate}
+          shape={LIST_RING}
+          className="top-[0.55px] left-[0.275px] size-[53.9px]"
+        />
         {/* Whole pixel sizes from the redrawn ring (designer note, 2026-11-12). */}
         <div
           aria-hidden="true"
@@ -77,13 +101,14 @@ export default function MatchRing({
     )
   }
 
-  // The analysis and the detail profile (1057:12891) still draw a full pink ring in Figma.
+  // The analysis and the detail profile (1057:12891). A shared result has no rate (`??`), so its
+  // ring keeps the full pink circle of Figma.
   return (
     <div className={`absolute size-[69px] ${className}`}>
-      <img
-        src={ringLarge}
-        alt=""
-        className="absolute inset-[-5.8%] block max-w-none"
+      <RateRing
+        rate={rate ?? 100}
+        shape={LARGE_RING}
+        className="inset-[-4px] size-[77px]"
       />
       <p className="absolute top-[12px] left-[12px] text-[24px] leading-[1.5] font-bold tracking-[0.44px] whitespace-nowrap text-gray-500">
         {rate ?? '??'}
