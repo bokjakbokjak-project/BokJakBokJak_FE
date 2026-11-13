@@ -92,7 +92,7 @@ export default function BottomNav({ active, notice }: BottomNavProps) {
       >
         {isShown && (
           <span className="flex h-[30px] items-center rounded-[10px] bg-gray-600 px-3.5 text-[13px] font-medium text-white">
-            아직 준비 중입니다.
+            {notice?.text}
           </span>
         )}
       </div>

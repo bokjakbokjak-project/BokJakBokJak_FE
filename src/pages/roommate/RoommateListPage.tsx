@@ -1,12 +1,42 @@
-import { useLayoutEffect, useRef } from 'react'
+import { useEffect, useLayoutEffect, useRef, useState } from 'react'
 import roomBackground from '../../assets/home/room-bg.png'
 import chevronDown from '../../assets/roommate/chevron-down.svg'
 import refreshIcon from '../../assets/roommate/refresh.svg'
 import AppLogo from '../../components/AppLogo/AppLogo'
 import BottomNav from '../../components/BottomNav/BottomNav'
+import { usePendingNotice } from '../../components/BottomNav/usePendingNotice'
+import {
+  EmptyState,
+  ErrorState,
+  LoadingState,
+} from '../../components/LoadState/LoadState'
+import CharacterAvatar from '../../components/roommate/CharacterAvatar'
 import RoommateCard from '../../components/roommate/RoommateCard'
+import {
+  sampleRoommateCard,
+  type RoommateCardData,
+} from '../../components/roommate/roommateCardData'
+import { isServerMode } from '../../lib/api/config'
+import { errorText } from '../../lib/api/errorText'
+import {
+  refreshRecommendations,
+  type Recommendation,
+} from '../../lib/roommate/recommendationApi'
 import { getCandidates } from '../../lib/roommate/roommateData'
 import { useRoommate } from '../../lib/roommate/roommateState'
+import { ROOMMATE_ROUTES } from '../../lib/roommate/routes'
+
+/** A server candidate's card. The card opens the analysis of that `user_id` (채희 spec 7.1). */
+function serverCard(item: Recommendation): RoommateCardData {
+  return {
+    to: ROOMMATE_ROUTES.analysis(String(item.userId)),
+    name: item.nickname,
+    age: item.age,
+    department: item.department,
+    matchRate: item.matchScore,
+    avatar: <CharacterAvatar priorities={item.priorities} />,
+  }
+}
 
 /**
  * Figma 912:14164 and 1095:26603, note: "홈화면 고정으로 하고 룸메이트 리스트만 움직이게 해주세요".
@@ -14,19 +44,66 @@ import { useRoommate } from '../../lib/roommate/roommateState'
  * The page takes the screen height, and the PC frame is always 844px tall.
  */
 export default function RoommateListPage() {
-  const { visibleCount, showMore, reset, listScrollTopRef } = useRoommate()
+  const {
+    visibleCount,
+    showMore,
+    reset,
+    listScrollTopRef,
+    recommendations,
+    loadRecommendations,
+    setRecommendations,
+  } = useRoommate()
   const listRef = useRef<HTMLDivElement>(null)
-  const candidates = getCandidates()
-  const hasMore = visibleCount < candidates.length
+  const notice = usePendingNotice()
+  const [isRefreshing, setIsRefreshing] = useState(false)
+  const isServer = isServerMode()
 
+  useEffect(() => {
+    if (isServer) loadRecommendations()
+  }, [isServer, loadRecommendations])
+
+  const cards: RoommateCardData[] | null = !isServer
+    ? getCandidates().map(sampleRoommateCard)
+    : recommendations.status === 'ready'
+      ? recommendations.items.map(serverCard)
+      : null
+  const hasMore = cards !== null && visibleCount < cards.length
+
+  // The saved place is restored once the cards are there to scroll.
+  const hasCards = cards !== null
   useLayoutEffect(() => {
-    if (listRef.current) listRef.current.scrollTop = listScrollTopRef.current
-  }, [listScrollTopRef])
+    if (hasCards && listRef.current) {
+      listRef.current.scrollTop = listScrollTopRef.current
+    }
+  }, [hasCards, listScrollTopRef])
 
-  // There is no recommendation API yet, so this only returns the list to its first state.
-  const handleRefresh = () => {
+  const backToTop = () => {
     reset()
     if (listRef.current) listRef.current.scrollTop = 0
+  }
+
+  // Sample mode has no recommendation API, so this only returns the list to its first state.
+  // The server recalculates; an unchanged list stays where it is (채희 spec 7.2).
+  const handleRefresh = async () => {
+    if (!isServer) {
+      backToTop()
+      return
+    }
+    if (isRefreshing) return
+    setIsRefreshing(true)
+    try {
+      const result = await refreshRecommendations()
+      if (result.changed) {
+        setRecommendations(result.recommendations)
+        backToTop()
+      } else {
+        notice.showText('변경된 사항이 없습니다')
+      }
+    } catch (error) {
+      notice.showText(errorText(error))
+    } finally {
+      setIsRefreshing(false)
+    }
   }
 
   return (
@@ -43,7 +120,9 @@ export default function RoommateListPage() {
         <AppLogo />
         <button
           type="button"
-          className="absolute top-[10px] right-[23px] flex h-[35px] items-center gap-0.5 rounded-full border-2 border-brand-brown3 bg-brand-beige1 py-[5px] pr-1.5 pl-[7px] text-[14px] leading-[normal] font-semibold whitespace-nowrap text-brand-brown3"
+          disabled={isRefreshing}
+          aria-busy={isRefreshing}
+          className="absolute top-[10px] right-[23px] flex h-[35px] disabled:opacity-60 items-center gap-0.5 rounded-full border-2 border-brand-brown3 bg-brand-beige1 py-[5px] pr-1.5 pl-[7px] text-[14px] leading-[normal] font-semibold whitespace-nowrap text-brand-brown3"
           onClick={handleRefresh}
         >
           새로고침
@@ -66,10 +145,25 @@ export default function RoommateListPage() {
           listScrollTopRef.current = event.currentTarget.scrollTop
         }}
       >
+        {isServer && recommendations.status !== 'ready' && (
+          <div className="mx-auto w-full max-w-[390px] px-6">
+            {recommendations.status === 'error' ? (
+              <ErrorState
+                error={recommendations.error}
+                onRetry={() => loadRecommendations(true)}
+              />
+            ) : (
+              <LoadingState label="추천 목록을 불러오는 중이에요" />
+            )}
+          </div>
+        )}
+        {cards?.length === 0 && (
+          <EmptyState text="아직 추천할 수 있는 후보가 없어요" />
+        )}
         <ul className="mx-auto flex w-full max-w-[390px] flex-col gap-2.5 px-6 pb-[15px]">
-          {candidates.slice(0, visibleCount).map((candidate) => (
-            <li key={candidate.id}>
-              <RoommateCard candidate={candidate} />
+          {cards?.slice(0, visibleCount).map((card) => (
+            <li key={card.to}>
+              <RoommateCard card={card} />
             </li>
           ))}
         </ul>
@@ -84,7 +178,7 @@ export default function RoommateListPage() {
           </button>
         )}
       </div>
-      <BottomNav active="roommate" />
+      <BottomNav active="roommate" notice={notice} />
     </div>
   )
 }

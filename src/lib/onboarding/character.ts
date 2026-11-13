@@ -93,7 +93,7 @@ export type CharacterLayer = {
 
 /** Rank 1 sets the head, rank 2 the hand, and rank 3 the body. Ranks 4 and 5 change nothing. */
 export function getPartVariants(
-  priorities: readonly CategoryId[],
+  priorities: readonly (CategoryId | undefined)[],
 ): Record<PartName, PartVariant> {
   return {
     head: priorities[0] ?? 'default',
@@ -119,7 +119,7 @@ function partLayer(part: PartName, variant: PartVariant): CharacterLayer {
 
 /** Layers from back to front. Figma's order, except the shadow (QA 2). */
 export function getCharacterLayers(
-  priorities: readonly CategoryId[],
+  priorities: readonly (CategoryId | undefined)[],
 ): CharacterLayer[] {
   const variants = getPartVariants(priorities)
   return [
