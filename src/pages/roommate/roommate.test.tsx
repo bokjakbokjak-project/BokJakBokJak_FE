@@ -57,6 +57,44 @@ describe('roommate list', () => {
     expect(screen.getByText('매칭률 100%')).toBeInTheDocument()
   })
 
+  it('starts every ring at 12 o’clock and fills to the left', () => {
+    const { rerender } = render(
+      <MatchRing rate={40} variant="list" className="" />,
+    )
+    // Turned a quarter back and mirrored: the stroke starts at the top and runs counterclockwise.
+    expect(screen.getByTestId('match-ring-arc')).toHaveAttribute(
+      'transform',
+      'translate(53.9 0) scale(-1 1) rotate(-90 26.95 26.95)',
+    )
+
+    rerender(<MatchRing rate={40} variant="analysis" className="" />)
+    expect(screen.getByTestId('match-ring-arc')).toHaveAttribute(
+      'transform',
+      'translate(77 0) scale(-1 1) rotate(-90 38.5 38.5)',
+    )
+  })
+
+  it('fills the analysis ring as far as the rate, and fully for a hidden rate', () => {
+    const circumference = 2 * Math.PI * 36.5
+    const { rerender } = render(
+      <MatchRing rate={83} variant="analysis" className="" />,
+    )
+    const [filled] = (
+      screen.getByTestId('match-ring-arc').getAttribute('stroke-dasharray') ??
+      ''
+    )
+      .split(' ')
+      .map(Number)
+    expect(filled / circumference).toBeCloseTo(0.83, 5)
+    expect(screen.getByText('83')).toBeInTheDocument()
+
+    rerender(<MatchRing rate={null} variant="analysis" className="" />)
+    expect(screen.getByTestId('match-ring-arc')).not.toHaveAttribute(
+      'stroke-dasharray',
+    )
+    expect(screen.getByText('??')).toBeInTheDocument()
+  })
+
   it('reads the rate with its label on each card', () => {
     renderAt('/roommate')
 
