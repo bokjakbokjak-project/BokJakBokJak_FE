@@ -97,7 +97,7 @@ describe('chat', () => {
 
     fireEvent.click(await screen.findByRole('button', { name: '다음안건으로' }))
     const dialog = screen.getByRole('dialog', {
-      name: '이대로 확정하시겠습니까?',
+      name: '다음 안건으로 넘어가시겠습니까?',
     })
     expect(dialog).toHaveAccessibleDescription(
       /^안건을 확정하면 다시 수정할 수 없어요\s*AI가 다음 안건으로 이동해요$/,
