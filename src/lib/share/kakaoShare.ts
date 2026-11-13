@@ -82,6 +82,15 @@ function loadKakaoSdk(key: string): Promise<KakaoSdk> {
 }
 
 /**
+ * Starts loading the SDK ahead of the tap that shares, so the share window opens straight from
+ * that tap and is not taken for a popup. Errors surface when sharing instead.
+ */
+export function preloadKakaoSdk() {
+  const key = javascriptKey()
+  if (key) loadKakaoSdk(key).catch(() => {})
+}
+
+/**
  * Opens KakaoTalk sharing for a profile link. The card follows the agreed layout: the character
  * image, `{name}님의 룸메이트 프로필`, a short description and a `프로필 보기` button to the link.
  * Rejects when the key is missing or the SDK cannot be used, so the caller can copy the link.

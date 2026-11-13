@@ -14,6 +14,7 @@ import { isFromMy, MY_ROUTES } from '../../lib/my/routes'
 import { useOnboarding } from '../../lib/onboarding/onboardingState'
 import {
   canShareToKakao,
+  preloadKakaoSdk,
   shareProfileToKakao,
 } from '../../lib/share/kakaoShare'
 import { createShareUrl } from '../../lib/share/profileShare'
@@ -59,11 +60,14 @@ export default function QuestionProfilePage() {
   const { data } = useOnboarding()
   const shareButtonRef = useRef<HTMLButtonElement>(null)
   // `copied` is Figma 1377:36531. `failed` is not in Figma: the link is shown to copy by hand.
+  // `kakaoFailed` is not in Figma either: the link stays copied for pasting.
   const [shareState, setShareState] = useState<
     | { status: 'idle' }
-    | { status: 'copied' }
+    | { status: 'copied'; url: string }
     | { status: 'failed'; url: string }
+    | { status: 'kakaoFailed' }
   >({ status: 'idle' })
+  const hasKakao = canShareToKakao()
 
   if (Object.keys(answers).length < QUESTION_COUNT) {
     return <Navigate to={QUESTION_ROUTES.survey} replace />
@@ -71,8 +75,9 @@ export default function QuestionProfilePage() {
 
   const name = data.name.trim() || '사용자'
 
-  // QA 11, 15: sharing opens KakaoTalk with the profile card when the Kakao key is set. Without
-  // it, or when the SDK cannot be used, it copies the link to the shared result and confirms it.
+  // QA 11, 15: sharing copies the link to the shared result and confirms it. With the Kakao key,
+  // the confirmation also offers 카카오톡 보내기, which sends the profile card (requested
+  // 2026-11-13), so both ways stay available.
   const shareProfile = async () => {
     const origin = window.location.origin
     const url = createShareUrl(
@@ -84,21 +89,25 @@ export default function QuestionProfilePage() {
       },
       origin,
     )
-    if (canShareToKakao()) {
-      try {
-        await shareProfileToKakao({ name, url, origin })
-        return
-      } catch {
-        // Falls back to copying the link below.
-      }
-    }
+    if (hasKakao) preloadKakaoSdk()
     try {
       await navigator.clipboard.writeText(url)
-      setShareState({ status: 'copied' })
+      setShareState({ status: 'copied', url })
     } catch {
       setShareState({ status: 'failed', url })
     }
   }
+
+  const sendToKakao = async (url: string) => {
+    try {
+      await shareProfileToKakao({ name, url, origin: window.location.origin })
+      setShareState({ status: 'idle' })
+    } catch {
+      setShareState({ status: 'kakaoFailed' })
+    }
+  }
+
+  const closeShare = () => setShareState({ status: 'idle' })
 
   return (
     <RoommatePage
@@ -172,20 +181,38 @@ export default function QuestionProfilePage() {
           message={
             '링크를 공유하고 다른 룸메이트들과\n설문 결과를 비교해보세요'
           }
-          confirmLabel="확인"
+          {...(hasKakao
+            ? { cancelLabel: '확인', confirmLabel: '카카오톡 보내기' }
+            : { confirmLabel: '확인' })}
           triggerRef={shareButtonRef}
-          onCancel={() => setShareState({ status: 'idle' })}
-          onConfirm={() => setShareState({ status: 'idle' })}
+          onCancel={closeShare}
+          onConfirm={() =>
+            hasKakao ? sendToKakao(shareState.url) : closeShare()
+          }
         />
       )}
       {shareState.status === 'failed' && (
         <ChoiceDialog
           title="링크를 복사하지 못했어요"
           message={shareState.url}
+          {...(hasKakao
+            ? { cancelLabel: '확인', confirmLabel: '카카오톡 보내기' }
+            : { confirmLabel: '확인' })}
+          triggerRef={shareButtonRef}
+          onCancel={closeShare}
+          onConfirm={() =>
+            hasKakao ? sendToKakao(shareState.url) : closeShare()
+          }
+        />
+      )}
+      {shareState.status === 'kakaoFailed' && (
+        <ChoiceDialog
+          title="카카오톡을 열지 못했어요"
+          message={'링크는 복사되어 있어요.\n카카오톡에 붙여 넣어 보내주세요.'}
           confirmLabel="확인"
           triggerRef={shareButtonRef}
-          onCancel={() => setShareState({ status: 'idle' })}
-          onConfirm={() => setShareState({ status: 'idle' })}
+          onCancel={closeShare}
+          onConfirm={closeShare}
         />
       )}
     </RoommatePage>
