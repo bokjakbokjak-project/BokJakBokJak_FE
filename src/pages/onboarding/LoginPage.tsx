@@ -11,7 +11,6 @@ import {
   initializeGoogleSignIn,
   loadGoogleIdentity,
   setCredentialHandler,
-  type GoogleAccountsId,
 } from '../../lib/auth/googleIdentity'
 import { routeForNextStep } from '../../lib/auth/nextStep'
 import { ONBOARDING_ROUTES } from '../../lib/onboarding/routes'
@@ -42,16 +41,18 @@ function SampleLogin() {
 type Phase = 'loading' | 'ready' | 'signing-in' | 'unavailable'
 
 /**
- * Server mode. Google's own button (GIS) is drawn invisibly over the Figma button, so the screen
- * looks the same while a press opens Google's account chooser. GIS returns an ID token, which
- * goes to POST /api/auth/login, and `next_step` picks the screen.
+ * Server mode. Google's own button (GIS) is drawn, visible, where the Figma button is. It used
+ * to sit invisibly (opacity 0) over the Figma button, but Google ignores presses on a button it
+ * cannot see: in Production a press opened nothing and POST /api/auth/login was never sent.
+ * The One Tap prompt is no replacement for the button either, so it is not used. GIS returns an
+ * ID token, which goes to POST /api/auth/login, and `next_step` picks the screen.
+ * https://developers.google.com/identity/gsi/web/guides/display-button
  */
 function ServerLogin() {
   const navigate = useNavigate()
   const { signIn } = useAuth()
   const clientId = getGoogleClientId()
-  const overlayRef = useRef<HTMLDivElement>(null)
-  const googleRef = useRef<GoogleAccountsId | null>(null)
+  const buttonRef = useRef<HTMLDivElement>(null)
   const isSigningIn = useRef(false)
   const [phase, setPhase] = useState<Phase>(
     clientId ? 'loading' : 'unavailable',
@@ -84,23 +85,24 @@ function ServerLogin() {
 
     loadGoogleIdentity().then(
       (google) => {
-        const overlay = overlayRef.current
-        if (!isCurrent || !overlay) return
+        const slot = buttonRef.current
+        if (!isCurrent || !slot) return
         initializeGoogleSignIn(google, clientId)
         const width = Math.min(
           GOOGLE_BUTTON_MAX_WIDTH,
-          Math.max(GOOGLE_BUTTON_MIN_WIDTH, Math.round(overlay.offsetWidth)),
+          Math.max(GOOGLE_BUTTON_MIN_WIDTH, Math.round(slot.offsetWidth)),
         )
-        overlay.replaceChildren()
-        google.renderButton(overlay, {
+        slot.replaceChildren()
+        // English, as the Figma button reads `Sign up with Google`.
+        google.renderButton(slot, {
           type: 'standard',
           theme: 'outline',
           size: 'large',
           text: 'signup_with',
           shape: 'pill',
           width,
+          locale: 'en',
         })
-        googleRef.current = google
         setPhase('ready')
       },
       () => {
@@ -118,17 +120,13 @@ function ServerLogin() {
 
   return (
     <LoginLayout
-      // The thin strips of the Figma button outside Google's button open Google's chooser too.
-      onPress={() => {
-        if (phase === 'ready') googleRef.current?.prompt()
-      }}
-      isBusy={phase === 'signing-in'}
-      overlay={
+      googleButton={
+        // Keeps the Figma button's 61px row, so nothing around it moves while Google loads.
         <div
-          ref={overlayRef}
-          data-testid="google-signin-overlay"
-          aria-hidden={phase !== 'ready'}
-          className={`absolute inset-0 flex items-center justify-center overflow-hidden rounded-[50px] opacity-0 ${
+          ref={buttonRef}
+          data-testid="google-signin-button"
+          aria-busy={phase === 'loading' || phase === 'signing-in' || undefined}
+          className={`flex h-[61px] w-full items-center justify-center ${
             phase === 'ready' ? '' : 'pointer-events-none'
           }`}
         />
@@ -139,19 +137,14 @@ function ServerLogin() {
 }
 
 type LoginLayoutProps = {
-  onPress: () => void
-  isBusy?: boolean
-  /** Server mode only: Google's invisible button over the Figma button. */
-  overlay?: ReactNode
+  /** Sample mode: the Figma button. */
+  onPress?: () => void
+  /** Server mode: Google's own button in place of the Figma button. */
+  googleButton?: ReactNode
   error?: string | null
 }
 
-function LoginLayout({
-  onPress,
-  isBusy = false,
-  overlay,
-  error,
-}: LoginLayoutProps) {
+function LoginLayout({ onPress, googleButton, error }: LoginLayoutProps) {
   return (
     <div className="mx-auto flex w-full max-w-[390px] flex-1 flex-col items-center pt-[max(0px,calc(277px-env(safe-area-inset-top)))]">
       <main className="flex flex-col items-center">
@@ -182,28 +175,19 @@ function LoginLayout({
             className="absolute top-[24px] left-[71px] h-[13px] w-[15px] max-w-none"
           />
         </div>
-        {/* In server mode Google's invisible button takes keyboard focus, so the focus ring is
-            drawn on this wrapper around the visible button. */}
-        <div
-          className={`relative w-full rounded-[50px] ${
-            overlay
-              ? 'focus-within:outline-2 focus-within:outline-offset-2 focus-within:outline-brand-brown1'
-              : ''
-          }`}
-        >
-          <button
-            type="button"
-            className="flex h-[61px] w-full items-center justify-center rounded-[50px] border border-[#e0e0e9] bg-white min-[390px]:justify-start min-[390px]:px-[51px]"
-            onClick={onPress}
-            disabled={isBusy}
-            aria-busy={isBusy || undefined}
-          >
-            <img src={googleLogo} alt="" className="size-[23px] shrink-0" />
-            <span className="ml-4 font-inter text-[20px] leading-5 font-medium whitespace-nowrap text-[#1d1c2b]">
-              Sign up with Google
-            </span>
-          </button>
-          {overlay}
+        <div className="relative w-full">
+          {googleButton ?? (
+            <button
+              type="button"
+              className="flex h-[61px] w-full items-center justify-center rounded-[50px] border border-[#e0e0e9] bg-white min-[390px]:justify-start min-[390px]:px-[51px]"
+              onClick={onPress}
+            >
+              <img src={googleLogo} alt="" className="size-[23px] shrink-0" />
+              <span className="ml-4 font-inter text-[20px] leading-5 font-medium whitespace-nowrap text-[#1d1c2b]">
+                Sign up with Google
+              </span>
+            </button>
+          )}
           {/* Not in Figma: shown below the button without moving the layout. */}
           {error && (
             <p

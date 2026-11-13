@@ -107,6 +107,8 @@ const restoringStatus = () =>
   screen.queryByRole('status', { name: '로그인 상태를 확인하고 있어요' })
 const loginButton = () =>
   screen.queryByRole('button', { name: 'Sign up with Google' })
+/** The login screen in either mode (the server mode draws Google's own button instead). */
+const loginScreen = () => screen.queryByText('상황으로 찾는 룸메이트')
 
 function useServerMode() {
   vi.stubEnv('VITE_API_MODE', 'server')
@@ -181,14 +183,14 @@ describe('server mode: access control', () => {
     renderAt(target)
 
     expect(path()).toBe('/')
-    expect(loginButton()).toBeInTheDocument()
+    expect(loginScreen()).toBeInTheDocument()
   })
 
   it('keeps the shared profile link public', () => {
     renderAt('/share')
 
     expect(path()).toBe('/share')
-    expect(loginButton()).not.toBeInTheDocument()
+    expect(loginScreen()).not.toBeInTheDocument()
   })
 })
 
@@ -198,17 +200,33 @@ describe('server mode: sign-in', () => {
     installGoogle()
   })
 
-  it('draws Google’s button over the Figma button', async () => {
+  it('shows Google’s own button, visible, where the Figma button was', async () => {
     renderAt('/')
 
     await waitFor(() => expect(google.renderButton).toHaveBeenCalled())
     expect(google.initialize).toHaveBeenCalledWith(
       expect.objectContaining({ client_id: CLIENT_ID, ux_mode: 'popup' }),
     )
-    const overlay = screen.getByTestId('google-signin-overlay')
-    expect(google.renderButton.mock.calls[0][0]).toBe(overlay)
-    expect(overlay).toHaveClass('opacity-0')
-    expect(loginButton()).toBeInTheDocument()
+    const slot = screen.getByTestId('google-signin-button')
+    const [parent, options] = google.renderButton.mock.calls[0] as unknown as [
+      HTMLElement,
+      Record<string, unknown>,
+    ]
+    expect(parent).toBe(slot)
+    expect(options).toEqual(
+      expect.objectContaining({
+        type: 'standard',
+        text: 'signup_with',
+        locale: 'en',
+      }),
+    )
+    // Google ignores presses on a button it cannot see, so nothing may hide it.
+    expect(slot.closest('[class*="opacity-0"]')).toBeNull()
+    expect(slot).not.toHaveClass('pointer-events-none')
+    expect(screen.getByRole('button', { name: 'Google' })).toBeVisible()
+    // The Figma button is not drawn over or under it, and One Tap is not used instead.
+    expect(loginButton()).not.toBeInTheDocument()
+    expect(google.prompt).not.toHaveBeenCalled()
   })
 
   it.each([
