@@ -2,6 +2,12 @@ import { act, fireEvent, render, screen, within } from '@testing-library/react'
 import { MemoryRouter } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import AppRoutes from '../../app/AppRoutes'
+import {
+  endFade,
+  finishSituation,
+  questionLayer,
+  stepScreen,
+} from '../../test/questionFade'
 import { QUESTION_COUNT, getQuestionStep } from './questionData'
 
 function renderAt(path: string) {
@@ -24,8 +30,10 @@ const next = () =>
 
 const advance = (ms: number) => act(() => vi.advanceTimersByTime(ms))
 
-// The STEP screen leaves after 2 seconds. The dissolve after it is CSS only.
-const finishSituation = () => advance(2000)
+const expectShown = (element: HTMLElement) =>
+  expect(element).toHaveClass('visible', 'opacity-100')
+const expectHidden = (element: HTMLElement) =>
+  expect(element).toHaveClass('invisible', 'opacity-0')
 
 function answerQuestions() {
   for (let index = 0; index < QUESTION_COUNT; index += 1) {
@@ -64,9 +72,17 @@ describe('situational survey', () => {
 
     advance(1999)
     expect(step).toHaveClass('visible')
+    expectHidden(questionLayer())
 
+    // The STEP screen fades out first. The question stays hidden until that ends.
     advance(1)
-    expect(step).toHaveClass('invisible', 'opacity-0')
+    expectHidden(step)
+    expectHidden(questionLayer())
+    expect(questionLayer()).toHaveAttribute('inert')
+
+    endFade(step)
+    expectShown(questionLayer())
+    expect(questionLayer()).not.toHaveAttribute('inert')
     expect(screen.getByText('Q1-1')).toBeInTheDocument()
     expect(
       screen.getByRole('heading', { name: /어느 정도 있는 편인가요/ }),
@@ -78,8 +94,13 @@ describe('situational survey', () => {
     finishSituation()
     const step = screen.getByLabelText('STEP 1 상황')
 
+    // The question fades out completely before the STEP screen fades in.
     fireEvent.click(screen.getByRole('button', { name: '상황 보기' }))
-    expect(step).toHaveClass('visible')
+    expectHidden(questionLayer())
+    expectHidden(step)
+
+    endFade(questionLayer())
+    expectShown(step)
     const showQuestion = within(step).getByRole('button', {
       name: '질문 다시보기',
     })
@@ -87,11 +108,116 @@ describe('situational survey', () => {
 
     // It stays until the button is used, unlike the first visit.
     advance(5000)
-    expect(step).toHaveClass('visible')
+    expectShown(step)
 
+    // And the other way: the STEP screen leaves completely, then the question comes back.
     fireEvent.click(showQuestion)
-    expect(step).toHaveClass('invisible')
+    expectHidden(step)
+    expectHidden(questionLayer())
+
+    endFade(step)
+    expectShown(questionLayer())
     expect(screen.getByRole('button', { name: '상황 보기' })).toHaveFocus()
+  })
+
+  it('ignores repeated presses while a change is under way', () => {
+    renderAt('/question')
+    finishSituation()
+    const situationButton = screen.getByRole('button', { name: '상황 보기' })
+
+    fireEvent.click(situationButton)
+    fireEvent.click(situationButton)
+    fireEvent.click(situationButton)
+    endFade(questionLayer())
+    expectShown(stepScreen())
+
+    // A second fade end (or one from a stray press) does not flip the screens again.
+    endFade(questionLayer())
+    expectShown(stepScreen())
+    expectHidden(questionLayer())
+
+    const showQuestion = within(stepScreen()).getByRole('button', {
+      name: '질문 다시보기',
+    })
+    fireEvent.click(showQuestion)
+    fireEvent.click(showQuestion)
+    endFade(stepScreen())
+    endFade(stepScreen())
+    expectShown(questionLayer())
+    expectHidden(stepScreen())
+    expect(screen.getByText('Q1-1')).toBeInTheDocument()
+  })
+
+  it('goes back when a press reverses a layer that is still fading in', () => {
+    renderAt('/question')
+    finishSituation()
+
+    fireEvent.click(screen.getByRole('button', { name: '상황 보기' }))
+    endFade(questionLayer())
+    // The STEP screen is fading in; 질문 다시보기 turns it around before it finishes.
+    fireEvent.click(
+      within(stepScreen()).getByRole('button', { name: '질문 다시보기' }),
+    )
+    expectHidden(stepScreen())
+    expectHidden(questionLayer())
+
+    endFade(stepScreen())
+    expectShown(questionLayer())
+  })
+
+  it('waits only for the layer’s own opacity fade', () => {
+    renderAt('/question')
+    advance(2000)
+
+    // Fades of its children, and the visibility part of the dissolve, do not count.
+    fireEvent.transitionEnd(
+      within(stepScreen()).getByRole('heading', { hidden: true }),
+      { propertyName: 'opacity' },
+    )
+    fireEvent.transitionEnd(stepScreen(), { propertyName: 'visibility' })
+    expectHidden(questionLayer())
+
+    endFade(stepScreen())
+    expectShown(questionLayer())
+  })
+
+  it('switches at once with reduced motion, where there is no fade to wait for', () => {
+    vi.stubGlobal(
+      'matchMedia',
+      vi.fn((query: string) => ({
+        matches: query === '(prefers-reduced-motion: reduce)',
+        media: query,
+        addEventListener: vi.fn(),
+        removeEventListener: vi.fn(),
+      })),
+    )
+    try {
+      renderAt('/question')
+      advance(2000)
+      expectHidden(stepScreen())
+      expectShown(questionLayer())
+
+      fireEvent.click(screen.getByRole('button', { name: '상황 보기' }))
+      expectShown(stepScreen())
+      expectHidden(questionLayer())
+    } finally {
+      vi.unstubAllGlobals()
+    }
+  })
+
+  it('moves between questions at once, as before', () => {
+    renderAt('/question')
+    finishSituation()
+    pick(0)
+    next()
+
+    expect(screen.getByText('Q1-2')).toBeInTheDocument()
+    expectShown(questionLayer())
+    expectHidden(stepScreen())
+
+    fireEvent.click(screen.getByRole('button', { name: '이전으로' }))
+    expect(screen.getByText('Q1-1')).toBeInTheDocument()
+    expectShown(questionLayer())
   })
 
   it('numbers the roommate question of a topic as its second question', () => {

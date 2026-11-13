@@ -4,6 +4,7 @@ import {
   useState,
   type ButtonHTMLAttributes,
   type ReactNode,
+  type TransitionEvent,
 } from 'react'
 import { useNavigate } from 'react-router'
 import backArrow from '../../assets/question/back-arrow-brown.svg'
@@ -26,6 +27,23 @@ import SurveySkipButton from './SurveySkipButton'
 const SITUATION_DURATION = 2000
 const DISSOLVE_CLASS =
   'transition-[opacity,visibility] duration-800 ease-[cubic-bezier(0.42,0,0.58,1)] motion-reduce:transition-none'
+
+/**
+ * The STEP screen and the question never show together: the leaving one fades out completely
+ * first, and only then does the other fade in, with the same dissolve. `null` is the moment in
+ * between, while the leaving layer fades out.
+ */
+type Layer = 'step' | 'question'
+const otherLayer = (layer: Layer): Layer =>
+  layer === 'step' ? 'question' : 'step'
+
+/** With reduced motion there is no fade, so there is no fade end to wait for. */
+const prefersReducedMotion = () =>
+  typeof window.matchMedia === 'function' &&
+  window.matchMedia('(prefers-reduced-motion: reduce)').matches
+
+const layerClass = (isShown: boolean) =>
+  `${DISSOLVE_CLASS} ${isShown ? 'visible opacity-100' : 'invisible opacity-0'}`
 
 const LAYOUT = {
   default: { sceneTop: 'top-[47px]', sheetHeight: 'min-h-[380px]' },
@@ -123,6 +141,7 @@ type SituationScreenProps = {
   questionButtonRef: React.RefObject<HTMLButtonElement | null>
   onShowQuestion: () => void
   onBack: () => void
+  onFadeEnd: (event: TransitionEvent<HTMLElement>) => void
 }
 
 /**
@@ -137,6 +156,7 @@ function SituationScreen({
   questionButtonRef,
   onShowQuestion,
   onBack,
+  onFadeEnd,
 }: SituationScreenProps) {
   const tone = topic.situationScene?.tone ?? 'light'
   return (
@@ -145,7 +165,8 @@ function SituationScreen({
       inert={!isVisible}
       // Mirrors inert for tools and browsers that do not support it yet.
       aria-hidden={!isVisible || undefined}
-      className={`absolute inset-0 z-20 isolate overflow-hidden bg-question-surface ${DISSOLVE_CLASS} ${isVisible ? 'visible opacity-100' : 'invisible opacity-0'}`}
+      onTransitionEnd={onFadeEnd}
+      className={`absolute inset-0 z-20 isolate overflow-hidden bg-question-surface ${layerClass(isVisible)}`}
     >
       {topic.situationScene ? (
         <>
@@ -223,19 +244,37 @@ function QuestionStep({ focusHeading, onMove }: QuestionStepProps) {
 
   // Each topic opens on its STEP screen. An answered question has seen it already, so going
   // back skips it, but `상황 보기` can always bring it back.
-  const [situation, setSituation] = useState({
-    isVisible: isSelf && selected === undefined,
-    fromQuestion: false,
-  })
+  const [shown, setShown] = useState<Layer | null>(
+    isSelf && selected === undefined ? 'step' : 'question',
+  )
+  /** The STEP screen was opened with `상황 보기`, so it waits for `질문 다시보기`. */
+  const [fromQuestion, setFromQuestion] = useState(false)
+
+  // Starts fading `from` out. A press that arrives during a change does nothing, so fast
+  // repeated presses cannot stack up.
+  const leave = (from: Layer) =>
+    setShown((current) =>
+      current !== from
+        ? current
+        : prefersReducedMotion()
+          ? otherLayer(from)
+          : null,
+    )
+
+  // The other layer fades in only once `from` has faded out completely. A reversed fade (a
+  // press while a layer is still fading in) also ends here, at full transparency.
+  const handleFadeEnd =
+    (from: Layer) => (event: TransitionEvent<HTMLElement>) => {
+      if (event.target !== event.currentTarget) return
+      if (event.propertyName === 'visibility') return
+      setShown((current) => (current === null ? otherLayer(from) : current))
+    }
 
   useEffect(() => {
-    if (!situation.isVisible || situation.fromQuestion) return
-    const timer = setTimeout(
-      () => setSituation({ isVisible: false, fromQuestion: false }),
-      SITUATION_DURATION,
-    )
+    if (shown !== 'step' || fromQuestion) return
+    const timer = setTimeout(() => leave('step'), SITUATION_DURATION)
     return () => clearTimeout(timer)
-  }, [situation])
+  }, [shown, fromQuestion])
 
   const headingRef = useRef<HTMLHeadingElement>(null)
   const situationButtonRef = useRef<HTMLButtonElement>(null)
@@ -244,14 +283,13 @@ function QuestionStep({ focusHeading, onMove }: QuestionStepProps) {
   // Keeps keyboard focus on the screen that is showing. The question is inert under the STEP
   // screen, so its heading can only take focus after the STEP screen leaves.
   useEffect(() => {
-    if (situation.isVisible) {
-      if (situation.fromQuestion) questionButtonRef.current?.focus()
-    } else if (situation.fromQuestion) {
-      situationButtonRef.current?.focus()
-    } else if (focusHeading) {
-      headingRef.current?.focus()
+    if (shown === 'step') {
+      if (fromQuestion) questionButtonRef.current?.focus()
+    } else if (shown === 'question') {
+      if (fromQuestion) situationButtonRef.current?.focus()
+      else if (focusHeading) headingRef.current?.focus()
     }
-  }, [situation, focusHeading])
+  }, [shown, fromQuestion, focusHeading])
 
   const goBack = () => {
     if (index === 0) navigate(ONBOARDING_ROUTES.complete)
@@ -266,9 +304,11 @@ function QuestionStep({ focusHeading, onMove }: QuestionStepProps) {
   return (
     <div className="relative isolate flex flex-1 flex-col overflow-hidden bg-question-surface md:rounded-[24px]">
       <div
-        inert={situation.isVisible}
-        aria-hidden={situation.isVisible || undefined}
-        className="flex flex-1 flex-col"
+        inert={shown !== 'question'}
+        aria-hidden={shown !== 'question' || undefined}
+        onTransitionEnd={handleFadeEnd('question')}
+        data-testid="question-layer"
+        className={`flex flex-1 flex-col ${layerClass(shown === 'question')}`}
       >
         <img
           src={topic.scene}
@@ -283,9 +323,11 @@ function QuestionStep({ focusHeading, onMove }: QuestionStepProps) {
               ref={situationButtonRef}
               type="button"
               className={PILL_CLASS}
-              onClick={() =>
-                setSituation({ isVisible: true, fromQuestion: true })
-              }
+              onClick={() => {
+                if (shown !== 'question') return
+                setFromQuestion(true)
+                leave('question')
+              }}
             >
               상황 보기
             </button>
@@ -357,13 +399,12 @@ function QuestionStep({ focusHeading, onMove }: QuestionStepProps) {
       <SituationScreen
         topic={topic}
         topicIndex={topicIndex}
-        isVisible={situation.isVisible}
-        showQuestionButton={situation.fromQuestion}
+        isVisible={shown === 'step'}
+        showQuestionButton={fromQuestion}
         questionButtonRef={questionButtonRef}
-        onShowQuestion={() =>
-          setSituation({ isVisible: false, fromQuestion: true })
-        }
+        onShowQuestion={() => leave('step')}
         onBack={goBack}
+        onFadeEnd={handleFadeEnd('step')}
       />
       <SurveySkipButton />
     </div>
