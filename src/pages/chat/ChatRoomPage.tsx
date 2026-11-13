@@ -450,7 +450,7 @@ export default function ChatRoomPage() {
       </footer>
       {confirming === 'agenda' && (
         <ChoiceDialog
-          title="이대로 확정하시겠습니까?"
+          title="다음 안건으로 넘어가시겠습니까?"
           message={
             '안건을 확정하면 다시 수정할 수 없어요\nAI가 다음 안건으로 이동해요'
           }
