@@ -93,13 +93,17 @@ function ServerLogin() {
           Math.max(GOOGLE_BUTTON_MIN_WIDTH, Math.round(slot.offsetWidth)),
         )
         slot.replaceChildren()
-        // English, as the Figma button reads `Sign up with Google`.
+        // As close to the Figma button (1036:26154) as GIS allows: white with a gray outline, a
+        // pill, the full row width, `Sign up with Google` in English, and the logo next to the
+        // text in the middle. GIS sets the height (40px at `large`), the font and the logo size,
+        // and the button must stay visible and unscaled, or Google ignores presses on it.
         google.renderButton(slot, {
           type: 'standard',
           theme: 'outline',
           size: 'large',
           text: 'signup_with',
           shape: 'pill',
+          logo_alignment: 'center',
           width,
           locale: 'en',
         })
@@ -122,11 +126,13 @@ function ServerLogin() {
     <LoginLayout
       googleButton={
         // Keeps the Figma button's 61px row, so nothing around it moves while Google loads.
+        // Google's 40px button sits at the top of the row: its top edge, its width and its 17px
+        // gap to the tooltip match Figma (1036:26154), and only its lower 21px is missing.
         <div
           ref={buttonRef}
           data-testid="google-signin-button"
           aria-busy={phase === 'loading' || phase === 'signing-in' || undefined}
-          className={`flex h-[61px] w-full items-center justify-center ${
+          className={`flex h-[61px] w-full items-start justify-center ${
             phase === 'ready' ? '' : 'pointer-events-none'
           }`}
         />

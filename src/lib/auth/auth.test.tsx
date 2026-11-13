@@ -216,13 +216,19 @@ describe('server mode: sign-in', () => {
     expect(options).toEqual(
       expect.objectContaining({
         type: 'standard',
+        theme: 'outline',
+        size: 'large',
         text: 'signup_with',
+        shape: 'pill',
+        logo_alignment: 'center',
         locale: 'en',
       }),
     )
     // Google ignores presses on a button it cannot see, so nothing may hide it.
     expect(slot.closest('[class*="opacity-0"]')).toBeNull()
     expect(slot).not.toHaveClass('pointer-events-none')
+    // The Figma button's 61px row, with Google's 40px button at its top (1036:26154).
+    expect(slot).toHaveClass('h-[61px]', 'items-start')
     expect(screen.getByRole('button', { name: 'Google' })).toBeVisible()
     // The Figma button is not drawn over or under it, and One Tap is not used instead.
     expect(loginButton()).not.toBeInTheDocument()
