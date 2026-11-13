@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import AppRoutes from '../../app/AppRoutes'
 import { getMatchStatus } from '../../lib/home/matchStatus'
 import { isFromHome } from '../../lib/home/routes'
+import { finishSituation } from '../../test/questionFade'
 import { QUESTION_COUNT, getQuestionStep } from '../question/questionData'
 
 function renderAt(path: string) {
@@ -182,8 +183,7 @@ describe('state across screens', () => {
   const answerAll = () => {
     for (let index = 0; index < QUESTION_COUNT; index += 1) {
       if (index % 2 === 0) {
-        act(() => vi.advanceTimersByTime(2000))
-        act(() => vi.advanceTimersByTime(500))
+        finishSituation()
       }
       fireEvent.click(
         screen.getByRole('radio', {

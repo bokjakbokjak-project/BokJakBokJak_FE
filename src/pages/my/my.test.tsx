@@ -4,6 +4,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import AppRoutes from '../../app/AppRoutes'
 import { ANSWER_GROUPS, getAnswerSummary } from '../../lib/answerSummary'
 import { CATEGORY_IDS } from '../../lib/onboarding/categories'
+import { finishSituation } from '../../test/questionFade'
 import { QUESTION_COUNT, QUESTION_TOPICS } from '../question/questionData'
 
 function renderAt(path: string) {
@@ -347,8 +348,7 @@ describe('retaking the survey', () => {
   const answerAll = () => {
     for (let index = 0; index < QUESTION_COUNT; index += 1) {
       if (index % 2 === 0) {
-        act(() => vi.advanceTimersByTime(2000))
-        act(() => vi.advanceTimersByTime(500))
+        finishSituation()
       }
       const topic = QUESTION_TOPICS[Math.floor(index / 2)]
       const options =
