@@ -43,8 +43,9 @@ export default function AppRoutes() {
       {isDemoMode() && <DemoNotice />}
       <Routes>
         <Route element={<MobileLayout />}>
+          {/* The login screen moved to `/`. Old `/login` links still land on it. */}
           <Route
-            index
+            path="/login"
             element={<Navigate to={ONBOARDING_ROUTES.login} replace />}
           />
           {/* These stay mounted across the screens below, so moving between them keeps the
