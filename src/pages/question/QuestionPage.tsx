@@ -10,7 +10,12 @@ import { useNavigate } from 'react-router'
 import backArrow from '../../assets/question/back-arrow-brown.svg'
 import radioOff from '../../assets/question/radio-off.svg'
 import radioOn from '../../assets/question/radio-on.svg'
+import { ErrorState, LoadingState } from '../../components/LoadState/LoadState'
+import { useOnboarding } from '../../lib/onboarding/onboardingState'
+import { isPriorityComplete } from '../../lib/onboarding/priority'
 import { ONBOARDING_ROUTES } from '../../lib/onboarding/routes'
+import { isQuestionBlocked } from '../../lib/survey/surveyMapping'
+import { useSavedSurvey } from '../../lib/survey/useSurvey'
 import {
   QUESTION_COUNT,
   QUESTION_ROUTES,
@@ -236,11 +241,15 @@ type QuestionStepProps = {
 /** Mounted once per question, so the STEP timer starts over on every topic. */
 function QuestionStep({ focusHeading, onMove }: QuestionStepProps) {
   const navigate = useNavigate()
-  const { answers, answer, index } = useQuestion()
+  const { answers, answer, index, sync } = useQuestion()
   const { topic, isSelf, question } = getQuestionStep(index)
   const topicIndex = Math.floor(index / 2)
   const selected = answers[index]
   const layout = LAYOUT[topic.layout]
+  // Server mode: this question's options do not match the server survey (BEDTIME_H while the
+  // server sends seven options), so the survey cannot be saved yet. The user can still answer.
+  const isBlocked =
+    sync.status === 'ready' && isQuestionBlocked(sync.mapping, index)
 
   // Each topic opens on its STEP screen. An answered question has seen it already, so going
   // back skips it, but `상황 보기` can always bring it back.
@@ -355,6 +364,16 @@ function QuestionStep({ focusHeading, onMove }: QuestionStepProps) {
         >
           <fieldset className="flex flex-col gap-px">
             <legend className="sr-only">{question.text}</legend>
+            {/* Not in Figma: shown only while the server survey does not match (BE-9). */}
+            {isBlocked && (
+              <p
+                role="note"
+                className="mb-2 text-[13px] leading-[1.5] break-keep text-gray-500"
+              >
+                이 문항은 서버 설문과 선택지가 맞지 않아 지금은 설문을 저장할 수
+                없어요. 다른 문항은 계속 답할 수 있어요.
+              </p>
+            )}
             {question.options.map((option) => {
               const isSelected = option === selected
               return (
@@ -412,12 +431,43 @@ function QuestionStep({ focusHeading, onMove }: QuestionStepProps) {
 }
 
 export default function QuestionPage() {
-  const { index, setIndex } = useQuestion()
+  const { index, setIndex, sync, isRetake, choosePriorities } = useQuestion()
   const [hasMoved, setHasMoved] = useState(false)
+  // Server mode: the questions open once the saved survey is read, so a saved answer is already
+  // selected when its screen first shows.
+  const saved = useSavedSurvey()
+  const navigate = useNavigate()
+  const { data: onboarding } = useOnboarding()
+  // A first survey needs the onboarding priorities. They come from this session or, after a
+  // new sign-in, from GET /api/me/survey. If neither has them, the user picks them before the
+  // questions instead of finding out after answering all 16; they are saved with the survey.
+  const needsPriorities =
+    sync.status === 'ready' &&
+    !isRetake &&
+    sync.priorities.length === 0 &&
+    !isPriorityComplete(onboarding.priorities)
+
+  useEffect(() => {
+    if (!needsPriorities) return
+    choosePriorities()
+    navigate(ONBOARDING_ROUTES.priority, { replace: true })
+  }, [needsPriorities, choosePriorities, navigate])
 
   const move = (next: number) => {
     setHasMoved(true)
     setIndex(next)
+  }
+
+  if (saved.status !== 'ready' || needsPriorities) {
+    return (
+      <div className="relative isolate flex flex-1 flex-col items-center justify-center bg-question-surface md:rounded-[24px]">
+        {saved.status === 'failed' ? (
+          <ErrorState error={saved.error} onRetry={saved.retry} />
+        ) : (
+          <LoadingState label="설문을 불러오고 있어요" />
+        )}
+      </div>
+    )
   }
 
   return <QuestionStep key={index} focusHeading={hasMoved} onMove={move} />

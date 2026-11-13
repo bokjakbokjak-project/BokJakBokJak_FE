@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useEffectEvent, useRef, useState } from 'react'
 import { Navigate, useNavigate } from 'react-router'
 import alarm from '../../assets/question/loading/alarm.png'
 import basin from '../../assets/question/loading/basin.png'
@@ -7,9 +7,17 @@ import character from '../../assets/question/loading/character.png'
 import pillow from '../../assets/question/loading/pillow.png'
 import spray from '../../assets/question/loading/spray.png'
 import towels from '../../assets/question/loading/towels.png'
+import {
+  SurveyConflictError,
+  describeSurveyError,
+  isSchemaMismatch,
+  useSurveySubmit,
+} from '../../lib/survey/useSurvey'
 import { QUESTION_COUNT, QUESTION_ROUTES } from './questionData'
 import { useQuestion } from './questionState'
-import { createSurveyProfile } from './surveyApi'
+
+const RETRY_BUTTON_CLASS =
+  'rounded-full border-2 border-question-outline bg-brand-beige1 px-4 py-1.5 text-[14px] font-semibold text-question-outline'
 
 /** Shown at least this long, and longer while the profile is still being made. */
 export const MIN_LOADING_DURATION = 2000
@@ -25,17 +33,21 @@ const PIECES = [
   { src: spray, box: [338.27, 468.07, 34.99, 41.69] },
 ] as const
 
-/** Figma 1270:18704, between the last question and the survey result. */
+/**
+ * Figma 1270:18704, between the last question and the survey result. In server mode it saves the
+ * survey (PUT /api/me/survey) and opens the result only after the server confirms. Sample mode
+ * saves nothing and waits only for the minimum time.
+ */
 export default function QuestionLoadingPage() {
   const navigate = useNavigate()
   const { answers } = useQuestion()
   const isComplete = Object.keys(answers).length === QUESTION_COUNT
+  const survey = useSurveySubmit()
+  const savesToServer = survey !== null
 
   const [hasWaited, setHasWaited] = useState(false)
-  const [isProfileReady, setIsProfileReady] = useState(
-    createSurveyProfile === null,
-  )
-  const [hasFailed, setHasFailed] = useState(false)
+  const [isProfileReady, setIsProfileReady] = useState(!savesToServer)
+  const [failure, setFailure] = useState<{ error: unknown } | null>(null)
   const [attempt, setAttempt] = useState(0)
   const startedAttempt = useRef(-1)
 
@@ -44,15 +56,27 @@ export default function QuestionLoadingPage() {
     return () => clearTimeout(timer)
   }, [])
 
+  const save = useEffectEvent(() => {
+    survey?.submit().then(
+      () => setIsProfileReady(true),
+      (error: unknown) => setFailure({ error }),
+    )
+  })
+
   // Started once per attempt, so the development double run does not send twice.
   useEffect(() => {
-    if (!createSurveyProfile || startedAttempt.current === attempt) return
+    if (!savesToServer || !isComplete) return
+    if (startedAttempt.current === attempt) return
     startedAttempt.current = attempt
-    createSurveyProfile().then(
-      () => setIsProfileReady(true),
-      () => setHasFailed(true),
-    )
-  }, [attempt])
+    save()
+  }, [attempt, savesToServer, isComplete])
+
+  const retry = () => {
+    setFailure(null)
+    setAttempt((current) => current + 1)
+  }
+  const conflict =
+    failure?.error instanceof SurveyConflictError ? failure.error : null
 
   // Replaces this entry, so back from the result returns to the survey, not to this screen.
   useEffect(() => {
@@ -81,7 +105,7 @@ export default function QuestionLoadingPage() {
       </div>
 
       <main
-        aria-busy={!hasFailed}
+        aria-busy={!failure}
         className="pt-[max(0px,calc(167px-env(safe-area-inset-top)))]"
       >
         <div className="px-[31px] font-bold text-brand-brown1">
@@ -95,22 +119,56 @@ export default function QuestionLoadingPage() {
         <p className="mx-[11px] mt-1 text-center text-[12px] leading-[1.6] font-medium tracking-[0.3px] text-question-caption">
           알려주신 정보를 바탕으로 프로필을 작성할게요!
         </p>
-        {/* Not in Figma. Only reachable once the profile API exists (OPEN_QUESTIONS DE-11). */}
-        {hasFailed && (
+        {/* Not in Figma (OPEN_QUESTIONS DE-11): server mode only. The answers stay as they are. */}
+        {failure && !conflict && (
           <div role="alert" className="mt-6 flex flex-col items-center gap-2">
-            <p className="text-[14px] font-medium text-gray-500">
-              프로필을 만들지 못했어요.
+            <p className="px-6 text-center text-[14px] font-medium break-keep text-gray-500">
+              {describeSurveyError(failure.error)}
             </p>
-            <button
-              type="button"
-              className="rounded-full border-2 border-question-outline bg-brand-beige1 px-4 py-1.5 text-[14px] font-semibold text-question-outline"
-              onClick={() => {
-                setHasFailed(false)
-                setAttempt((current) => current + 1)
-              }}
-            >
-              다시 시도
-            </button>
+            {/* Trying again cannot help while the server survey does not match the screens. */}
+            {!isSchemaMismatch(failure.error) && (
+              <button
+                type="button"
+                className={RETRY_BUTTON_CLASS}
+                onClick={retry}
+              >
+                다시 시도
+              </button>
+            )}
+          </div>
+        )}
+        {/* Another save came first (409). Nothing is replaced or sent again until the user picks. */}
+        {conflict && survey && (
+          <div role="alert" className="mt-6 flex flex-col items-center gap-2">
+            <p className="px-6 text-center text-[14px] font-medium break-keep text-gray-500">
+              다른 곳에서 설문이 먼저 저장됐어요. 지금 답변으로 다시 저장할지,
+              저장된 답변을 볼지 선택해주세요.
+            </p>
+            <div className="flex gap-2">
+              <button
+                type="button"
+                className={RETRY_BUTTON_CLASS}
+                onClick={() => {
+                  survey
+                    .saveOverLatest(conflict.latest)
+                    .then(retry, (error) => setFailure({ error }))
+                }}
+              >
+                지금 답변으로 저장
+              </button>
+              <button
+                type="button"
+                className={RETRY_BUTTON_CLASS}
+                onClick={() => {
+                  survey.takeLatest(conflict.latest).then(
+                    () => navigate(QUESTION_ROUTES.profile, { replace: true }),
+                    (error: unknown) => setFailure({ error }),
+                  )
+                }}
+              >
+                저장된 답변 보기
+              </button>
+            </div>
           </div>
         )}
       </main>
