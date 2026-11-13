@@ -9,6 +9,8 @@ import AnswerCard from '../../components/AnswerCard/AnswerCard'
 import ConfirmDialog from '../../components/my/ConfirmDialog'
 import ProfileAvatar from '../../components/my/ProfileAvatar'
 import ProfileHeader from '../../components/my/ProfileHeader'
+import { isServerMode } from '../../lib/api/config'
+import { useAuth } from '../../lib/auth/authState'
 import { DIAMOND_BACKGROUND } from '../../lib/diamondBackground'
 import { getAnswerSummary } from '../../lib/answerSummary'
 import { HOME_ROUTES } from '../../lib/home/routes'
@@ -44,6 +46,15 @@ export default function MyPage() {
     update({ priorities: [] })
     reset()
     navigate(ONBOARDING_ROUTES.priority)
+  }
+
+  // Server mode only. Sample mode keeps the `아직 준비 중입니다.` notice (OPEN_QUESTIONS MY-1).
+  // Signing out always ends the local session, even if the request fails.
+  const { signOut } = useAuth()
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
+  const handleLogout = async () => {
+    setIsLoggingOut(true)
+    if (await signOut()) navigate(ONBOARDING_ROUTES.login, { replace: true })
   }
 
   return (
@@ -88,7 +99,9 @@ export default function MyPage() {
               <button
                 type="button"
                 className={MENU_ROW_CLASS}
-                onClick={notice.show}
+                onClick={isServerMode() ? handleLogout : notice.show}
+                disabled={isLoggingOut}
+                aria-busy={isLoggingOut || undefined}
               >
                 로그아웃 하기
                 <img src={menuChevron} alt="" className="size-6" />
