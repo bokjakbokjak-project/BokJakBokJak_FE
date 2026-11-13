@@ -247,4 +247,68 @@ describe('situational survey', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: '확인' }))
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
+  it('opens KakaoTalk sharing with the profile link when the key is set', async () => {
+    vi.stubEnv('VITE_KAKAO_JS_KEY', 'test-key')
+    const sendDefault = vi.fn()
+    const init = vi.fn()
+    window.Kakao = {
+      init,
+      isInitialized: () => init.mock.calls.length > 0,
+      Share: { sendDefault },
+    }
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText },
+      configurable: true,
+    })
+    renderAt('/question')
+    answerAll()
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: '공유하기' }))
+    })
+
+    expect(sendDefault).toHaveBeenCalledTimes(1)
+    const [card] = sendDefault.mock.calls[0]
+    expect(card.content.title).toBe('사용자님의 룸메이트 프로필')
+    expect(card.buttons[0].title).toBe('프로필 보기')
+    expect(card.buttons[0].link.webUrl).toMatch(/\/share#.+/)
+    expect(writeText).not.toHaveBeenCalled()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+
+    vi.unstubAllEnvs()
+    delete window.Kakao
+  })
+
+  it('copies the link instead when KakaoTalk sharing fails', async () => {
+    vi.stubEnv('VITE_KAKAO_JS_KEY', 'test-key')
+    window.Kakao = {
+      init: vi.fn(),
+      isInitialized: () => true,
+      Share: {
+        sendDefault: () => {
+          throw new Error('blocked')
+        },
+      },
+    }
+    const writeText = vi.fn().mockResolvedValue(undefined)
+    Object.defineProperty(navigator, 'clipboard', {
+      value: { writeText },
+      configurable: true,
+    })
+    renderAt('/question')
+    answerAll()
+
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: '공유하기' }))
+    })
+
+    expect(writeText).toHaveBeenCalledTimes(1)
+    expect(
+      screen.getByRole('dialog', { name: '링크 복사 완료!' }),
+    ).toBeInTheDocument()
+
+    vi.unstubAllEnvs()
+    delete window.Kakao
+  })
 })

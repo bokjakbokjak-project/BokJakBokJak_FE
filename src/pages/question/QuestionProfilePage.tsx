@@ -12,6 +12,10 @@ import { getAnswerSummary } from '../../lib/answerSummary'
 import { HOME_ROUTES, isFromHome } from '../../lib/home/routes'
 import { isFromMy, MY_ROUTES } from '../../lib/my/routes'
 import { useOnboarding } from '../../lib/onboarding/onboardingState'
+import {
+  canShareToKakao,
+  shareProfileToKakao,
+} from '../../lib/share/kakaoShare'
 import { createShareUrl } from '../../lib/share/profileShare'
 import { QUESTION_COUNT, QUESTION_ROUTES } from './questionData'
 import { useQuestion } from './questionState'
@@ -67,8 +71,10 @@ export default function QuestionProfilePage() {
 
   const name = data.name.trim() || '사용자'
 
-  // QA 11: sharing copies the link to the shared result (QA 15) and confirms it.
-  const copyShareLink = async () => {
+  // QA 11, 15: sharing opens KakaoTalk with the profile card when the Kakao key is set. Without
+  // it, or when the SDK cannot be used, it copies the link to the shared result and confirms it.
+  const shareProfile = async () => {
+    const origin = window.location.origin
     const url = createShareUrl(
       {
         name,
@@ -76,8 +82,16 @@ export default function QuestionProfilePage() {
         priorities: data.priorities,
         answers,
       },
-      window.location.origin,
+      origin,
     )
+    if (canShareToKakao()) {
+      try {
+        await shareProfileToKakao({ name, url, origin })
+        return
+      } catch {
+        // Falls back to copying the link below.
+      }
+    }
     try {
       await navigator.clipboard.writeText(url)
       setShareState({ status: 'copied' })
@@ -117,7 +131,7 @@ export default function QuestionProfilePage() {
             type="button"
             aria-label="공유하기"
             className="size-7 rounded-full border-[1.5px] border-transparent transition-colors hover:border-brand-brown3 hover:bg-brand-beige1 focus-visible:border-brand-brown3 focus-visible:bg-brand-beige1"
-            onClick={copyShareLink}
+            onClick={shareProfile}
           >
             <img src={share} alt="" className="-m-[1.5px] block size-7" />
           </button>
