@@ -49,7 +49,7 @@ export default function CharacterPreview({
   greet = false,
   className = 'relative mx-auto w-full max-w-[302px]',
 }: {
-  priorities: readonly CategoryId[]
+  priorities: readonly (CategoryId | undefined)[]
   /** The home and notification frames draw the character without its rug. */
   showRug?: boolean
   /** The home greeting: open eyes, then a smile with a small nod of the head. */

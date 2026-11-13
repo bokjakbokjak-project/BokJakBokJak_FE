@@ -69,13 +69,63 @@ type MatchRingProps = {
   rate: number | null
   variant: 'list' | 'analysis'
   className: string
+  /**
+   * What a null rate means. `shared` (the default) is a shared result read without a rate (`??`).
+   * `insufficient` is a server score that could not be counted for too few answers, shown as
+   * `정보 부족` on an empty ring (채희 spec 7.1). 0 is a real 0%.
+   */
+  nullMeaning?: 'shared' | 'insufficient'
+}
+
+/** `정보 부족` on an empty gray track. Not in Figma, so it reuses the ring's own text styles. */
+function InsufficientRing({
+  shape,
+  ringClassName,
+  className,
+  textClassName,
+}: {
+  shape: RingShape
+  ringClassName: string
+  className: string
+  textClassName: string
+}) {
+  return (
+    <div className={className}>
+      <RateRing rate={0} shape={shape} className={ringClassName} />
+      <p
+        aria-hidden="true"
+        className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center leading-[1.2] font-bold whitespace-pre text-gray-300 ${textClassName}`}
+      >
+        {'정보\n부족'}
+      </p>
+      <span className="sr-only">매칭률 정보 부족</span>
+    </div>
+  )
 }
 
 export default function MatchRing({
   rate,
   variant,
   className,
+  nullMeaning = 'shared',
 }: MatchRingProps) {
+  if (rate === null && nullMeaning === 'insufficient') {
+    return variant === 'list' ? (
+      <InsufficientRing
+        shape={LIST_RING}
+        className={`absolute size-[55px] ${className}`}
+        ringClassName="top-[0.55px] left-[0.275px] size-[53.9px]"
+        textClassName="text-[12px]"
+      />
+    ) : (
+      <InsufficientRing
+        shape={LARGE_RING}
+        className={`absolute size-[69px] ${className}`}
+        ringClassName="inset-[-4px] size-[77px]"
+        textClassName="text-[16px]"
+      />
+    )
+  }
   if (variant === 'list' && rate !== null) {
     return (
       <div className={`absolute size-[55px] ${className}`}>

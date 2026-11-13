@@ -19,74 +19,29 @@ import {
   type ChatItem,
   type ChatRoom,
 } from '../../lib/chat/chatApi'
+import { isServerMode } from '../../lib/api/config'
+import { parseId } from '../../lib/api/parse'
 import { CHAT_ROUTES, fromChatState } from '../../lib/chat/routes'
 import { ROOMMATE_ROUTES } from '../../lib/roommate/routes'
 import { AI_TILE, PARTNER_TILE } from './chatAvatars'
+import AiCard from './AiCard'
+import {
+  agendaTitle,
+  BOT_NAME,
+  BUBBLE_TEXT,
+  CARD_BUTTON,
+  ERROR_TEXT,
+  LEFT_BUBBLE,
+  ROUND_BUTTON,
+} from './chatRoomStyles'
 import SampleNotice from './SampleNotice'
+import ServerChatRoom from './ServerChatRoom'
 import { useChatRoom } from './useChatRoom'
 
 type Sender = 'ai' | 'me' | 'partner' | 'system'
 
 const senderOf = (item: ChatItem): Sender =>
   item.kind === 'message' ? item.from : item.kind === 'left' ? 'system' : 'ai'
-
-// Not in Figma. Shown when the server rejects a change (chat OPEN_QUESTIONS DE-C1).
-const ERROR_TEXT = '요청을 처리하지 못했어요. 잠시 후 다시 시도해주세요.'
-
-/** The chatbot's name is a placeholder in Figma (`챗봇이 이름`, `"00"`), chat OPEN_QUESTIONS DE-C6. */
-const BOT_NAME = 'AI 챗봇'
-
-const ROUND_BUTTON =
-  'relative size-7 shrink-0 rounded-full border-[1.5px] border-transparent transition-colors hover:border-question-outline hover:bg-brand-beige1 focus-visible:border-question-outline focus-visible:bg-brand-beige1'
-
-/** White bubble of the chatbot and the partner, open at the top left (Figma 1715:38156). */
-const LEFT_BUBBLE =
-  'rounded-tr-[12px] rounded-b-[12px] border border-gray-100 bg-white px-3 py-2 text-gray-black'
-
-/** Figma 1952:40401: a 35px gray row with a 20px icon and the label. */
-const CARD_BUTTON =
-  'flex h-[35px] w-full items-center justify-center gap-[5px] rounded-[5px] bg-[#f3f3f3] text-[14px] leading-[1.5] font-medium text-gray-black disabled:opacity-60'
-
-/**
- * Text wraps once the text box reaches 258px, the Figma bubble text width (QA 7). Korean words
- * stay whole, and a run without spaces such as a URL still breaks instead of overflowing.
- */
-const BUBBLE_TEXT =
-  'text-[14px] leading-[1.5] break-keep [overflow-wrap:anywhere] whitespace-pre-wrap'
-
-/** `1 시험기간` in the data reads `1. 시험기간` on the card (Figma 1715:38135). */
-const agendaTitle = (title: string) => title.replace(/^(\d+)\s+/, '$1. ')
-
-function AiCard({
-  title,
-  badge,
-  children,
-  actions,
-}: {
-  title: string
-  badge?: { text: string; tone: 'open' | 'done' }
-  children: ReactNode
-  actions?: ReactNode
-}) {
-  return (
-    <div className={`${LEFT_BUBBLE} flex w-[234px] max-w-full flex-col gap-2`}>
-      <div className="flex items-center justify-between gap-2 border-b border-gray-100 pb-2">
-        <p className="text-[14px] leading-[1.5] font-semibold">{title}</p>
-        {badge && (
-          <span
-            className={`flex h-[21px] shrink-0 items-center rounded-[4px] px-1.5 text-[11px] leading-[1.5] font-semibold ${badge.tone === 'open' ? 'bg-gray-100 text-gray-500' : 'bg-brand-brown1 text-white'}`}
-          >
-            {badge.text}
-          </span>
-        )}
-      </div>
-      <div className="text-[12px] leading-[1.5] break-keep whitespace-pre-line">
-        {children}
-      </div>
-      {actions}
-    </div>
-  )
-}
 
 function ChatItemView({
   item,
@@ -225,10 +180,18 @@ function CardActions({
   )
 }
 
-/** Figma 1715:38109, the redesign of 988:19036, 988:16735, 940:19880 and 1236:14142. */
+/** A server room in server mode (the route id is its `matching_id`), the samples otherwise. */
 export default function ChatRoomPage() {
-  const navigate = useNavigate()
   const { roomId } = useParams()
+  if (!isServerMode()) return <SampleChatRoom roomId={roomId} />
+  const matchingId = parseId(roomId)
+  if (matchingId === null) return <Navigate to={CHAT_ROUTES.list} replace />
+  return <ServerChatRoom key={matchingId} matchingId={matchingId} />
+}
+
+/** Figma 1715:38109, the redesign of 988:19036, 988:16735, 940:19880 and 1236:14142. */
+function SampleChatRoom({ roomId }: { roomId: string | undefined }) {
+  const navigate = useNavigate()
   const { room, update } = useChatRoom(roomId)
   const [draft, setDraft] = useState('')
   const [isPending, setIsPending] = useState(false)

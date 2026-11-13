@@ -12,7 +12,8 @@ export default function RoommatePage({
   footer,
 }: {
   children: ReactNode
-  footer: ReactNode
+  /** Left out while the screen is still loading or failed. */
+  footer?: ReactNode
 }) {
   return (
     <div className="relative -mt-[env(safe-area-inset-top)] -mb-[env(safe-area-inset-bottom)] flex h-dvh flex-col overflow-hidden bg-brand-cream1 md:h-[844px]">

@@ -14,6 +14,8 @@ export type ProfileCardData = {
    * `??` on a shared result (Figma 1952:40101).
    */
   matchRate?: number | null
+  /** A server score that could not be counted is `정보 부족` instead of `??`. */
+  matchRateNull?: 'shared' | 'insufficient'
   /** Drawn in the 100px slot. Its image may spill over the slot for its outline. */
   avatar: ReactNode
 }
@@ -23,7 +25,7 @@ export type ProfileCardData = {
  * result (1377:35850).
  */
 export default function ProfileCard({ profile }: { profile: ProfileCardData }) {
-  const { name, age, department, matchRate, avatar } = profile
+  const { name, age, department, matchRate, matchRateNull, avatar } = profile
   const details = [age === null ? null : `${age}세`, department.trim() || null]
   return (
     // QA 14: the cream fill stays inside the border (bg-clip-padding), and the pink band takes
@@ -86,6 +88,7 @@ export default function ProfileCard({ profile }: { profile: ProfileCardData }) {
       {matchRate !== undefined && (
         <MatchRing
           rate={matchRate}
+          nullMeaning={matchRateNull}
           variant="analysis"
           className="top-[13.5px] right-[27.25px]"
         />

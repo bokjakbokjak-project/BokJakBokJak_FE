@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react'
 import { Link } from 'react-router'
 import bellBefore from '../../assets/home/bell-before.svg'
 import bellMatched from '../../assets/home/bell-matched.svg'
@@ -7,12 +8,14 @@ import roomBackground from '../../assets/home/room-bg.png'
 import AppLogo from '../../components/AppLogo/AppLogo'
 import BottomNav from '../../components/BottomNav/BottomNav'
 import CharacterPreview from '../../components/onboarding/CharacterPreview'
+import { isServerMode } from '../../lib/api/config'
 import { STAGE } from '../../lib/onboarding/character'
 import { getMatchStatus, type MatchStatus } from '../../lib/home/matchStatus'
 import {
   getNotifications,
   hasNewNotification,
 } from '../../lib/home/notificationData'
+import { getUnreadNotificationCount } from '../../lib/home/notificationApi'
 import { FROM_HOME_STATE, HOME_ROUTES } from '../../lib/home/routes'
 import { useOnboarding } from '../../lib/onboarding/onboardingState'
 import { QUESTION_ROUTES } from '../question/questionData'
@@ -53,6 +56,30 @@ const toWidthPercent = (value: number) => `${(value / FRAME.width) * 100}%`
 const toHeightPercent = (value: number) => `${(value / FRAME.height) * 100}%`
 
 /**
+ * The bell's red dot. In server mode it asks `GET /api/notifications/unread-count` each time the
+ * home opens and shows the dot for a count of 1 or more (채희 spec 7.16). The spec sets no
+ * polling, so it does not ask again while the home stays open. A failed read shows no dot.
+ */
+function useHasNewNotification() {
+  const isServer = isServerMode()
+  const [count, setCount] = useState(0)
+
+  useEffect(() => {
+    if (!isServer) return
+    const controller = new AbortController()
+    getUnreadNotificationCount(controller.signal).then(
+      (value) => {
+        if (!controller.signal.aborted) setCount(value)
+      },
+      () => {},
+    )
+    return () => controller.abort()
+  }, [isServer])
+
+  return isServer ? count > 0 : hasNewNotification(getNotifications())
+}
+
+/**
  * The room art scales with the screen width, and the character and the bubble follow it, so they
  * stay on the rug. The bar stays at the bottom, and only the content above it scrolls on short
  * screens. The PC frame is always 844px tall.
@@ -65,7 +92,7 @@ export default function HomePage({
   const { data } = useOnboarding()
   const variant = VARIANTS[matchStatus]
   const name = data.name.trim() || '사용자'
-  const hasNew = hasNewNotification(getNotifications())
+  const hasNew = useHasNewNotification()
 
   return (
     <div className="relative -mt-[env(safe-area-inset-top)] -mb-[env(safe-area-inset-bottom)] flex h-dvh flex-col overflow-hidden bg-home-floor md:h-[844px]">
