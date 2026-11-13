@@ -13,6 +13,7 @@ import { DIAMOND_BACKGROUND } from '../../lib/diamondBackground'
 import { HOME_ROUTES } from '../../lib/home/routes'
 import { FROM_MY_STATE, MY_ROUTES } from '../../lib/my/routes'
 import { useOnboarding } from '../../lib/onboarding/onboardingState'
+import { useDisplayProfile } from '../../lib/profile/myProfile'
 import { ONBOARDING_ROUTES } from '../../lib/onboarding/routes'
 import { QUESTION_ROUTES } from '../question/questionData'
 import { useQuestion } from '../question/questionState'
@@ -29,12 +30,13 @@ const MENU_ROW_CLASS =
  */
 export default function MyPage() {
   const navigate = useNavigate()
-  const { data, update } = useOnboarding()
+  const { update } = useOnboarding()
   const { startRetake } = useQuestion()
   const notice = usePendingNotice()
   const [isConfirming, setIsConfirming] = useState(false)
   const retakeButtonRef = useRef<HTMLButtonElement>(null)
-  const name = data.name.trim() || '사용자'
+  // Server mode: the saved nickname and the top three categories (GET /api/me/profile).
+  const { name, priorities } = useDisplayProfile()
 
   // Keeps the name, gender, birth year, school, and dormitory. Only the priorities and the survey
   // start over; a retake lets the user straight into the priority step, and in server mode the
@@ -74,7 +76,7 @@ export default function MyPage() {
                 stroke sits outside the frame, so the box starts 5.208px earlier. */}
             <div className="mt-[26.792px] flex flex-col items-center gap-[9.792px]">
               <ProfileAvatar
-                priorities={data.priorities}
+                priorities={priorities}
                 frame="rounded-[35.208px] bg-card-avatar"
                 strokeOutside
               />

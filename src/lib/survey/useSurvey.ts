@@ -15,6 +15,7 @@ import {
   toServerPriorities,
 } from './surveyMapping'
 import { MAX_PRIORITY_COUNT, MIN_PRIORITY_COUNT } from '../onboarding/priority'
+import { markMyProfileStale } from '../profile/myProfile'
 
 /** Another save reached the server first (409 SURVEY_REVISION_CONFLICT). */
 export class SurveyConflictError extends Error {
@@ -128,6 +129,8 @@ export function useSurveySubmit() {
           priorities: [...priorities],
           answers,
         })
+        // The profile's answers and top categories changed with the save.
+        markMyProfileStale()
         if (onboarding.priorities.length === 0) {
           updateOnboarding({ priorities: [...priorities] })
         }
@@ -155,6 +158,7 @@ export function useSurveySubmit() {
       answers: fromServerAnswers(latest.answers, saved.mapping).answers,
     }
     recordSaved(snapshot)
+    markMyProfileStale()
     return snapshot
   }
 

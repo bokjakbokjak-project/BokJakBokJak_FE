@@ -12,7 +12,9 @@ import {
   readStringArray,
   type JsonObject,
 } from '../api/parse'
+import type { AnswerSummaryCard } from '../answerSummary'
 import type { CategoryId } from '../onboarding/categories'
+import { parseProfileCards } from '../profile/profileApi'
 
 /**
  * The recommendation, analysis, lifestyle summary and chat request APIs (채희 spec 7.1 to 7.5).
@@ -162,13 +164,19 @@ export type RoommateProfile = {
   age: number | null
   department: string
   priorities: (CategoryId | undefined)[]
+  /**
+   * The candidate's own answers as the `상세 답변 요약` cards, from `categories` (`habit_answer`,
+   * `tolerance_answer` in A's Notion spec). Null when the answers are not in that shape, which
+   * leaves the cards out as before (roommate OPEN_QUESTIONS RM-9).
+   */
+  cards: AnswerSummaryCard[] | null
 }
 
 /**
- * The card part of A's detail profile, `GET /api/roommates/{candidateId}/profile` (Swagger
- * `RoommateProfileResponse`). Its `categories` hold the survey questions and options but not
- * which option the candidate chose, so the answer cards are not built from it yet (roommate
- * OPEN_QUESTIONS RM-9).
+ * The card part of A's detail profile, `GET /api/roommates/{candidateId}/profile`, and the
+ * candidate's answers. A's Notion spec returns the same `categories` as the my profile, with the
+ * candidate's chosen answers; the Swagger schema still shows the survey questions instead
+ * (roommate OPEN_QUESTIONS RM-9).
  */
 export async function getRoommateProfile(
   candidateId: number,
@@ -183,5 +191,6 @@ export async function getRoommateProfile(
     age: readNullableNumber(data, 'age'),
     department: readNullableString(data, 'department') ?? '',
     priorities: categoriesFromCodes(readStringArray(data, 'top_categories')),
+    cards: parseProfileCards(data.categories),
   }
 }

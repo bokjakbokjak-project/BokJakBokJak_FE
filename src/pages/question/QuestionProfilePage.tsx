@@ -19,6 +19,8 @@ import {
   shareProfileToKakao,
 } from '../../lib/share/kakaoShare'
 import { createShareUrl } from '../../lib/share/profileShare'
+import { isServerMode } from '../../lib/api/config'
+import { useMyProfile } from '../../lib/profile/myProfile'
 import { useSavedSurvey } from '../../lib/survey/useSurvey'
 import { QUESTION_COUNT, QUESTION_ROUTES } from './questionData'
 import { useQuestion } from './questionState'
@@ -73,18 +75,33 @@ export default function QuestionProfilePage() {
   // Server mode: reads the saved answers first, so a new session (home 「내 설문 다시보기」,
   // my page 「상세 프로필 보기」) shows them instead of sending the user to the survey.
   const saved = useSavedSurvey()
+  // Server mode: the card and the answer summary come from GET /api/me/profile.
+  const { state: profileState, retry: retryProfile } = useMyProfile()
+  const isServer = isServerMode()
+  const profileFailed = profileState.status === 'failed'
+  const profileLoading =
+    isServer &&
+    (profileState.status === 'idle' || profileState.status === 'loading')
 
-  if (saved.status !== 'ready') {
+  if (saved.status !== 'ready' || profileLoading || profileFailed) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center bg-brand-cream1 md:rounded-[24px]">
         {saved.status === 'failed' ? (
           <ErrorState error={saved.error} onRetry={saved.retry} />
+        ) : profileState.status === 'failed' ? (
+          <ErrorState error={profileState.error} onRetry={retryProfile} />
         ) : (
           <LoadingState label="설문 답변을 불러오고 있어요" />
         )}
       </div>
     )
   }
+
+  // Before the first survey the server has no profile (409 SURVEY_REQUIRED): take the survey.
+  if (profileState.status === 'survey-required') {
+    return <Navigate to={QUESTION_ROUTES.survey} replace />
+  }
+  const profile = profileState.status === 'ready' ? profileState.profile : null
 
   // Server mode shows what the server confirmed, never an unsaved retake or a failed save.
   // Sample mode has no server and shows the answers in memory, as before.
@@ -98,7 +115,22 @@ export default function QuestionProfilePage() {
     return <Navigate to={QUESTION_ROUTES.survey} replace />
   }
 
-  const name = data.name.trim() || '사용자'
+  // Server mode shows the saved profile: nickname, the server's age, department, the top three
+  // categories for the character, and the profile's answer cards. Sample mode uses this session's
+  // onboarding answers, as before.
+  const name = profile?.nickname ?? (data.name.trim() || '사용자')
+  const card = profile
+    ? {
+        age: profile.age,
+        department: profile.department,
+        character: profile.topCategories,
+      }
+    : {
+        age: ageOf(data.birthYear),
+        department: data.department,
+        character: priorities,
+      }
+  const answerCards = profile?.cards ?? getAnswerSummary(answers)
 
   // QA 11, 15: sharing copies the link to the shared result and confirms it. With the Kakao key,
   // the confirmation also offers 카카오톡 보내기, which sends the profile card (requested
@@ -108,7 +140,7 @@ export default function QuestionProfilePage() {
     const url = createShareUrl(
       {
         name,
-        department: data.department,
+        department: card.department,
         priorities,
         answers,
       },
@@ -179,9 +211,9 @@ export default function QuestionProfilePage() {
         <ProfileHero
           profile={{
             name,
-            age: ageOf(data.birthYear),
-            department: data.department,
-            avatar: <MyCardAvatar priorities={priorities} />,
+            age: card.age,
+            department: card.department,
+            avatar: <MyCardAvatar priorities={card.character} />,
           }}
         />
         <RoommateSheet labelledBy="result-summary-title" scrolls={false}>
@@ -193,8 +225,8 @@ export default function QuestionProfilePage() {
               상세 답변 요약
             </h2>
             <div className="mt-[15px] flex flex-col gap-3">
-              {getAnswerSummary(answers).map((card) => (
-                <AnswerCard key={card.category} card={card} />
+              {answerCards.map((answerCard) => (
+                <AnswerCard key={answerCard.category} card={answerCard} />
               ))}
             </div>
           </div>

@@ -270,3 +270,65 @@ export function mySurveyData({
     answers,
   }
 }
+
+type Answer = { question_code: string; option_code: string }
+
+/**
+ * Raw `data` of GET /api/me/profile (or, with `candidateId`, of GET /api/roommates/{id}/profile)
+ * built from saved answers the way the spec describes: five categories, eight topics, each with
+ * the habit question and the owner's habit and tolerance answers as option labels.
+ */
+export function profileData({
+  answers = FIRST_OPTION_ANSWERS as Answer[],
+  topCategories = ['SMOKING', 'CLEANING', 'SLEEP_HABITS'],
+  nickname = '서버닉네임',
+  age = 21,
+  department = '서버학과',
+  surveyRevision = 1,
+  candidateId,
+}: {
+  answers?: Answer[]
+  topCategories?: string[]
+  nickname?: string
+  age?: number | null
+  department?: string
+  surveyRevision?: number
+  candidateId?: number
+} = {}) {
+  const schema = schemaData()
+  const chosen = new Map(answers.map((a) => [a.question_code, a.option_code]))
+  const labelOf = (questionCode: string) => {
+    for (const topic of schema.topics) {
+      const question = topic.questions.find(
+        (q) => q.question_code === questionCode,
+      )
+      const option = question?.options.find(
+        (o) => o.option_code === chosen.get(questionCode),
+      )
+      if (option) return option.label
+    }
+    throw new Error(`No answer for ${questionCode}`)
+  }
+  return {
+    ...(candidateId === undefined
+      ? { user_id: 42 }
+      : { candidate_id: candidateId }),
+    nickname,
+    age,
+    department,
+    top_categories: topCategories,
+    survey_revision: surveyRevision,
+    categories: schema.categories.map((category) => ({
+      category_code: category.category_code,
+      name: category.name,
+      topics: schema.topics
+        .filter((topic) => topic.category_code === category.category_code)
+        .map((topic) => ({
+          topic_code: topic.topic_code,
+          question: topic.questions[0].prompt,
+          habit_answer: labelOf(`${topic.topic_code}_H`),
+          tolerance_answer: labelOf(`${topic.topic_code}_T`),
+        })),
+    })),
+  }
+}
