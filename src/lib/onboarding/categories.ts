@@ -8,6 +8,18 @@ export const CATEGORY_IDS = [
 
 export type CategoryId = (typeof CATEGORY_IDS)[number]
 
+/**
+ * Server `category_code` of each card, matched by name and display order to the five categories
+ * of GET /api/surveys/current in the Notion spec (잠버릇, 기상 알람, 청소 청결, 개인 청결, 흡연 유무).
+ */
+export const CATEGORY_SERVER_CODES: Record<CategoryId, string> = {
+  'sleep-habit': 'SLEEP_HABITS',
+  'wake-alarm': 'SLEEP_SCHEDULE',
+  cleaning: 'CLEANING',
+  'personal-hygiene': 'PERSONAL_HYGIENE',
+  smoking: 'SMOKING',
+}
+
 /** Fixed card rows from Figma 1036:26158. Selection and rank never change them. */
 export const CATEGORY_ROWS: readonly (readonly CategoryId[])[] = [
   ['sleep-habit', 'wake-alarm', 'cleaning'],

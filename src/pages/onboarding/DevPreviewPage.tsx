@@ -22,7 +22,6 @@ const PROFILE: Partial<OnboardingData> = {
 }
 const DORMITORY: Partial<OnboardingData> = {
   dormitory: '미리보기 기숙사',
-  roomType: '미리보기 타입',
   roomCapacity: 2,
 }
 const PRIORITIES: Partial<OnboardingData> = {

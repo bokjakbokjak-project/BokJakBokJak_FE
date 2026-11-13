@@ -1,4 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  type CSSProperties,
+} from 'react'
+import alertCircle from '../../assets/icons/alert-circle.svg'
 import infoIcon from '../../assets/icons/info.svg'
 import panelDecor from '../../assets/onboarding/panel-decor.svg'
 import CharacterPreview from '../../components/onboarding/CharacterPreview'
@@ -16,6 +23,7 @@ import {
   togglePriority,
 } from '../../lib/onboarding/priority'
 import { ONBOARDING_ROUTES } from '../../lib/onboarding/routes'
+import { useOnboardingSubmit } from '../../lib/onboarding/useOnboardingSubmit'
 import { useStepNavigation } from '../../lib/onboarding/useStepNavigation'
 
 export default function PriorityPage() {
@@ -26,11 +34,33 @@ export default function PriorityPage() {
   const infoButtonRef = useRef<HTMLButtonElement>(null)
   const [isMissionOpen, setIsMissionOpen] = useState(!hasSeenMission)
   const closeMission = useCallback(() => setIsMissionOpen(false), [])
+  const { state, submit, clearError } = useOnboardingSubmit(() =>
+    go(ONBOARDING_ROUTES.complete),
+  )
+  const isSaving = state.status === 'saving'
+  const alertRef = useRef<HTMLDivElement>(null)
+  const failure = state.status === 'failed' ? state.message : null
+  // Height of the save failure notice, 0 while it is hidden. The character gives up this height.
+  const [alertHeight, setAlertHeight] = useState(0)
 
   useEffect(preloadCharacterAssets, [])
   useEffect(markMissionSeen, [markMissionSeen])
+  useEffect(() => {
+    const node = alertRef.current
+    if (!node || typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(() => setAlertHeight(node.offsetHeight))
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [])
+  // On a short phone the button is pressed with the page scrolled down, so bring the notice in.
+  useEffect(() => {
+    if (failure) alertRef.current?.scrollIntoView?.({ block: 'nearest' })
+  }, [failure])
 
   const handleToggle = (id: CategoryId) => {
+    // The answers being saved stay as they are until the server answers.
+    if (isSaving) return
+    clearError()
     update({ priorities: togglePriority(priorities, id) })
   }
 
@@ -41,10 +71,11 @@ export default function PriorityPage() {
       fullBleed
       footer={
         <PrimaryButton
-          disabled={!isComplete}
-          onClick={() => go(ONBOARDING_ROUTES.complete)}
+          disabled={!isComplete || isSaving}
+          aria-busy={isSaving}
+          onClick={() => void submit()}
         >
-          완료하기
+          {isSaving ? '저장 중...' : '완료하기'}
         </PrimaryButton>
       }
       headerAction={
@@ -67,10 +98,32 @@ export default function PriorityPage() {
         내가 가장 중요하게 생각하는 생활습관 5개의 순위를 매겨주세요
       </h1>
       <div className="relative flex flex-1 flex-col justify-end">
+        {/* No Figma design for a failed save: it reuses the Figma snackbar style (575:1733) of
+            the dormitory step, above the character. It never covers the character: while it
+            shows, the character shrinks by its height, as the complete step does for its second
+            card row (OPEN_QUESTIONS DE-9), so an 844px screen still fits without scrolling.
+            Empty, it takes no height and nothing changes. */}
+        <div
+          ref={alertRef}
+          role="alert"
+          className={`relative z-30 mx-auto mb-auto w-full max-w-[390px] px-6 ${failure ? 'pb-2' : ''}`}
+        >
+          {state.status === 'failed' && (
+            <div className="flex min-h-[39px] items-center justify-center gap-0.5 rounded-[5px] border border-brand-cream3 bg-brand-cream2 px-2.5 py-2">
+              <img src={alertCircle} alt="" className="size-5 shrink-0" />
+              <p className="min-w-0 text-[14px] leading-[1.5] break-keep text-gray-500">
+                {state.message}
+              </p>
+            </div>
+          )}
+        </div>
         <RoomBackground className="absolute inset-x-0 -bottom-[35px] h-[155px]" />
         {/* 294px of the 342px character shows above the panel. On a short phone it shrinks with
             the free height, then the page scrolls. The PC frame is always 844px tall. */}
-        <div className="relative mx-auto aspect-[302/294] min-h-0 w-[clamp(220px,calc((100dvh-550px)*302/294),302px)] shrink-0 md:w-[302px]">
+        <div
+          className="relative mx-auto aspect-[302/294] min-h-0 w-[clamp(220px,calc((100dvh-550px-var(--alert-h))*302/294),302px)] shrink-0 md:w-[calc((294px-var(--alert-h))*302/294)]"
+          style={{ '--alert-h': `${alertHeight}px` } as CSSProperties}
+        >
           <CharacterPreview priorities={priorities} />
         </div>
       </div>

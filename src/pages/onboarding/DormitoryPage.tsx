@@ -6,6 +6,11 @@ import OnboardingScreen from '../../components/onboarding/OnboardingScreen'
 import PrimaryButton from '../../components/onboarding/PrimaryButton'
 import ScreenTitle from '../../components/onboarding/ScreenTitle'
 import {
+  isSameName,
+  roomTypeNameFor,
+  type DormitoryOption,
+} from '../../lib/onboarding/dormitoryApi'
+import {
   isDormitoryStepComplete,
   useOnboarding,
   type RoomCapacity,
@@ -29,8 +34,23 @@ export default function DormitoryPage() {
   const [isNoticeVisible, setIsNoticeVisible] = useState(false)
   const noticeTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
   const isComplete = isDormitoryStepComplete(data)
+  const { selectedDormitory } = data
 
   useEffect(() => () => clearTimeout(noticeTimerRef.current), [])
+
+  // A dormitory picked earlier stops counting once the name is edited to another one.
+  const changeDormitory = (dormitory: string) => {
+    const isStillSelected =
+      selectedDormitory !== null &&
+      isSameName(selectedDormitory.name, dormitory)
+    update(
+      isStillSelected ? { dormitory } : { dormitory, selectedDormitory: null },
+    )
+  }
+
+  const selectDormitory = (option: DormitoryOption) => {
+    update({ selectedDormitory: option })
+  }
 
   const handleRoomPress = (isSelected: boolean) => {
     clearTimeout(noticeTimerRef.current)
@@ -78,14 +98,22 @@ export default function DormitoryPage() {
       <div className="mt-[37px] flex flex-col gap-5 max-md:[@media(max-height:696px)]:pb-[78px]">
         <DormitoryField
           value={data.dormitory}
-          onChange={(dormitory) => update({ dormitory })}
+          onChange={changeDormitory}
+          onSelect={selectDormitory}
         />
+        {/* The Figma field stays, filled from 방 인원: the room type is the room size
+            (`2인실`), decided on 2026-11-13. It takes no input. */}
         <Field label="방 타입" htmlFor="room-type">
           <TextInput
             id="room-type"
-            value={data.roomType}
+            value={
+              data.roomCapacity === null
+                ? ''
+                : roomTypeNameFor(data.roomCapacity)
+            }
             placeholder="합격한 기숙사 타입을 입력해주세요."
-            onChange={(roomType) => update({ roomType })}
+            readOnly
+            onChange={() => {}}
           />
         </Field>
         <Field label="방 인원">
