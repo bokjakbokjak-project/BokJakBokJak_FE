@@ -1,240 +1,136 @@
-import { useEffect, useRef, useState, type KeyboardEvent } from 'react'
-import { canUseTemporaryFlow } from '../../lib/onboarding/demoMode'
+import { useEffect, useEffectEvent, useState } from 'react'
+import { isApiError } from '../../lib/api/apiError'
 import {
-  dormitoryApi,
+  DORMITORY_NAME_MAX_LENGTH,
+  canShowDormitoryResults,
+  getDormitoryApi,
+  isSameName,
   type DormitoryApi,
   type DormitoryOption,
 } from '../../lib/onboarding/dormitoryApi'
-import { Field, TextInput } from './Field'
+import SuggestionCombobox, { type SuggestionItem } from './SuggestionCombobox'
 
 type SearchResult = {
   query: string
   options: DormitoryOption[]
-  failed: boolean
+  error: 'network' | 'server' | null
 }
 
-type CreateState =
-  { status: 'idle' } | { status: 'pending' | 'failed'; query: string }
-
-type ListItem = {
-  key: string
-  label: string
-  isDisabled?: boolean
-}
-
-const LISTBOX_ID = 'dormitory-results'
 const NEW_ITEM_KEY = 'new'
-
-const ROW_CLASS =
-  'flex h-[45px] w-full items-center px-2.5 text-left text-[14px] leading-[1.5] font-medium text-gray-500'
+export const SEARCH_DEBOUNCE_MS = 200
 
 type DormitoryFieldProps = {
   value: string
   onChange: (value: string) => void
+  /**
+   * A server dormitory for the typed name: picked from the list, or found by a search for the
+   * exact name. Matching does not change the text, so typing is never interrupted.
+   */
+  onSelect: (dormitory: DormitoryOption) => void
   api?: DormitoryApi
 }
 
 /**
- * Figma defines only the plain input. The suggestion list, its pending text, and the failure
- * text are temporary until a final design exists (OPEN_QUESTIONS DE-5). Focus stays on the
- * input while the arrow keys move through the list, following the ARIA combobox pattern.
+ * Searches the user's school dormitories as they type. Choosing ‘새로 추가’ keeps the typed
+ * name as a new dormitory; it is registered together with the room type when the onboarding is
+ * submitted, because the API registers the two only as a pair.
  */
 export default function DormitoryField({
   value,
   onChange,
-  api = dormitoryApi,
+  onSelect,
+  api,
 }: DormitoryFieldProps) {
   const [isOpen, setIsOpen] = useState(false)
-  const [activeKey, setActiveKey] = useState<string | null>(null)
   const [result, setResult] = useState<SearchResult | null>(null)
-  const [createState, setCreateState] = useState<CreateState>({
-    status: 'idle',
-  })
-  // The state updates too late to stop a second click in the same frame.
-  const isCreatingRef = useRef(false)
-  // Changes when the input is edited or unmounted, so a late response cannot overwrite it.
-  const inputVersionRef = useRef(0)
   const query = value.trim()
+  const canSearch =
+    canShowDormitoryResults() &&
+    query.length > 0 &&
+    query.length <= DORMITORY_NAME_MAX_LENGTH
+  // A new callback from the parent must not start another search.
+  const reportMatch = useEffectEvent((dormitory: DormitoryOption) =>
+    onSelect(dormitory),
+  )
 
   useEffect(() => {
-    if (!isOpen || !query) return
+    if (!isOpen || !canSearch) return
+    const searchApi = api ?? getDormitoryApi()
+    const controller = new AbortController()
+    // Cleared on every edit and on unmount, so a late answer never replaces a newer one.
     let isCurrent = true
     const timer = setTimeout(() => {
-      api
-        .search(query)
+      searchApi
+        .search(query, controller.signal)
         .then((options) => {
-          if (isCurrent) setResult({ query, options, failed: false })
+          if (!isCurrent) return
+          setResult({ query, options, error: null })
+          const exact = options.filter(({ name }) => isSameName(name, query))
+          if (exact.length === 1) reportMatch(exact[0])
         })
-        .catch(() => {
-          if (isCurrent) setResult({ query, options: [], failed: true })
+        .catch((error: unknown) => {
+          if (!isCurrent) return
+          const isNetwork =
+            isApiError(error) &&
+            (error.kind === 'network' || error.kind === 'timeout')
+          setResult({
+            query,
+            options: [],
+            error: isNetwork ? 'network' : 'server',
+          })
         })
-    }, 200)
+    }, SEARCH_DEBOUNCE_MS)
     return () => {
       isCurrent = false
       clearTimeout(timer)
+      controller.abort()
     }
-  }, [api, isOpen, query])
+  }, [api, isOpen, canSearch, query])
 
-  useEffect(
-    () => () => {
-      inputVersionRef.current += 1
-    },
-    [],
-  )
+  const current = canSearch && result?.query === query ? result : null
+  const options = current?.options ?? []
+  const hasExactMatch = options.some(({ name }) => isSameName(name, query))
+  const hasOtherOptions = options.some(({ name }) => !isSameName(name, query))
 
-  const close = () => {
-    setIsOpen(false)
-    setActiveKey(null)
+  let status: string | null = null
+  if (canSearch && !current) status = '검색 중...'
+  else if (current?.error === 'network') {
+    status = '네트워크 연결을 확인해주세요.'
+  } else if (current?.error === 'server') {
+    status = '검색 결과를 불러오지 못했습니다.'
   }
 
-  const choose = (name: string) => {
-    inputVersionRef.current += 1
-    onChange(name)
-    close()
-  }
-
-  const addNew = async () => {
-    if (isCreatingRef.current) return
-    isCreatingRef.current = true
-    const version = inputVersionRef.current
-    setCreateState({ status: 'pending', query })
-    try {
-      const created = await api.create(query)
-      setCreateState({ status: 'idle' })
-      if (version === inputVersionRef.current) choose(created.name)
-    } catch {
-      setCreateState({ status: 'failed', query })
-    } finally {
-      isCreatingRef.current = false
-    }
-  }
-
-  const current = result?.query === query ? result : null
-  const hasExactMatch = current?.options.some(({ name }) => name === query)
-  const hasOtherOptions = current?.options.some(({ name }) => name !== query)
-  // Without a server, nothing comes back and only the Figma input is shown.
-  const visibleResult =
-    isOpen &&
-    query &&
-    current &&
-    (!hasExactMatch || hasOtherOptions) &&
-    (current.failed || canUseTemporaryFlow())
-      ? current
-      : null
-
-  const isCreatePending = createState.status === 'pending'
-  const items: ListItem[] =
-    visibleResult && !visibleResult.failed
+  // Nothing to choose when the only result is what is already typed.
+  const items: SuggestionItem[] =
+    current && !current.error && (!hasExactMatch || hasOtherOptions)
       ? [
-          ...visibleResult.options.map((option) => ({
-            key: option.id,
-            label: option.name,
-          })),
+          ...options.map((option) => ({ key: option.key, label: option.name })),
           ...(hasExactMatch
             ? []
-            : [
-                {
-                  key: NEW_ITEM_KEY,
-                  label: isCreatePending
-                    ? `‘${query}’ 추가 중...`
-                    : `‘${query}’ 새로 추가`,
-                  isDisabled: isCreatePending,
-                },
-              ]),
+            : [{ key: NEW_ITEM_KEY, label: `‘${query}’ 새로 추가` }]),
         ]
       : []
-  const isExpanded = items.length > 0
-  const activeIndex = items.findIndex(({ key }) => key === activeKey)
-  const optionId = (key: string) => `${LISTBOX_ID}-${key}`
 
-  const selectItem = ({ key, label }: ListItem) => {
-    if (key === NEW_ITEM_KEY) void addNew()
-    else choose(label)
-  }
-
-  const moveActive = (step: 1 | -1) => {
-    if (!isExpanded) return
-    const from = activeIndex === -1 ? (step === 1 ? -1 : 0) : activeIndex
-    setActiveKey(items[(from + step + items.length) % items.length].key)
-  }
-
-  const handleKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
-    // These keys finish Korean IME composition first, and must not act on the list.
-    if (event.nativeEvent.isComposing) return
-
-    if (event.key === 'ArrowDown' || event.key === 'ArrowUp') {
-      event.preventDefault()
-      setIsOpen(true)
-      moveActive(event.key === 'ArrowDown' ? 1 : -1)
-    } else if (event.key === 'Enter' && activeIndex !== -1) {
-      event.preventDefault()
-      selectItem(items[activeIndex])
-    } else if (event.key === 'Escape') {
-      close()
-    }
+  const handleSelect = ({ key }: SuggestionItem) => {
+    const option = options.find((item) => item.key === key)
+    if (!option) return // ‘새로 추가’: the typed name stays as it is.
+    onChange(option.name)
+    onSelect(option)
   }
 
   return (
-    <div className="relative">
-      <Field label="기숙사" htmlFor="dormitory">
-        <TextInput
-          id="dormitory"
-          value={value}
-          placeholder="합격한 기숙사 타입을 입력해주세요."
-          role="combobox"
-          aria-autocomplete="list"
-          aria-expanded={isExpanded}
-          aria-controls={isExpanded ? LISTBOX_ID : undefined}
-          aria-activedescendant={
-            activeIndex !== -1 ? optionId(items[activeIndex].key) : undefined
-          }
-          onChange={(next) => {
-            inputVersionRef.current += 1
-            onChange(next)
-            setIsOpen(true)
-            setActiveKey(null)
-          }}
-          onFocus={() => setIsOpen(true)}
-          onBlur={close}
-          onKeyDown={handleKeyDown}
-        />
-      </Field>
-      {createState.status === 'failed' && createState.query === query && (
-        <p
-          role="alert"
-          className="mt-[5px] text-[13px] leading-[1.5] text-gray-500"
-        >
-          기숙사를 추가하지 못했습니다. 다시 시도해주세요.
-        </p>
-      )}
-      {visibleResult && (
-        <div
-          className="absolute top-full z-10 w-full overflow-hidden rounded-[8px] border border-[#ebebeb] bg-white"
-          onMouseDown={(event) => event.preventDefault()}
-        >
-          {visibleResult.failed ? (
-            <p role="status" className={ROW_CLASS}>
-              검색 결과를 불러오지 못했습니다.
-            </p>
-          ) : (
-            <ul id={LISTBOX_ID} role="listbox" aria-label="기숙사 검색 결과">
-              {items.map((item) => (
-                <li
-                  key={item.key}
-                  id={optionId(item.key)}
-                  role="option"
-                  aria-selected={item.key === activeKey}
-                  aria-disabled={item.isDisabled}
-                  className={`${ROW_CLASS} ${item.isDisabled ? '' : 'cursor-pointer'} ${item.key === activeKey ? 'bg-gray-100' : ''}`}
-                  onClick={() => selectItem(item)}
-                >
-                  {item.label}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
-    </div>
+    <SuggestionCombobox
+      id="dormitory"
+      label="기숙사"
+      placeholder="합격한 기숙사 타입을 입력해주세요."
+      value={value}
+      onChange={onChange}
+      isOpen={isOpen}
+      onOpenChange={setIsOpen}
+      items={items}
+      status={status}
+      onSelect={handleSelect}
+      listLabel="기숙사 검색 결과"
+    />
   )
 }

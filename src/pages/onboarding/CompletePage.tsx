@@ -34,7 +34,7 @@ export default function CompletePage() {
       backTo={ONBOARDING_ROUTES.priority}
       fullBleed
       footer={
-        // Nothing is saved yet, because the save API is not agreed (OPEN_QUESTIONS BE-6, BE-7).
+        // Server mode saved the answers on the priority step before this screen opened.
         <PrimaryButton onClick={() => go(QUESTION_ROUTES.survey)}>
           시작하기!
         </PrimaryButton>

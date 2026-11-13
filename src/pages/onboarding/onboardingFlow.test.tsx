@@ -60,7 +60,6 @@ function completeProfileStep() {
 
 function completeDormitoryStep() {
   type('기숙사', '남산학사')
-  type('방 타입', 'A동')
   click('2인실')
   click('다음으로')
 }
@@ -466,7 +465,8 @@ describe('onboarding flow', () => {
 
     click('이전')
     expectHeading('기숙사 정보를 등록해주세요')
-    expect(screen.getByLabelText('방 타입')).toHaveValue('A동')
+    expect(screen.getByLabelText('기숙사')).toHaveValue('남산학사')
+    expect(screen.getByLabelText('방 타입')).toHaveValue('2인실')
 
     click('이전')
     expectHeading('내 정보를 등록해주세요')
@@ -505,8 +505,8 @@ describe('onboarding step guard', () => {
     gender: 'male',
     birthYear: 2005,
     dormitory: '기숙사',
-    roomType: 'A',
     roomCapacity: 2,
+    selectedDormitory: null,
     priorities: [
       'sleep-habit',
       'cleaning',

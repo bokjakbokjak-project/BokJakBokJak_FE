@@ -1,52 +1,72 @@
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import { useState } from 'react'
 import { afterEach, describe, expect, it, vi } from 'vitest'
+import { ApiError } from '../../lib/api/apiError'
 import type {
   DormitoryApi,
   DormitoryOption,
 } from '../../lib/onboarding/dormitoryApi'
-import DormitoryField from './DormitoryField'
+import DormitoryField, { SEARCH_DEBOUNCE_MS } from './DormitoryField'
 
-const OPTIONS = [
-  { id: 'a', name: '남산학사' },
-  { id: 'b', name: '남산학사 별관' },
+const OPTIONS: DormitoryOption[] = [
+  {
+    key: 'a',
+    name: '남산학사',
+    roomTypes: [{ id: 11, name: '2인실', capacity: 2 }],
+  },
+  {
+    key: 'b',
+    name: '남산학사 별관',
+    roomTypes: [{ id: 12, name: '2인실', capacity: 2 }],
+  },
 ]
 
 function createApi(overrides: Partial<DormitoryApi> = {}): DormitoryApi {
   return {
     search: vi.fn(async () => OPTIONS),
-    create: vi.fn(async (name: string) => ({ id: 'new', name })),
+    register: vi.fn(async () => OPTIONS[0]),
     ...overrides,
   }
 }
 
+const onSelect = vi.fn<(dormitory: DormitoryOption) => void>()
+
 function Harness({ api }: { api: DormitoryApi }) {
   const [value, setValue] = useState('')
-  return <DormitoryField value={value} onChange={setValue} api={api} />
+  return (
+    <DormitoryField
+      value={value}
+      onChange={setValue}
+      onSelect={onSelect}
+      api={api}
+    />
+  )
 }
 
-function deferredCreate() {
-  let resolve: (option: DormitoryOption) => void = () => {}
-  const create = vi.fn<DormitoryApi['create']>(
-    () =>
-      new Promise((next) => {
-        resolve = next
-      }),
-  )
-  return {
-    create,
-    resolveCreate: (option: DormitoryOption) => resolve(option),
-  }
+afterEach(() => {
+  onSelect.mockReset()
+  vi.unstubAllEnvs()
+  vi.useRealTimers()
+})
+
+function typeInto(text: string) {
+  const input = screen.getByRole('combobox', { name: '기숙사' })
+  fireEvent.focus(input)
+  fireEvent.change(input, { target: { value: text } })
+  return input
 }
 
 async function openList(api: DormitoryApi, text = '남산') {
   render(<Harness api={api} />)
-  const input = screen.getByRole('combobox', { name: '기숙사' })
-  fireEvent.focus(input)
-  fireEvent.change(input, { target: { value: text } })
+  const input = typeInto(text)
   await screen.findByRole('listbox')
   return input
 }
+
+const waitForSearch = () =>
+  act(async () => {
+    await new Promise((resolve) => setTimeout(resolve, SEARCH_DEBOUNCE_MS + 60))
+  })
 
 const press = (input: HTMLElement, key: string) =>
   fireEvent.keyDown(input, { key })
@@ -84,7 +104,7 @@ describe('DormitoryField keyboard', () => {
     expect(activeOption(input)).toHaveTextContent('남산학사')
   })
 
-  it('confirms an existing result with Enter', async () => {
+  it('confirms an existing result with Enter and reports the dormitory', async () => {
     const input = await openList(createApi())
 
     press(input, 'ArrowDown')
@@ -92,32 +112,18 @@ describe('DormitoryField keyboard', () => {
     press(input, 'Enter')
 
     expect(input).toHaveValue('남산학사 별관')
+    expect(onSelect).toHaveBeenLastCalledWith(OPTIONS[1])
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
     expect(input).toHaveAttribute('aria-expanded', 'false')
   })
 
-  it('adds a new dormitory with the keyboard only', async () => {
-    const api = createApi({ search: vi.fn(async () => []) })
-    const input = await openList(api, '새 기숙사')
-
-    press(input, 'ArrowDown')
-    press(input, 'Enter')
-
-    expect(api.create).toHaveBeenCalledWith('새 기숙사')
-    await vi.waitFor(() =>
-      expect(screen.queryByRole('listbox')).not.toBeInTheDocument(),
-    )
-    expect(input).toHaveValue('새 기숙사')
-  })
-
   it('does nothing on Enter when no result is active', async () => {
-    const api = createApi()
-    const input = await openList(api)
+    const input = await openList(createApi())
 
     press(input, 'Enter')
 
     expect(input).toHaveValue('남산')
-    expect(api.create).not.toHaveBeenCalled()
+    expect(onSelect).not.toHaveBeenCalled()
   })
 
   it('keeps other results reachable when the input matches one exactly', async () => {
@@ -132,22 +138,6 @@ describe('DormitoryField keyboard', () => {
     press(input, 'Enter')
 
     expect(input).toHaveValue('남산학사 별관')
-  })
-
-  it('shows no list when the only result is the exact match', async () => {
-    render(
-      <Harness api={createApi({ search: vi.fn(async () => [OPTIONS[0]]) })} />,
-    )
-    const input = screen.getByRole('combobox', { name: '기숙사' })
-    fireEvent.focus(input)
-    fireEvent.change(input, { target: { value: '남산학사' } })
-
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 260))
-    })
-
-    expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
-    expect(input).toHaveAttribute('aria-expanded', 'false')
   })
 
   it('closes with Escape, and the arrow key opens it again', async () => {
@@ -195,156 +185,230 @@ describe('DormitoryField keyboard', () => {
   })
 })
 
-describe('DormitoryField outside development', () => {
-  afterEach(() => {
-    vi.unstubAllEnvs()
+describe('DormitoryField search', () => {
+  it('waits for typing to pause and sends one search with the trimmed name', async () => {
+    vi.useFakeTimers()
+    const api = createApi()
+    render(<Harness api={api} />)
+    const input = typeInto('남')
+    fireEvent.change(input, { target: { value: '남산' } })
+    fireEvent.change(input, { target: { value: ' 남산학 ' } })
+
+    await act(async () => {
+      vi.advanceTimersByTime(SEARCH_DEBOUNCE_MS - 1)
+    })
+    expect(api.search).not.toHaveBeenCalled()
+    await act(async () => {
+      vi.advanceTimersByTime(1)
+    })
+    expect(api.search).toHaveBeenCalledTimes(1)
+    expect(api.search).toHaveBeenCalledWith('남산학', expect.any(AbortSignal))
   })
 
-  const typeAndWait = async (api: DormitoryApi) => {
-    render(<Harness api={api} />)
-    const input = screen.getByRole('combobox', { name: '기숙사' })
-    fireEvent.focus(input)
-    fireEvent.change(input, { target: { value: '남산' } })
-    await act(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 260))
+  it('shows a pending line until the answer arrives', async () => {
+    let resolve: (options: DormitoryOption[]) => void = () => {}
+    const api = createApi({
+      search: vi.fn(
+        () =>
+          new Promise<DormitoryOption[]>((next) => {
+            resolve = next
+          }),
+      ),
     })
-  }
+    render(<Harness api={api} />)
+    typeInto('남산')
 
+    expect(screen.getByRole('status')).toHaveTextContent('검색 중')
+    await waitForSearch()
+    await act(async () => resolve(OPTIONS))
+    expect(screen.getByRole('listbox')).toBeInTheDocument()
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
+  })
+
+  it('offers only the new entry when nothing is found, and keeps the typed name', async () => {
+    const api = createApi({ search: vi.fn(async () => []) })
+    const input = await openList(api, '새 기숙사')
+
+    expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual([
+      '‘새 기숙사’ 새로 추가',
+    ])
+    press(input, 'ArrowDown')
+    press(input, 'Enter')
+
+    expect(input).toHaveValue('새 기숙사')
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+  })
+
+  it('registers nothing when the new entry is chosen', async () => {
+    const api = createApi({ search: vi.fn(async () => []) })
+    await openList(api, '새 기숙사')
+
+    fireEvent.click(screen.getByRole('option'))
+
+    expect(api.register).not.toHaveBeenCalled()
+    expect(onSelect).not.toHaveBeenCalled()
+  })
+
+  it('reports an exact match without changing the typed text', async () => {
+    render(
+      <Harness api={createApi({ search: vi.fn(async () => [OPTIONS[0]]) })} />,
+    )
+    const input = typeInto('남산학사 ')
+    await waitForSearch()
+
+    expect(onSelect).toHaveBeenCalledWith(OPTIONS[0])
+    expect(input).toHaveValue('남산학사 ')
+    // Nothing to choose when the only result is what is already typed.
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+  })
+
+  it('never lets an older answer replace a newer one', async () => {
+    const pending: ((options: DormitoryOption[]) => void)[] = []
+    const api = createApi({
+      search: vi.fn(
+        () =>
+          new Promise<DormitoryOption[]>((next) => {
+            pending.push(next)
+          }),
+      ),
+    })
+    render(<Harness api={api} />)
+    const input = typeInto('남산')
+    await waitForSearch()
+    fireEvent.change(input, { target: { value: '남산학사 별' } })
+    await waitForSearch()
+
+    await act(async () => pending[1]([OPTIONS[1]]))
+    await act(async () => pending[0](OPTIONS))
+
+    expect(screen.getAllByRole('option').map((o) => o.textContent)).toEqual([
+      '남산학사 별관',
+      '‘남산학사 별’ 새로 추가',
+    ])
+    expect(onSelect).not.toHaveBeenCalled()
+  })
+
+  it('cancels the search of an edited name', async () => {
+    const signals: AbortSignal[] = []
+    const api = createApi({
+      search: vi.fn((_keyword: string, signal?: AbortSignal) => {
+        if (signal) signals.push(signal)
+        return new Promise<DormitoryOption[]>(() => {})
+      }),
+    })
+    render(<Harness api={api} />)
+    const input = typeInto('남산')
+    await waitForSearch()
+    fireEvent.change(input, { target: { value: '남산학사' } })
+
+    expect(signals[0].aborted).toBe(true)
+  })
+
+  it('cancels the search when the screen closes', async () => {
+    const signals: AbortSignal[] = []
+    const api = createApi({
+      search: vi.fn((_keyword: string, signal?: AbortSignal) => {
+        if (signal) signals.push(signal)
+        return new Promise<DormitoryOption[]>(() => {})
+      }),
+    })
+    const { unmount } = render(<Harness api={api} />)
+    typeInto('남산')
+    await waitForSearch()
+    unmount()
+
+    expect(signals[0].aborted).toBe(true)
+  })
+
+  it('tells a network failure from a server failure, with no selectable list', async () => {
+    const network = new ApiError({
+      kind: 'network',
+      status: null,
+      code: 'NETWORK_ERROR',
+      message: 'network',
+    })
+    render(
+      <Harness
+        api={createApi({
+          search: vi.fn(async () => {
+            throw network
+          }),
+        })}
+      />,
+    )
+    const input = typeInto('남산')
+
+    await vi.waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent('네트워크'),
+    )
+    expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
+    expect(input).toHaveAttribute('aria-expanded', 'false')
+    expect(input).toHaveValue('남산')
+  })
+
+  it('reports a server failure', async () => {
+    render(
+      <Harness
+        api={createApi({
+          search: vi.fn(async () => {
+            throw new ApiError({
+              kind: 'http',
+              status: 500,
+              code: 'HTTP_500',
+              message: 'server',
+            })
+          }),
+        })}
+      />,
+    )
+    typeInto('남산')
+
+    await vi.waitFor(() =>
+      expect(screen.getByRole('status')).toHaveTextContent(
+        '불러오지 못했습니다',
+      ),
+    )
+  })
+
+  it('does not search a name longer than the server accepts', async () => {
+    const api = createApi()
+    render(<Harness api={api} />)
+    typeInto('가'.repeat(81))
+    await waitForSearch()
+
+    expect(api.search).not.toHaveBeenCalled()
+  })
+})
+
+describe('DormitoryField by mode', () => {
   it('shows the list in demo mode', async () => {
     vi.stubEnv('DEV', false)
     vi.stubEnv('VITE_DEMO_MODE', 'true')
     vi.stubEnv('VITE_VERCEL_ENV', 'preview')
 
-    await typeAndWait(createApi())
+    await openList(createApi())
 
     expect(screen.getByRole('listbox')).toBeInTheDocument()
   })
 
-  it('shows only the plain input in production', async () => {
+  it('shows the list from the server in a production server build', async () => {
     vi.stubEnv('DEV', false)
+    vi.stubEnv('VITE_API_MODE', 'server')
 
-    await typeAndWait(createApi())
+    await openList(createApi())
 
+    expect(screen.getByRole('listbox')).toBeInTheDocument()
+  })
+
+  it('shows only the plain input in a production sample build', async () => {
+    vi.stubEnv('DEV', false)
+    const api = createApi()
+    render(<Harness api={api} />)
+    typeInto('남산')
+    await waitForSearch()
+
+    expect(api.search).not.toHaveBeenCalled()
     expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
-  })
-})
-
-describe('DormitoryField new dormitory request', () => {
-  it('sends one request and shows progress while it is pending', async () => {
-    const { create, resolveCreate } = deferredCreate()
-    const api = createApi({
-      search: vi.fn(async () => []),
-      create,
-    })
-    const input = await openList(api, '새 기숙사')
-    const option = screen.getByRole('option')
-
-    fireEvent.click(option)
-    fireEvent.click(option)
-
-    expect(api.create).toHaveBeenCalledTimes(1)
-    expect(option).toHaveTextContent('추가 중')
-    expect(option).toHaveAttribute('aria-disabled', 'true')
-
-    await act(async () => resolveCreate({ id: 'n', name: '새 기숙사' }))
-    expect(input).toHaveValue('새 기숙사')
-    expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
-  })
-
-  it('shows a failure message, keeps the input, and allows a retry', async () => {
-    const create = vi
-      .fn<DormitoryApi['create']>()
-      .mockRejectedValueOnce(new Error('network'))
-      .mockResolvedValueOnce({ id: 'n', name: '새 기숙사' })
-    const input = await openList(
-      createApi({ search: vi.fn(async () => []), create }),
-      '새 기숙사',
-    )
-
-    press(input, 'ArrowDown')
-    press(input, 'Enter')
-
-    expect(await screen.findByRole('alert')).toHaveTextContent(
-      '추가하지 못했습니다',
-    )
-    expect(input).toHaveValue('새 기숙사')
-
-    press(input, 'Enter')
-    await vi.waitFor(() => expect(create).toHaveBeenCalledTimes(2))
-    await vi.waitFor(() =>
-      expect(screen.queryByRole('alert')).not.toBeInTheDocument(),
-    )
-  })
-
-  it('clears the failure message when the name is edited', async () => {
-    const input = await openList(
-      createApi({
-        search: vi.fn(async () => []),
-        create: vi.fn(async () => {
-          throw new Error('network')
-        }),
-      }),
-      '새 기숙사',
-    )
-
-    fireEvent.click(screen.getByRole('option'))
-    await screen.findByRole('alert')
-
-    fireEvent.change(input, { target: { value: '다른 이름' } })
-    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
-  })
-
-  it('does not overwrite an input edited while the request was pending', async () => {
-    const { create, resolveCreate } = deferredCreate()
-    const input = await openList(
-      createApi({
-        search: vi.fn(async () => []),
-        create,
-      }),
-      '새 기숙사',
-    )
-
-    fireEvent.click(screen.getByRole('option'))
-    fireEvent.change(input, { target: { value: '다른 이름' } })
-    await act(async () => resolveCreate({ id: 'n', name: '새 기숙사' }))
-
-    expect(input).toHaveValue('다른 이름')
-  })
-
-  it('keeps a result chosen while the new request was pending', async () => {
-    const { create, resolveCreate } = deferredCreate()
-    const input = await openList(
-      createApi({
-        create,
-      }),
-    )
-
-    fireEvent.click(screen.getByRole('option', { name: /새로 추가/ }))
-    fireEvent.click(screen.getByRole('option', { name: '남산학사 별관' }))
-    await act(async () => resolveCreate({ id: 'n', name: '남산' }))
-
-    expect(input).toHaveValue('남산학사 별관')
-  })
-
-  it('reports a search failure without a selectable list', async () => {
-    render(
-      <Harness
-        api={createApi({
-          search: vi.fn(async () => {
-            throw new Error('network')
-          }),
-        })}
-      />,
-    )
-    const input = screen.getByRole('combobox', { name: '기숙사' })
-    fireEvent.focus(input)
-    fireEvent.change(input, { target: { value: '남산' } })
-
-    expect(await screen.findByRole('status')).toHaveTextContent(
-      '불러오지 못했습니다',
-    )
-    expect(screen.queryByRole('listbox')).not.toBeInTheDocument()
-    expect(input).toHaveAttribute('aria-expanded', 'false')
+    expect(screen.queryByRole('status')).not.toBeInTheDocument()
   })
 })

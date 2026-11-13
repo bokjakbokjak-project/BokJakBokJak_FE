@@ -1,5 +1,6 @@
 import { createContext, useContext } from 'react'
 import type { CategoryId } from './categories'
+import type { DormitoryOption } from './dormitoryApi'
 import { isPriorityComplete } from './priority'
 import { ONBOARDING_ROUTES } from './routes'
 
@@ -13,8 +14,17 @@ export type OnboardingData = {
   gender: Gender | null
   birthYear: number | null
   dormitory: string
-  roomType: string
+  /**
+   * The room type follows from this (2 → `2인실`, decided 2026-11-13 after the Notion example),
+   * so the 방 타입 field shows it and takes no input. MVP supports 2인실 only.
+   */
   roomCapacity: RoomCapacity | null
+  /**
+   * The server dormitory, with its room types, that was picked from the results, matched the
+   * typed name, or was registered. It only offers IDs: the room type ID is taken from it at
+   * submit time and only while the typed name still matches (`getConfirmedRoomType`).
+   */
+  selectedDormitory: DormitoryOption | null
   priorities: CategoryId[]
 }
 
@@ -25,9 +35,9 @@ export const INITIAL_ONBOARDING_DATA: OnboardingData = {
   gender: null,
   birthYear: null,
   dormitory: '',
-  roomType: '',
   // Figma note: start on 2인실. 4인실 and 6인실 only show a notice for now.
   roomCapacity: 2,
+  selectedDormitory: null,
   priorities: [],
 }
 
@@ -37,6 +47,31 @@ type OnboardingContextValue = {
   /** The mission notice opens by itself only on the first visit to the priority step. */
   hasSeenMission: boolean
   markMissionSeen: () => void
+  /** Server mode: the answers last saved with PUT /api/me/onboarding (`savedAnswersKey`). */
+  savedAnswersKey: string | null
+  markSaved: (key: string) => void
+  /** A save is out. One runs at a time per session, whichever screen started it. */
+  isSaving: boolean
+  /** Takes the save lock. Returns false while another save is out. */
+  beginSave: () => boolean
+  endSave: () => void
+}
+
+/**
+ * Identifies the answers a save sent. Any later change gives another key, so the complete screen
+ * can tell whether what is on screen was saved.
+ */
+export function savedAnswersKey(data: OnboardingData) {
+  return JSON.stringify([
+    data.department,
+    data.studentId,
+    data.name,
+    data.gender,
+    data.birthYear,
+    data.dormitory,
+    data.roomCapacity,
+    data.priorities,
+  ])
 }
 
 export const OnboardingContext = createContext<OnboardingContextValue | null>(
@@ -63,11 +98,7 @@ export function isProfileStepComplete(data: OnboardingData) {
 }
 
 export function isDormitoryStepComplete(data: OnboardingData) {
-  return (
-    hasText(data.dormitory) &&
-    hasText(data.roomType) &&
-    data.roomCapacity !== null
-  )
+  return hasText(data.dormitory) && data.roomCapacity !== null
 }
 
 export function isPriorityStepComplete(data: OnboardingData) {
