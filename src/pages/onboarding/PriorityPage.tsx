@@ -25,6 +25,7 @@ import {
 import { ONBOARDING_ROUTES } from '../../lib/onboarding/routes'
 import { useOnboardingSubmit } from '../../lib/onboarding/useOnboardingSubmit'
 import { useStepNavigation } from '../../lib/onboarding/useStepNavigation'
+import { useQuestion } from '../question/questionState'
 
 export default function PriorityPage() {
   const { data, update, hasSeenMission, markMissionSeen } = useOnboarding()
@@ -34,8 +35,11 @@ export default function PriorityPage() {
   const infoButtonRef = useRef<HTMLButtonElement>(null)
   const [isMissionOpen, setIsMissionOpen] = useState(!hasSeenMission)
   const closeMission = useCallback(() => setIsMissionOpen(false), [])
-  const { state, submit, clearError } = useOnboardingSubmit(() =>
-    go(ONBOARDING_ROUTES.complete),
+  // A survey retake saves these priorities with the survey, not with the onboarding.
+  const { isRetake } = useQuestion()
+  const { state, submit, clearError } = useOnboardingSubmit(
+    () => go(ONBOARDING_ROUTES.complete),
+    !isRetake,
   )
   const isSaving = state.status === 'saving'
   const alertRef = useRef<HTMLDivElement>(null)

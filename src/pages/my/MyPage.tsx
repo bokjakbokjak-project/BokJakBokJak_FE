@@ -30,17 +30,18 @@ const MENU_ROW_CLASS =
 export default function MyPage() {
   const navigate = useNavigate()
   const { data, update } = useOnboarding()
-  const { reset } = useQuestion()
+  const { startRetake } = useQuestion()
   const notice = usePendingNotice()
   const [isConfirming, setIsConfirming] = useState(false)
   const retakeButtonRef = useRef<HTMLButtonElement>(null)
   const name = data.name.trim() || '사용자'
 
-  // Keeps the name, gender, birth year, school, and dormitory, so the onboarding guard lets the
-  // user straight into the priority step. Only the priorities and the survey start over.
+  // Keeps the name, gender, birth year, school, and dormitory. Only the priorities and the survey
+  // start over; a retake lets the user straight into the priority step, and in server mode the
+  // new priorities are saved with the survey (PUT /api/me/survey).
   const retakeSurvey = () => {
     update({ priorities: [] })
-    reset()
+    startRetake()
     navigate(ONBOARDING_ROUTES.priority)
   }
 

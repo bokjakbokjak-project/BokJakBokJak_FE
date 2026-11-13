@@ -16,9 +16,9 @@ import {
   hasNewNotification,
 } from '../../lib/home/notificationData'
 import { getUnreadNotificationCount } from '../../lib/home/notificationApi'
-import { FROM_HOME_STATE, HOME_ROUTES } from '../../lib/home/routes'
+import { HOME_ROUTES } from '../../lib/home/routes'
+import { MY_ROUTES } from '../../lib/my/routes'
 import { useOnboarding } from '../../lib/onboarding/onboardingState'
-import { QUESTION_ROUTES } from '../question/questionData'
 
 // The two Figma frames also differ in the bell and a 1px shift (OPEN_QUESTIONS DE-H1). The logo is
 // the same on both and on the roommate list (AppLogo).
@@ -172,9 +172,10 @@ export default function HomePage({
               ))}
             </h1>
           </div>
+          {/* Opens the my page, where the survey result is viewed and retaken. The home edits
+              no answers (decided by the project owner on 2026-11-14). */}
           <Link
-            to={QUESTION_ROUTES.profile}
-            state={FROM_HOME_STATE}
+            to={MY_ROUTES.my}
             className="absolute inset-x-6 bottom-9 flex h-[65px] items-center justify-center rounded-[10px] bg-brand-brown1 text-[20px] leading-[1.5] font-semibold whitespace-nowrap text-white"
           >
             내 설문 다시보기 →

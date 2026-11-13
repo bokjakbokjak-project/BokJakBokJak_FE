@@ -30,7 +30,14 @@ export type SubmitState =
  * what is on screen. A 401 is handled by the shared client: it refreshes and retries, or ends the
  * session, which remounts these screens and the provider and drops the result.
  */
-export function useOnboardingSubmit(onSaved: () => void) {
+export function useOnboardingSubmit(
+  onSaved: () => void,
+  /**
+   * False for a survey retake: after the first survey the server refuses another onboarding
+   * save (409 ONBOARDING_ALREADY_SUBMITTED), so the new priorities go with the survey instead.
+   */
+  saveToServer = true,
+) {
   const {
     data,
     update,
@@ -51,7 +58,7 @@ export function useOnboardingSubmit(onSaved: () => void) {
   }, [])
 
   const submit = async () => {
-    if (!isServerMode()) {
+    if (!isServerMode() || !saveToServer) {
       onSaved()
       return
     }

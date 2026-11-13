@@ -3,6 +3,7 @@ import { Navigate, useLocation, useNavigate } from 'react-router'
 import share from '../../assets/question/share-small.svg'
 import AnswerCard from '../../components/AnswerCard/AnswerCard'
 import ChoiceDialog from '../../components/dialog/ChoiceDialog'
+import { ErrorState, LoadingState } from '../../components/LoadState/LoadState'
 import ProfileAvatar from '../../components/my/ProfileAvatar'
 import ProfileHero from '../../components/roommate/ProfileHero'
 import RoommateHeader from '../../components/roommate/RoommateHeader'
@@ -18,6 +19,7 @@ import {
   shareProfileToKakao,
 } from '../../lib/share/kakaoShare'
 import { createShareUrl } from '../../lib/share/profileShare'
+import { useSavedSurvey } from '../../lib/survey/useSurvey'
 import { QUESTION_COUNT, QUESTION_ROUTES } from './questionData'
 import { useQuestion } from './questionState'
 
@@ -56,7 +58,7 @@ function MyCardAvatar({
 export default function QuestionProfilePage() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { answers } = useQuestion()
+  const { answers: editingAnswers, sync } = useQuestion()
   const { data } = useOnboarding()
   const shareButtonRef = useRef<HTMLButtonElement>(null)
   // `copied` is Figma 1377:36531. `failed` is not in Figma: the link is shown to copy by hand.
@@ -68,6 +70,29 @@ export default function QuestionProfilePage() {
     | { status: 'kakaoFailed' }
   >({ status: 'idle' })
   const hasKakao = canShareToKakao()
+  // Server mode: reads the saved answers first, so a new session (home 「내 설문 다시보기」,
+  // my page 「상세 프로필 보기」) shows them instead of sending the user to the survey.
+  const saved = useSavedSurvey()
+
+  if (saved.status !== 'ready') {
+    return (
+      <div className="flex flex-1 flex-col items-center justify-center bg-brand-cream1 md:rounded-[24px]">
+        {saved.status === 'failed' ? (
+          <ErrorState error={saved.error} onRetry={saved.retry} />
+        ) : (
+          <LoadingState label="설문 답변을 불러오고 있어요" />
+        )}
+      </div>
+    )
+  }
+
+  // Server mode shows what the server confirmed, never an unsaved retake or a failed save.
+  // Sample mode has no server and shows the answers in memory, as before.
+  const answers = sync.status === 'ready' ? sync.answers : editingAnswers
+  const priorities =
+    sync.status === 'ready' && sync.priorities.length > 0
+      ? sync.priorities
+      : data.priorities
 
   if (Object.keys(answers).length < QUESTION_COUNT) {
     return <Navigate to={QUESTION_ROUTES.survey} replace />
@@ -84,7 +109,7 @@ export default function QuestionProfilePage() {
       {
         name,
         department: data.department,
-        priorities: data.priorities,
+        priorities,
         answers,
       },
       origin,
@@ -156,7 +181,7 @@ export default function QuestionProfilePage() {
             name,
             age: ageOf(data.birthYear),
             department: data.department,
-            avatar: <MyCardAvatar priorities={data.priorities} />,
+            avatar: <MyCardAvatar priorities={priorities} />,
           }}
         />
         <RoommateSheet labelledBy="result-summary-title" scrolls={false}>

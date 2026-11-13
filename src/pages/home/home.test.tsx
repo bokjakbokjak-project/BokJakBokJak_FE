@@ -196,10 +196,31 @@ describe('state across screens', () => {
     act(() => vi.advanceTimersByTime(2000))
   }
 
+  /** 홈 「내 설문 다시보기」 opens the my page (decided 2026-11-14), which opens the result. */
+  const openResultFromHome = () => {
+    clickLink('내 설문 다시보기 →')
+    clickLink('상세 프로필 보기')
+  }
+
+  it('opens the my page from 내 설문 다시보기, where the survey is viewed and retaken', () => {
+    openSeededHome()
+
+    clickLink('내 설문 다시보기 →')
+
+    expect(
+      screen.getByRole('heading', { name: '미리보기' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByRole('button', { name: '설문조사 다시 하기' }),
+    ).toBeInTheDocument()
+    expect(screen.getByRole('link', { name: '상세 프로필 보기' })).toBeVisible()
+  })
+
   it('keeps the name, the character, and the answers through home and roommate', () => {
     vi.useFakeTimers()
     openSeededHome()
-    clickLink('내 설문 다시보기 →')
+    // No answers yet, so the result sends the user to the survey first.
+    openResultFromHome()
     answerAll()
 
     const firstAnswer = getQuestionStep(0).question.options[0]
@@ -220,7 +241,7 @@ describe('state across screens', () => {
         .querySelector('[data-layer="head"]'),
     ).toHaveAttribute('data-variant', 'sleep-habit')
 
-    clickLink('내 설문 다시보기 →')
+    openResultFromHome()
     expect(
       screen.getByRole('heading', { name: '미리보기님' }),
     ).toBeInTheDocument()
@@ -230,18 +251,20 @@ describe('state across screens', () => {
     expect(screen.getByTestId('home-scroll')).toBeInTheDocument()
   })
 
-  it('returns to the home from a review opened on the home, keeping everything', () => {
+  it('returns to the home through the my page, keeping everything', () => {
     vi.useFakeTimers()
     openSeededHome()
-    clickLink('내 설문 다시보기 →')
+    openResultFromHome()
     answerAll()
     fireEvent.click(screen.getByRole('button', { name: '홈화면으로 가기' }))
     clickLink('룸메이트')
     fireEvent.click(screen.getByRole('button', { name: '리스트 더보기' }))
     clickLink('홈')
 
-    clickLink('내 설문 다시보기 →')
+    // The result opened from the my page goes back to it, and the my page back to the home.
+    openResultFromHome()
     clickLink('이전')
+    fireEvent.click(screen.getByRole('button', { name: '뒤로' }))
 
     expect(
       screen.getByRole('heading', { name: /안녕하세요 미리보기님/ }),
@@ -252,15 +275,13 @@ describe('state across screens', () => {
         .querySelector('[data-layer="head"]'),
     ).toHaveAttribute('data-variant', 'sleep-habit')
 
-    clickLink('내 설문 다시보기 →')
-    expect(
-      screen.getByRole('heading', { name: '미리보기님' }),
-    ).toBeInTheDocument()
+    openResultFromHome()
     expect(
       screen.getAllByText(getQuestionStep(0).question.options[0]).length,
     ).toBeGreaterThan(0)
 
     clickLink('이전')
+    fireEvent.click(screen.getByRole('button', { name: '뒤로' }))
     clickLink('룸메이트')
     expect(
       within(screen.getByTestId('roommate-list')).getAllByRole('link'),
@@ -285,7 +306,7 @@ describe('state across screens', () => {
   it('keeps the survey as the back target when the home sent an unfinished user to the survey', () => {
     vi.useFakeTimers()
     openSeededHome()
-    clickLink('내 설문 다시보기 →')
+    openResultFromHome()
     answerAll()
 
     clickLink('이전')
@@ -307,7 +328,7 @@ describe('state across screens', () => {
   it('still sends the survey review back to the survey without answers', () => {
     renderAt('/home')
 
-    clickLink('내 설문 다시보기 →')
+    openResultFromHome()
 
     expect(
       screen.getByRole('heading', { name: /밤에 함께 자고 있는데/ }),
