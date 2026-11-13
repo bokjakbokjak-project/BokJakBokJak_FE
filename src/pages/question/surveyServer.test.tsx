@@ -12,6 +12,7 @@ import {
   FIVE_BEDTIME_H_OPTIONS,
   SPEC_BEDTIME_H_OPTIONS,
   mySurveyData,
+  profileData,
   schemaData,
 } from '../../test/surveyFixture'
 import {
@@ -64,6 +65,10 @@ type Call = { method: string; path: string; body: unknown; auth: string | null }
 let calls: Call[]
 type Handler = (call: Call) => Response | Promise<Response>
 let handlers: Record<string, Handler>
+let savedOnServer: {
+  answers: { question_code: string; option_code: string }[]
+  priorities: { category_code: string; rank: number }[]
+} | null
 
 const callsTo = (method: string, path: string) =>
   calls.filter((call) => call.method === method && call.path === path)
@@ -91,7 +96,38 @@ beforeEach(() => {
     'GET /api/me/survey': () =>
       ok(mySurveyData({ priorities: SAVED_PRIORITIES })),
     'PUT /api/me/survey': () => ok(SAVED),
+    // The profile reflects what the server holds: the last successful save, or else the saved
+    // survey; before the first survey it is 409, as the spec says.
+    'GET /api/me/profile': async () => {
+      if (!savedOnServer) {
+        const mine = await (
+          await handlers['GET /api/me/survey']({
+            method: 'GET',
+            path: '/api/me/survey',
+            body: undefined,
+            auth: null,
+          })
+        ).json()
+        if (!mine.data?.survey_completed) {
+          return fail(409, 'SURVEY_REQUIRED', '설문을 먼저 완료해주세요.')
+        }
+        savedOnServer = {
+          answers: mine.data.answers,
+          priorities: mine.data.priorities,
+        }
+      }
+      return ok(
+        profileData({
+          answers: savedOnServer.answers,
+          topCategories: [...savedOnServer.priorities]
+            .sort((a, b) => a.rank - b.rank)
+            .slice(0, 3)
+            .map((p) => p.category_code),
+        }),
+      )
+    },
   }
+  savedOnServer = null
   vi.stubGlobal(
     'fetch',
     vi.fn(async (url: string, init: RequestInit) => {
@@ -108,7 +144,22 @@ beforeEach(() => {
         return ok(tokens(refreshCount))
       }
       const handler = handlers[`${call.method} ${call.path}`]
-      return handler ? handler(call) : fail(404, 'NOT_FOUND', 'not found')
+      const response = handler
+        ? await handler(call)
+        : fail(404, 'NOT_FOUND', 'not found')
+      // The server's saved survey changes only with a successful save.
+      if (
+        call.path === '/api/me/survey' &&
+        call.method === 'PUT' &&
+        response.ok
+      ) {
+        const body = call.body as {
+          answers: { question_code: string; option_code: string }[]
+          priorities: { category_code: string; rank: number }[]
+        }
+        savedOnServer = { answers: body.answers, priorities: body.priorities }
+      }
+      return response
     }),
   )
   vi.stubEnv('VITE_API_MODE', 'server')

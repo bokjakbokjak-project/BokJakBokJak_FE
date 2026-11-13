@@ -30,7 +30,8 @@ export default function ProfileAvatar({
   frame = 'rounded-[30px] bg-card-avatar',
   strokeOutside = false,
 }: {
-  priorities: readonly CategoryId[]
+  /** Ranks 1-3 set the parts. A server profile may leave a rank empty for an unknown code. */
+  priorities: readonly (CategoryId | undefined)[]
   /** Corner and fill of the frame. The survey result card uses its own corner. */
   frame?: string
   /** Keeps the 100px frame and draws the white stroke around it, as Profile2 does. */

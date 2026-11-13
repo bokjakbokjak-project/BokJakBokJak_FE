@@ -18,7 +18,7 @@ import {
 import { getUnreadNotificationCount } from '../../lib/home/notificationApi'
 import { HOME_ROUTES } from '../../lib/home/routes'
 import { MY_ROUTES } from '../../lib/my/routes'
-import { useOnboarding } from '../../lib/onboarding/onboardingState'
+import { useDisplayProfile } from '../../lib/profile/myProfile'
 
 // The two Figma frames also differ in the bell and a 1px shift (OPEN_QUESTIONS DE-H1). The logo is
 // the same on both and on the roommate list (AppLogo).
@@ -89,9 +89,10 @@ export default function HomePage({
 }: {
   matchStatus?: MatchStatus
 }) {
-  const { data } = useOnboarding()
   const variant = VARIANTS[matchStatus]
-  const name = data.name.trim() || '사용자'
+  // Server mode: the saved nickname and the top three categories, so a new session greets the
+  // user by name and draws their character (GET /api/me/profile).
+  const { name, priorities } = useDisplayProfile()
   const hasNew = useHasNewNotification()
 
   return (
@@ -118,7 +119,7 @@ export default function HomePage({
               }}
             >
               <CharacterPreview
-                priorities={data.priorities}
+                priorities={priorities}
                 showRug={false}
                 greet
                 className="relative w-full"

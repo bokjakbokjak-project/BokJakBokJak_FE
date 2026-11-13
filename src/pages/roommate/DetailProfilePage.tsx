@@ -131,8 +131,9 @@ function LifestyleSummarySection({
 
 /**
  * Server mode. The card comes from A's profile, and the match rate from the recommendation list
- * when it is loaded (the profile has no score). The answer cards need the candidate's chosen
- * options, which the profile response does not have yet (RM-9), so only the summary shows.
+ * when it is loaded (the profile has no score). The answer cards show the candidate's own
+ * answers from the same profile; if they are not in the agreed shape, only the summary shows
+ * (RM-9).
  */
 function ServerDetailProfile({ userId }: { userId: number }) {
   const { state } = useLocation()
@@ -202,6 +203,11 @@ function ServerDetailProfile({ userId }: { userId: number }) {
                 summary={summary}
                 onRetry={retrySummary}
               />
+              {/* The candidate's own answers (A's profile), with the same cards as the sample. */}
+              {profile.status === 'ready' &&
+                profile.value.cards?.map((card) => (
+                  <AnswerCard key={card.category} card={card} />
+                ))}
             </div>
           </div>
         </RoommateSheet>
