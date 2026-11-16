@@ -16,6 +16,7 @@ import {
 } from './surveyMapping'
 import { MAX_PRIORITY_COUNT, MIN_PRIORITY_COUNT } from '../onboarding/priority'
 import { markMyProfileStale } from '../profile/myProfile'
+import { markRecommendationsStale } from '../roommate/recommendationFreshness'
 
 /** Another save reached the server first (409 SURVEY_REVISION_CONFLICT). */
 export class SurveyConflictError extends Error {
@@ -131,6 +132,9 @@ export function useSurveySubmit() {
         })
         // The profile's answers and top categories changed with the save.
         markMyProfileStale()
+        // A new revision means the survey changed, so the server computes the recommendations
+        // again on the next read (채희 spec 7.1). The same revision means the same answers.
+        if (result.revision !== saved.revision) markRecommendationsStale()
         if (onboarding.priorities.length === 0) {
           updateOnboarding({ priorities: [...priorities] })
         }
