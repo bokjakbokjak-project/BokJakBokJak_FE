@@ -17,6 +17,8 @@ type ChoiceDialogProps = {
   triggerRef: RefObject<HTMLElement | null>
   onCancel: () => void
   onConfirm: () => void
+  /** Disables the brown button, such as while its request is out. Off by default. */
+  confirmDisabled?: boolean
   /** Moves the box down from the frame's center, as the chat request dialog does (Figma 1686:17718). */
   offsetClass?: string
 }
@@ -38,6 +40,7 @@ export default function ChoiceDialog({
   triggerRef,
   onCancel,
   onConfirm,
+  confirmDisabled = false,
   offsetClass = '',
 }: ChoiceDialogProps) {
   const overlayRef = useRef<HTMLDivElement>(null)
@@ -105,7 +108,8 @@ export default function ChoiceDialog({
             )}
             <button
               type="button"
-              className={`${BUTTON_CLASS} ${cancelLabel ? 'w-[116px]' : 'w-full'} bg-brand-brown1 text-white`}
+              disabled={confirmDisabled}
+              className={`${BUTTON_CLASS} ${cancelLabel ? 'w-[116px]' : 'w-full'} bg-brand-brown1 text-white disabled:opacity-60`}
               onClick={onConfirm}
             >
               {confirmLabel}
