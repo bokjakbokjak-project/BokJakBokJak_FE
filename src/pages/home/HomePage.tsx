@@ -10,7 +10,7 @@ import BottomNav from '../../components/BottomNav/BottomNav'
 import CharacterPreview from '../../components/onboarding/CharacterPreview'
 import { isServerMode } from '../../lib/api/config'
 import { STAGE } from '../../lib/onboarding/character'
-import { getMatchStatus, type MatchStatus } from '../../lib/home/matchStatus'
+import { useMatchStatus, type MatchStatus } from '../../lib/home/matchStatus'
 import {
   getNotifications,
   hasNewNotification,
@@ -85,11 +85,17 @@ function useHasNewNotification() {
  * screens. The PC frame is always 844px tall.
  */
 export default function HomePage({
-  matchStatus = getMatchStatus(),
+  matchStatus,
 }: {
+  /** Fixes the status, for the dev preview. Otherwise the server's status in server mode. */
   matchStatus?: MatchStatus
 }) {
-  const variant = VARIANTS[matchStatus]
+  // Server mode: matched only for a CONFIRMED room (GET /api/matchings/me). While the first
+  // answer of the session is checked, the greeting and the bubble stay hidden in place, so
+  // neither copy shows by mistake and nothing moves when it arrives.
+  const status = useMatchStatus(matchStatus)
+  const variant = VARIANTS[status ?? 'before']
+  const hideCopy = status === null ? 'invisible' : ''
   // Server mode: the saved nickname and the top three categories, so a new session greets the
   // user by name and draws their character (GET /api/me/profile).
   const { name, priorities } = useDisplayProfile()
@@ -126,7 +132,7 @@ export default function HomePage({
               />
             </div>
             <div
-              className="absolute aspect-[173/78] motion-safe:animate-bubble-float"
+              className={`absolute aspect-[173/78] motion-safe:animate-bubble-float ${hideCopy}`}
               style={{
                 left: toWidthPercent(variant.bubbleLeft),
                 top: toHeightPercent(254),
@@ -165,7 +171,9 @@ export default function HomePage({
                 )}
               </Link>
             </header>
-            <h1 className="mt-[15px] px-6 text-[clamp(18px,5.641vw,22px)] leading-[1.5] font-bold tracking-[0.44px] break-words text-gray-500 md:text-[22px]">
+            <h1
+              className={`mt-[15px] px-6 ${hideCopy} text-[clamp(18px,5.641vw,22px)] leading-[1.5] font-bold tracking-[0.44px] break-words text-gray-500 md:text-[22px]`}
+            >
               {variant.greeting(name).map((line) => (
                 <span key={line} className="block whitespace-pre-wrap">
                   {line}
