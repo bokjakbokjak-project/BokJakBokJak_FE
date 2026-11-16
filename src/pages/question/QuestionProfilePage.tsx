@@ -205,7 +205,9 @@ export default function QuestionProfilePage() {
       />
       <div
         data-testid="result-scroll"
-        className="scrollbar-none flex min-h-0 flex-1 flex-col overflow-y-auto"
+        // The back card of ProfileHero is tilted 9px above the block, so the scroll area starts
+        // 9px higher and pads it back, instead of cutting the card off at its top edge.
+        className="scrollbar-none -mt-[9px] flex min-h-0 flex-1 flex-col overflow-y-auto pt-[9px]"
       >
         {/* QA 12: the card sits where the roommate analysis has it. */}
         <ProfileHero
