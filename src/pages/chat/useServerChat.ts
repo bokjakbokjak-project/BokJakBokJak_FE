@@ -228,9 +228,19 @@ export function useServerChat(matchingId: number) {
     )
   }, [matchingId, apply])
 
+  /**
+   * Whether the room as last read still takes a choice. It is read from the ref, which a poll
+   * updates before the screen is redrawn, so a tap in between sends nothing for a finished room.
+   */
+  const isStillChatting = () => {
+    const current = stateRef.current
+    return current.status === 'ready' && current.room.status === 'CHATTING'
+  }
+
   /** Decides the agenda in discussion, then reads the room. Returns `all_decided`. */
   const decide = useCallback(
     async (agendaId: number) => {
+      if (!isStillChatting()) return false
       const { allDecided } = await decideAgenda(matchingId, agendaId).catch(
         syncOnStale,
       )
@@ -242,6 +252,7 @@ export function useServerChat(matchingId: number) {
 
   /** Records my final choice. The match is final only once the server says CONFIRMED. */
   const confirm = useCallback(async () => {
+    if (!isStillChatting()) return
     const result = await confirmMatching(matchingId).catch(syncOnStale)
     apply((current) =>
       current.status === 'ready'

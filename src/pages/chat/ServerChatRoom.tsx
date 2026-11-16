@@ -265,6 +265,8 @@ export default function ServerChatRoom({ matchingId }: { matchingId: number }) {
     useServerChat(matchingId)
   const [draft, setDraft] = useState('')
   const [isPending, setIsPending] = useState(false)
+  /** Set at once when a request starts, so a second tap cannot start another (QA 3). */
+  const pendingRef = useRef(false)
   const [error, setError] = useState<string | null>(null)
   const [isLoadingOlder, setIsLoadingOlder] = useState(false)
   const [confirming, setConfirming] = useState<
@@ -329,6 +331,10 @@ export default function ServerChatRoom({ matchingId }: { matchingId: number }) {
 
   const { room, messages, myUserId, hasMore } = state
   const isChatting = room.status === 'CHATTING'
+  // Every choice here needs a CHATTING room. When a poll or a refused request shows it ENDED or
+  // CONFIRMED, an open dialog closes with it, so nothing is sent for a room that has finished
+  // (QA 5). The footer then shows why, as before.
+  const dialog = isChatting ? confirming : null
   const entries = buildEntries(room, messages, myUserId)
   const current = room.agendas.find((agenda) => agenda.status === 'DISCUSSING')
   // The choices sit in the agenda in discussion, or in the opening card when there is none.
@@ -342,7 +348,13 @@ export default function ServerChatRoom({ matchingId }: { matchingId: number }) {
         )?.key
       : 'intro'
 
+  /**
+   * Runs one request at a time. The ref blocks a second call at once, before the buttons are
+   * redrawn as disabled. Returns null when another request is still out.
+   */
   const run = async (action: () => Promise<void>) => {
+    if (pendingRef.current) return null
+    pendingRef.current = true
     setIsPending(true)
     setError(null)
     try {
@@ -352,30 +364,42 @@ export default function ServerChatRoom({ matchingId }: { matchingId: number }) {
       setError(errorText(failure))
       return false
     } finally {
+      pendingRef.current = false
       setIsPending(false)
     }
   }
 
+  // The text leaves the field when it is sent, so whatever is typed meanwhile is a new draft
+  // that a finished send never clears. A failed send gives its text back, in front of a new
+  // draft if there is one, so nothing typed is lost and nothing sent is sent twice.
   const submit = async (event: FormEvent) => {
     event.preventDefault()
     const text = draft.trim()
-    if (!text || isPending || !isChatting) return
+    if (!text || pendingRef.current || !isChatting) return
+    // The field limits typing to 500, but a given-back text plus a new draft can be longer. It
+    // stays for the user to shorten; nothing outside the 1 to 500 of the spec is sent (7.10).
+    if (text.length > MESSAGE_MAX_LENGTH) {
+      setError(`메시지는 ${MESSAGE_MAX_LENGTH}자까지 보낼 수 있어요.`)
+      return
+    }
+    pendingRef.current = true
     setIsPending(true)
     setError(null)
+    setDraft('')
     try {
       await send(text)
-      setDraft('')
     } catch (failure) {
-      // The draft stays, so sending again is one tap.
+      setDraft((typed) => (typed.trim() ? `${text} ${typed}` : text))
       setError(sendErrorText(failure))
     } finally {
+      pendingRef.current = false
       setIsPending(false)
     }
   }
 
   const decideCurrent = async () => {
     setConfirming(null)
-    if (!current) return
+    if (!current || !isChatting) return
     let allDecided = false
     const done = await run(async () => {
       allDecided = await decide(current.agendaId)
@@ -386,15 +410,19 @@ export default function ServerChatRoom({ matchingId }: { matchingId: number }) {
 
   const confirmMatch = () => {
     setConfirming(null)
+    if (!isChatting) return
     void run(confirm)
   }
 
+  // The dialog stays open while the request is out, with its button disabled (QA 3).
   const exit = async () => {
     if (!isChatting) {
       navigate(CHAT_ROUTES.list)
       return
     }
-    if (await run(end)) navigate(CHAT_ROUTES.list)
+    const done = await run(end)
+    if (done === null) return
+    if (done) navigate(CHAT_ROUTES.list)
     else setConfirming(null)
   }
 
@@ -561,7 +589,7 @@ export default function ServerChatRoom({ matchingId }: { matchingId: number }) {
           </form>
         </div>
       </footer>
-      {confirming === 'agenda' && (
+      {dialog === 'agenda' && (
         <ChoiceDialog
           title="다음 안건으로 넘어가시겠습니까?"
           message={
@@ -574,7 +602,7 @@ export default function ServerChatRoom({ matchingId }: { matchingId: number }) {
           onConfirm={decideCurrent}
         />
       )}
-      {confirming === 'match' && (
+      {dialog === 'match' && (
         // Figma 1858:18674.
         <ChoiceDialog
           title="매칭을 확정하시겠습니까?"
@@ -586,7 +614,7 @@ export default function ServerChatRoom({ matchingId }: { matchingId: number }) {
           onConfirm={confirmMatch}
         />
       )}
-      {confirming === 'exit' && (
+      {dialog === 'exit' && (
         // Figma 1952:40268, with the server rule: an ended room cannot start again (spec 7.12).
         <ChoiceDialog
           title="정말로 채팅을 종료하시겠습니까?"
@@ -595,6 +623,7 @@ export default function ServerChatRoom({ matchingId }: { matchingId: number }) {
           }
           cancelLabel="취소하기"
           confirmLabel="나가기"
+          confirmDisabled={isPending}
           triggerRef={exitRef}
           onCancel={() => setConfirming(null)}
           onConfirm={exit}
