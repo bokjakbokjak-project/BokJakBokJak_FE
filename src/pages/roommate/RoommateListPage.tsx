@@ -51,6 +51,7 @@ export default function RoommateListPage() {
     listScrollTopRef,
     recommendations,
     loadRecommendations,
+    beginRefresh,
     setRecommendations,
   } = useRoommate()
   const listRef = useRef<HTMLDivElement>(null)
@@ -91,11 +92,12 @@ export default function RoommateListPage() {
     }
     if (isRefreshing) return
     setIsRefreshing(true)
+    // An answer that is no longer the newest when it arrives is dropped (RoommateProvider).
+    const ticket = beginRefresh()
     try {
       const result = await refreshRecommendations()
       if (result.changed) {
-        setRecommendations(result.recommendations)
-        backToTop()
+        if (setRecommendations(result.recommendations, ticket)) backToTop()
       } else {
         notice.showText('변경된 사항이 없습니다')
       }

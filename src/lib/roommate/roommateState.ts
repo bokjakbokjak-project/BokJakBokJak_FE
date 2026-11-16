@@ -7,6 +7,13 @@ export type RecommendationsState =
   | { status: 'error'; error: unknown }
   | { status: 'ready'; items: Recommendation[] }
 
+/** What a refresh was asked against: the survey version and the order of the requests. */
+export type RefreshTicket = {
+  version: number
+  refresh: number
+  request: number
+}
+
 type RoommateContextValue = {
   /** How many recommended candidates the list shows. */
   visibleCount: number
@@ -17,8 +24,17 @@ type RoommateContextValue = {
   recommendations: RecommendationsState
   /** Loads the server list unless it is loaded or loading. `force` loads it again. */
   loadRecommendations: (force?: boolean) => void
-  /** Replaces the server list, such as after a refresh that changed it. */
-  setRecommendations: (items: Recommendation[]) => void
+  /** Called when a refresh is sent; its ticket goes back with the answer. */
+  beginRefresh: () => RefreshTicket
+  /**
+   * Replaces the server list after a refresh that changed it. Returns false, keeping the list,
+   * when the answer is no longer the newest: the survey changed, another refresh or a list read
+   * was asked after it.
+   */
+  setRecommendations: (
+    items: Recommendation[],
+    ticket: RefreshTicket,
+  ) => boolean
 }
 
 export const RoommateContext = createContext<RoommateContextValue | null>(null)
