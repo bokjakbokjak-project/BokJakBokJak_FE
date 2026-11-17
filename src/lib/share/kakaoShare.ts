@@ -92,7 +92,8 @@ export function preloadKakaoSdk() {
 
 /**
  * Opens KakaoTalk sharing for a profile link. The card follows the agreed layout: the character
- * image, `{name}님의 룸메이트 프로필`, a short description and a `프로필 보기` button to the link.
+ * image, `{name}님의 룸메이트 프로필`, `{name}님의 프로필을 확인해보세요!` (requested 2026-11-18) and a
+ * `프로필 보기` button to the link.
  * Rejects when the key is missing or the SDK cannot be used, so the caller can copy the link.
  */
 export async function shareProfileToKakao({
@@ -112,7 +113,7 @@ export async function shareProfileToKakao({
     objectType: 'feed',
     content: {
       title: `${name}님의 룸메이트 프로필`,
-      description: '함께 살기 전, 나의 생활습관을 확인해 보세요',
+      description: `${name}님의 프로필을 확인해보세요!`,
       imageUrl: `${origin}${KAKAO_SHARE_IMAGE_PATH}`,
       imageWidth: 684,
       imageHeight: 428,
