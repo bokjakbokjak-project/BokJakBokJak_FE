@@ -24,6 +24,7 @@ import { useMyProfile } from '../../lib/profile/myProfile'
 import { useSavedSurvey } from '../../lib/survey/useSurvey'
 import { QUESTION_COUNT, QUESTION_ROUTES } from './questionData'
 import { useQuestion } from './questionState'
+import FeedbackPrompt from '../../components/userTest/FeedbackPrompt'
 
 /**
  * Age from the birth year chosen in onboarding, counted as this year minus the birth year. The
@@ -272,6 +273,11 @@ export default function QuestionProfilePage() {
           onConfirm={closeShare}
         />
       )}
+      {/* Right after a full survey reached the server (Q1). */}
+      <FeedbackPrompt
+        allowed={['q1_discovery']}
+        answeredCount={Object.keys(answers).length}
+      />
     </RoommatePage>
   )
 }

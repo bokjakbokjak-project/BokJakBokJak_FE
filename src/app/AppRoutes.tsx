@@ -39,6 +39,9 @@ import DetailProfilePage from '../pages/roommate/DetailProfilePage'
 import SharedProfilePage from '../pages/share/SharedProfilePage'
 import MatchAnalysisPage from '../pages/roommate/MatchAnalysisPage'
 import RoommateListPage from '../pages/roommate/RoommateListPage'
+import UserTestLayer from '../components/userTest/UserTestLayer'
+import { USER_TEST_ROUTES } from '../lib/userTest/routes'
+import UserTestStartPage from '../pages/userTest/UserTestStartPage'
 
 export default function AppRoutes() {
   return (
@@ -110,6 +113,10 @@ export default function AppRoutes() {
                         }
                       />
                       <Route
+                        path={USER_TEST_ROUTES.start}
+                        element={<UserTestStartPage />}
+                      />
+                      <Route
                         path={QUESTION_ROUTES.survey}
                         element={<QuestionPage />}
                       />
@@ -130,53 +137,55 @@ export default function AppRoutes() {
                     </Route>
                   </Route>
                   <Route element={<RequireAuth />}>
-                    <Route path={HOME_ROUTES.home} element={<HomePage />} />
-                    <Route path={MY_ROUTES.my} element={<MyPage />} />
-                    <Route
-                      path={MY_ROUTES.editName}
-                      element={<EditNamePage />}
-                    />
-                    <Route
-                      path={HOME_ROUTES.notifications}
-                      element={<NotificationsPage />}
-                    />
-                    {import.meta.env.DEV && (
-                      <>
-                        <Route
-                          path={HOME_ROUTES.previewMatched}
-                          element={<HomePage matchStatus="matched" />}
-                        />
-                        <Route
-                          path={HOME_ROUTES.previewTodayNotifications}
-                          element={<NotificationsPage sample="withToday" />}
-                        />
-                      </>
-                    )}
-                    <Route
-                      path={ROOMMATE_ROUTES.list}
-                      element={<RoommateListPage />}
-                    />
-                    <Route
-                      path={ROOMMATE_ROUTES.analysis(':candidateId')}
-                      element={<MatchAnalysisPage />}
-                    />
-                    <Route
-                      path={ROOMMATE_ROUTES.profile(':candidateId')}
-                      element={<DetailProfilePage />}
-                    />
-                    {/* Inside the providers too, so a visit to the chat tab keeps the session state. */}
-                    <Route
-                      path={CHAT_ROUTE_PATTERNS.list}
-                      element={<ChatListPage />}
-                    />
-                    <Route
-                      path={CHAT_ROUTE_PATTERNS.room}
-                      element={<ChatRoomPage />}
-                    />
-                    <Route
-                      path={CHAT_ROUTE_PATTERNS.menu}
-                      element={<ChatMenuPage />}
-                    />
+                    <Route element={<UserTestLayer />}>
+                      <Route path={HOME_ROUTES.home} element={<HomePage />} />
+                      <Route path={MY_ROUTES.my} element={<MyPage />} />
+                      <Route
+                        path={MY_ROUTES.editName}
+                        element={<EditNamePage />}
+                      />
+                      <Route
+                        path={HOME_ROUTES.notifications}
+                        element={<NotificationsPage />}
+                      />
+                      {import.meta.env.DEV && (
+                        <>
+                          <Route
+                            path={HOME_ROUTES.previewMatched}
+                            element={<HomePage matchStatus="matched" />}
+                          />
+                          <Route
+                            path={HOME_ROUTES.previewTodayNotifications}
+                            element={<NotificationsPage sample="withToday" />}
+                          />
+                        </>
+                      )}
+                      <Route
+                        path={ROOMMATE_ROUTES.list}
+                        element={<RoommateListPage />}
+                      />
+                      <Route
+                        path={ROOMMATE_ROUTES.analysis(':candidateId')}
+                        element={<MatchAnalysisPage />}
+                      />
+                      <Route
+                        path={ROOMMATE_ROUTES.profile(':candidateId')}
+                        element={<DetailProfilePage />}
+                      />
+                      {/* Inside the providers too, so a visit to the chat tab keeps the session state. */}
+                      <Route
+                        path={CHAT_ROUTE_PATTERNS.list}
+                        element={<ChatListPage />}
+                      />
+                      <Route
+                        path={CHAT_ROUTE_PATTERNS.room}
+                        element={<ChatRoomPage />}
+                      />
+                      <Route
+                        path={CHAT_ROUTE_PATTERNS.menu}
+                        element={<ChatMenuPage />}
+                      />
+                    </Route>
                   </Route>
                 </Route>
               </Route>

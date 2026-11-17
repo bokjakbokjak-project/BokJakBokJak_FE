@@ -17,6 +17,7 @@ import {
 import { MAX_PRIORITY_COUNT, MIN_PRIORITY_COUNT } from '../onboarding/priority'
 import { markMyProfileStale } from '../profile/myProfile'
 import { markRecommendationsStale } from '../roommate/recommendationFreshness'
+import { recordSurveySaved } from '../userTest/progress'
 
 /** Another save reached the server first (409 SURVEY_REVISION_CONFLICT). */
 export class SurveyConflictError extends Error {
@@ -135,6 +136,8 @@ export function useSurveySubmit() {
         // A new revision means the survey changed, so the server computes the recommendations
         // again on the next read (채희 spec 7.1). The same revision means the same answers.
         if (result.revision !== saved.revision) markRecommendationsStale()
+        // User test: a full survey reached the server, so its feedback question comes next.
+        recordSurveySaved()
         if (onboarding.priorities.length === 0) {
           updateOnboarding({ priorities: [...priorities] })
         }

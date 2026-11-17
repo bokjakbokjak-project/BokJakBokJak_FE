@@ -5,6 +5,7 @@ import {
   OnboardingContext,
   type OnboardingData,
 } from './onboardingState'
+import { testOnboardingPatch } from '../userTest/testProfile'
 
 /**
  * Keeps answers in memory across every screen of a session, so it stays mounted above the home
@@ -12,7 +13,11 @@ import {
  * (PUT /api/me/onboarding); in sample mode nothing is sent.
  */
 export default function OnboardingProvider() {
-  const [data, setData] = useState(INITIAL_ONBOARDING_DATA)
+  // The user test fills in the shared basic information, also after a reload.
+  const [data, setData] = useState<OnboardingData>(() => ({
+    ...INITIAL_ONBOARDING_DATA,
+    ...testOnboardingPatch(),
+  }))
   const [hasSeenMission, setHasSeenMission] = useState(false)
   const [savedAnswersKey, setSavedAnswersKey] = useState<string | null>(null)
   // Lives here, not in the screen, so leaving and reopening the priority step while a save is

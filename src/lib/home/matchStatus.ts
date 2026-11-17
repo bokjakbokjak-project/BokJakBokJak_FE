@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { isServerMode } from '../api/config'
+import { usesServerData } from '../userTest/experience'
 import { getSessionGeneration } from '../auth/tokenStore'
 import { listMyRooms, type RoomSummary } from '../chat/matchingApi'
 
@@ -40,7 +40,7 @@ function knownStatus(): MatchStatus | null {
  * - Sample mode and a fixed `preview` (the dev preview route) send nothing.
  */
 export function useMatchStatus(preview?: MatchStatus): MatchStatus | null {
-  const isServer = isServerMode() && preview === undefined
+  const isServer = usesServerData() && preview === undefined
   const [status, setStatus] = useState<MatchStatus | null>(knownStatus)
 
   useEffect(() => {

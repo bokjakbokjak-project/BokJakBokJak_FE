@@ -5,13 +5,15 @@ import iconCheck from '../../assets/roommate/analysis-check.png'
 import iconGood from '../../assets/roommate/analysis-good.png'
 import { ErrorState, LoadingState } from '../../components/LoadState/LoadState'
 import ChatRequestFooter from '../../components/roommate/ChatRequestFooter'
+import FeedbackPrompt from '../../components/userTest/FeedbackPrompt'
+import { useQueuePrompt } from '../../lib/userTest/useQueuePrompt'
 import { candidateCard } from '../../components/roommate/candidateCard'
 import ProfileHero from '../../components/roommate/ProfileHero'
 import RoommateHeader from '../../components/roommate/RoommateHeader'
 import RoommatePage from '../../components/roommate/RoommatePage'
 import RoommateSheet from '../../components/roommate/RoommateSheet'
 import { serverProfileCard } from '../../components/roommate/serverProfileCard'
-import { isServerMode } from '../../lib/api/config'
+import { usesServerData } from '../../lib/userTest/experience'
 import { errorCode } from '../../lib/api/errorText'
 import { parseId } from '../../lib/api/parse'
 import { getChatReturnPath } from '../../lib/chat/routes'
@@ -111,6 +113,13 @@ function ProfileTab({ to, state }: { to: string; state: unknown }) {
   )
 }
 
+/** The comparison has something to show; with nothing to compare, Q3 is not asked. */
+const hasLines = (analysis: MatchAnalysis) =>
+  analysis.good.length + analysis.adjust.length + analysis.check.length > 0
+
+const hasComparison = (loaded: Loaded) =>
+  loaded.status === 'ready' && hasLines(loaded.analysis)
+
 type Loaded =
   | { status: 'loading' }
   | { status: 'error'; error: unknown }
@@ -145,6 +154,8 @@ function ServerMatchAnalysis({ userId }: { userId: number }) {
   const current: Loaded =
     loaded?.attempt === attempt ? loaded.value : { status: 'loading' }
   const id = String(userId)
+  // User test: the comparison is on screen, so Q3 waits for the next step.
+  useQueuePrompt('q3_negotiation', id, hasComparison(current))
   const header = (
     <RoommateHeader
       backTo={chatReturnPath ?? ROOMMATE_ROUTES.list}
@@ -196,6 +207,8 @@ function ServerMatchAnalysis({ userId }: { userId: number }) {
       <RoommateSheet>
         <AnalysisSections name={analysis.target.nickname} analysis={analysis} />
       </RoommateSheet>
+      {/* Back from the detail profile: Q2 asks about it here. */}
+      <FeedbackPrompt allowed={['q2_understanding']} />
     </RoommatePage>
   )
 }
@@ -205,6 +218,11 @@ function SampleMatchAnalysis({ candidateId }: { candidateId?: string }) {
   const candidate = getCandidate(candidateId)
   // Opened from a chat room's profile picture, back returns to that room.
   const chatReturnPath = getChatReturnPath(state)
+  useQueuePrompt(
+    'q3_negotiation',
+    candidate?.id ?? null,
+    candidate !== undefined && hasLines(candidate.analysis),
+  )
 
   if (!candidate) {
     return <Navigate to={ROOMMATE_ROUTES.list} replace />
@@ -228,13 +246,15 @@ function SampleMatchAnalysis({ candidateId }: { candidateId?: string }) {
           analysis={candidate.analysis}
         />
       </RoommateSheet>
+      <FeedbackPrompt allowed={['q2_understanding']} />
     </RoommatePage>
   )
 }
 
 export default function MatchAnalysisPage() {
   const { candidateId } = useParams()
-  if (!isServerMode()) return <SampleMatchAnalysis candidateId={candidateId} />
+  if (!usesServerData())
+    return <SampleMatchAnalysis candidateId={candidateId} />
   const userId = parseId(candidateId)
   if (userId === null) return <Navigate to={ROOMMATE_ROUTES.list} replace />
   return <ServerMatchAnalysis key={userId} userId={userId} />

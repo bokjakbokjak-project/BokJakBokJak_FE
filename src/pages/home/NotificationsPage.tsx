@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router'
 import arrowLeft from '../../assets/question/back-arrow-brown.svg'
 import { ErrorState, LoadingState } from '../../components/LoadState/LoadState'
 import CharacterPreview from '../../components/onboarding/CharacterPreview'
-import { isServerMode } from '../../lib/api/config'
+import { usesServerData } from '../../lib/userTest/experience'
 import { errorCode, errorText } from '../../lib/api/errorText'
 import { CHAT_ROUTES } from '../../lib/chat/routes'
 import {
@@ -329,6 +329,6 @@ export default function NotificationsPage({
   sample?: NotificationSample
 }) {
   // The preview route always shows its sample.
-  if (isServerMode() && !sample) return <ServerNotifications />
+  if (usesServerData() && !sample) return <ServerNotifications />
   return <SampleNotifications sample={sample} />
 }

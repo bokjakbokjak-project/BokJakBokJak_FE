@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useSyncExternalStore } from 'react'
 import { isApiError } from '../api/apiError'
-import { isServerMode } from '../api/config'
+import { DEMO_PRIORITIES, usesServerData } from '../userTest/experience'
+import { isUserTestDemo } from '../userTest/userTestStore'
 import { getSessionGeneration } from '../auth/tokenStore'
 import { useOnboarding } from '../onboarding/onboardingState'
 import { fetchMyProfile, type MyProfile } from './profileApi'
@@ -130,7 +131,7 @@ const snapshot = () => current().state
 /** Server mode: the profile, read when first needed. Sample mode: always `idle`, nothing is sent. */
 export function useMyProfile() {
   const state = useSyncExternalStore(subscribe, snapshot, snapshot)
-  const isServer = isServerMode()
+  const isServer = usesServerData()
 
   useEffect(() => {
     if (isServer) void loadMyProfile()
@@ -159,6 +160,11 @@ export function useDisplayProfile() {
     state,
     retry,
     name: profile?.nickname ?? fallbackName,
-    priorities: profile ? profile.topCategories : data.priorities,
+    // The browse mode draws the example character, like the rest of its example data.
+    priorities: isUserTestDemo()
+      ? DEMO_PRIORITIES
+      : profile
+        ? profile.topCategories
+        : data.priorities,
   }
 }

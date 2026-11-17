@@ -13,6 +13,7 @@ import {
   setCredentialHandler,
 } from '../../lib/auth/googleIdentity'
 import { routeForNextStep } from '../../lib/auth/nextStep'
+import { userTestRouteAfterSignIn } from '../../lib/userTest/signIn'
 import { ONBOARDING_ROUTES } from '../../lib/onboarding/routes'
 import { useStepNavigation } from '../../lib/onboarding/useStepNavigation'
 
@@ -72,7 +73,12 @@ function ServerLogin() {
       setError(null)
       try {
         const result = await signIn(credential)
-        navigate(routeForNextStep(result.nextStep), { replace: true })
+        navigate(
+          userTestRouteAfterSignIn(result) ?? routeForNextStep(result.nextStep),
+          {
+            replace: true,
+          },
+        )
       } catch (signInError) {
         if (!isCurrent) return
         // The server's messages are written for users (Notion spec, POST /api/auth/login).

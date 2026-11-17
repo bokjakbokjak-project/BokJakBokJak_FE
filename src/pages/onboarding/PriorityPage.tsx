@@ -26,6 +26,7 @@ import { ONBOARDING_ROUTES } from '../../lib/onboarding/routes'
 import { useOnboardingSubmit } from '../../lib/onboarding/useOnboardingSubmit'
 import { useStepNavigation } from '../../lib/onboarding/useStepNavigation'
 import { useQuestion } from '../question/questionState'
+import BrowseInsteadButton from '../../components/userTest/BrowseInsteadButton'
 
 export default function PriorityPage() {
   const { data, update, hasSeenMission, markMissionSeen } = useOnboarding()
@@ -164,6 +165,7 @@ export default function PriorityPage() {
       {isMissionOpen && (
         <MissionNotice triggerRef={infoButtonRef} onClose={closeMission} />
       )}
+      <BrowseInsteadButton />
     </OnboardingScreen>
   )
 }

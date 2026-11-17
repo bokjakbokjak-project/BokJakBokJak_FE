@@ -25,6 +25,7 @@ import {
 } from './questionData'
 import { useQuestion } from './questionState'
 import SurveySkipButton from './SurveySkipButton'
+import BrowseInsteadButton from '../../components/userTest/BrowseInsteadButton'
 
 // Prototype in Figma 1377:49785: the STEP screen waits 2 seconds, then dissolves into the
 // question over 0.8 seconds with Figma's ease in and out. `상황 보기` and `질문 다시보기` use the same dissolve
@@ -426,6 +427,7 @@ function QuestionStep({ focusHeading, onMove }: QuestionStepProps) {
         onFadeEnd={handleFadeEnd('step')}
       />
       <SurveySkipButton />
+      <BrowseInsteadButton />
     </div>
   )
 }

@@ -16,7 +16,7 @@ import {
   sampleRoommateCard,
   type RoommateCardData,
 } from '../../components/roommate/roommateCardData'
-import { isServerMode } from '../../lib/api/config'
+import { usesServerData } from '../../lib/userTest/experience'
 import { errorText } from '../../lib/api/errorText'
 import {
   refreshRecommendations,
@@ -25,6 +25,7 @@ import {
 import { getCandidates } from '../../lib/roommate/roommateData'
 import { useRoommate } from '../../lib/roommate/roommateState'
 import { ROOMMATE_ROUTES } from '../../lib/roommate/routes'
+import FeedbackPrompt from '../../components/userTest/FeedbackPrompt'
 
 /** A server candidate's card. The card opens the analysis of that `user_id` (채희 spec 7.1). */
 function serverCard(item: Recommendation): RoommateCardData {
@@ -57,7 +58,7 @@ export default function RoommateListPage() {
   const listRef = useRef<HTMLDivElement>(null)
   const notice = usePendingNotice()
   const [isRefreshing, setIsRefreshing] = useState(false)
-  const isServer = isServerMode()
+  const isServer = usesServerData()
 
   useEffect(() => {
     if (isServer) loadRecommendations()
@@ -181,6 +182,8 @@ export default function RoommateListPage() {
         )}
       </div>
       <BottomNav active="roommate" notice={notice} />
+      {/* Back from a profile or a comparison: Q2 or Q3, one per visit. */}
+      <FeedbackPrompt allowed={['q2_understanding', 'q3_negotiation']} />
     </div>
   )
 }

@@ -1,5 +1,7 @@
 import type { RefObject } from 'react'
 import ChoiceDialog from '../dialog/ChoiceDialog'
+import { DEMO_REQUEST_NOTICE } from '../../lib/userTest/experience'
+import { isUserTestDemo } from '../../lib/userTest/userTestStore'
 
 type ChatRequestDialogProps = {
   triggerRef: RefObject<HTMLElement | null>
@@ -23,7 +25,10 @@ export default function ChatRequestDialog({
     <ChoiceDialog
       title="대화 요청을 보냈어요!"
       message={
-        '성공적으로 대화 요청을 보냈어요!\n룸메이트에게 답장이 올 때까지 기다려봐요'
+        // The browse mode sent nothing, and says so.
+        isUserTestDemo()
+          ? DEMO_REQUEST_NOTICE
+          : '성공적으로 대화 요청을 보냈어요!\n룸메이트에게 답장이 올 때까지 기다려봐요'
       }
       cancelLabel="계속 둘러보기"
       confirmLabel="대화창 이동"
