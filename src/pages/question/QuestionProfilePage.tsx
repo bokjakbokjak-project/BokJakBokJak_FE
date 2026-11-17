@@ -12,6 +12,8 @@ import RoommateSheet from '../../components/roommate/RoommateSheet'
 import { getAnswerSummary } from '../../lib/answerSummary'
 import { HOME_ROUTES, isFromHome } from '../../lib/home/routes'
 import { isFromMy, MY_ROUTES } from '../../lib/my/routes'
+import { useRoommate } from '../../lib/roommate/roommateState'
+import { ROOMMATE_ROUTES } from '../../lib/roommate/routes'
 import { useOnboarding } from '../../lib/onboarding/onboardingState'
 import {
   canShareToKakao,
@@ -59,6 +61,7 @@ function MyCardAvatar({
  */
 export default function QuestionProfilePage() {
   const navigate = useNavigate()
+  const { reset: resetRoommateList, loadRecommendations } = useRoommate()
   const location = useLocation()
   const { answers: editingAnswers, sync } = useQuestion()
   const { data } = useOnboarding()
@@ -173,10 +176,17 @@ export default function QuestionProfilePage() {
           <div className="mx-auto w-full max-w-[390px] px-6">
             <button
               type="button"
-              onClick={() => navigate(HOME_ROUTES.home)}
+              // The result leads straight to the recommendations, not the home (requested
+              // 2026-11-17). The list starts at its top, and in server mode it is read again,
+              // since the answers it is calculated from may have just changed.
+              onClick={() => {
+                resetRoommateList()
+                if (isServerMode()) loadRecommendations(true)
+                navigate(ROOMMATE_ROUTES.list)
+              }}
               className="flex h-[62px] w-full items-center justify-center rounded-[10px] bg-brand-brown1 p-2.5 text-[20px] leading-[1.5] font-semibold text-white"
             >
-              홈화면으로 가기
+              룸메이트 보러 가기
             </button>
           </div>
         </div>

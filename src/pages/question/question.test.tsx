@@ -345,7 +345,7 @@ describe('situational survey', () => {
       screen.getByRole('heading', { name: '상세 프로필' }),
     )
     expect(scroll).not.toContainElement(
-      screen.getByRole('button', { name: '홈화면으로 가기' }),
+      screen.getByRole('button', { name: '룸메이트 보러 가기' }),
     )
     expect(screen.queryByTestId('roommate-scroll')).not.toBeInTheDocument()
   })
