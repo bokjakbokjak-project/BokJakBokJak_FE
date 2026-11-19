@@ -44,7 +44,7 @@ export default function DemoBanner() {
       ) : (
         <button
           type="button"
-          className="pointer-events-auto mt-1.5 rounded-full border-[1.5px] border-home-alert bg-roommate-pink px-3 py-1 text-[11px] leading-[1.4] font-semibold text-white"
+          className="pointer-events-auto mt-1.5 rounded-full border-[1.5px] border-white bg-roommate-pink px-3 py-1 text-[11px] leading-[1.4] font-bold text-brand-brown1 shadow-[0_2px_6px_rgba(97,71,53,0.18)]"
           onClick={() => {
             setExperienceMode('demo')
             navigate(DEMO_ENTRY_ROUTE)
