@@ -3,7 +3,7 @@ import { Navigate, useLocation, useNavigate } from 'react-router'
 import share from '../../assets/question/share-small.svg'
 import AnswerCard from '../../components/AnswerCard/AnswerCard'
 import ChoiceDialog from '../../components/dialog/ChoiceDialog'
-import { ErrorState, LoadingState } from '../../components/LoadState/LoadState'
+import { ErrorState } from '../../components/LoadState/LoadState'
 import ProfileAvatar from '../../components/my/ProfileAvatar'
 import ProfileHero from '../../components/roommate/ProfileHero'
 import RoommateHeader from '../../components/roommate/RoommateHeader'
@@ -25,6 +25,7 @@ import { useSavedSurvey } from '../../lib/survey/useSurvey'
 import { QUESTION_COUNT, QUESTION_ROUTES } from './questionData'
 import { useQuestion } from './questionState'
 import FeedbackPrompt from '../../components/userTest/FeedbackPrompt'
+import FullPageLoading from '../../components/LoadState/FullPageLoading'
 
 /**
  * Age from the birth year chosen in onboarding, counted as this year minus the birth year. The
@@ -84,17 +85,26 @@ export default function QuestionProfilePage() {
     isServer &&
     (profileState.status === 'idle' || profileState.status === 'loading')
 
-  if (saved.status !== 'ready' || profileLoading || profileFailed) {
+  if (saved.status === 'failed' || profileFailed) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center bg-brand-cream1 md:rounded-[24px]">
         {saved.status === 'failed' ? (
           <ErrorState error={saved.error} onRetry={saved.retry} />
-        ) : profileState.status === 'failed' ? (
-          <ErrorState error={profileState.error} onRetry={retryProfile} />
         ) : (
-          <LoadingState label="설문 답변을 불러오고 있어요" />
+          profileState.status === 'failed' && (
+            <ErrorState error={profileState.error} onRetry={retryProfile} />
+          )
         )}
       </div>
+    )
+  }
+  if (saved.status !== 'ready' || profileLoading) {
+    return (
+      <FullPageLoading
+        label="설문 답변을 불러오고 있어요"
+        hint="나의 생활습관 프로필을 준비하고 있어요"
+        priorities={data.priorities}
+      />
     )
   }
 
