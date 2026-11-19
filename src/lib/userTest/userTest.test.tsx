@@ -333,6 +333,27 @@ describe('browse mode screens', () => {
     })
   })
 
+  it('offers the examples again from the real flow, also after the survey', async () => {
+    useUserTestEnv()
+    startSession({ accessToken: 'a', refreshToken: 'r' })
+    startParticipant(11, {
+      onboardingCompleted: true,
+      surveyCompleted: true,
+    })
+    respond = () => ok({ rooms: [] })
+    renderAt('/chat')
+
+    fireEvent.click(
+      await screen.findByRole('button', { name: '예시로 둘러보기' }),
+    )
+    expect(isUserTestDemo()).toBe(true)
+    await act(async () => {})
+    expect(screen.getByTestId('path').textContent).toBe('/home')
+    expect(
+      screen.getByRole('button', { name: '직접 설문하고 매칭하기' }),
+    ).toBeInTheDocument()
+  })
+
   it('goes back to the real flow from the notice', async () => {
     useUserTestEnv()
     startSession({ accessToken: 'a', refreshToken: 'r' })
