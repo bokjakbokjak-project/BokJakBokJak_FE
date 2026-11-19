@@ -118,6 +118,7 @@ describe('survey parsing', () => {
       'CLEANING',
       'PERSONAL_HYGIENE',
       'SMOKING',
+      'TEMPERATURE',
     ])
     expect(schema.questions).toHaveLength(16)
     expect(schema.questions.map((q) => q.questionNumber)).toEqual(
@@ -210,6 +211,19 @@ describe('BEDTIME_H options', () => {
     expect(() => toServerAnswers(firstOptions(), mapping)).toThrow(
       SurveyMappingError,
     )
+  })
+
+  it('blocks the save when the server has no category for a priority card', () => {
+    const raw = schemaData()
+    raw.categories = raw.categories.filter(
+      (category) => category.category_code !== 'TEMPERATURE',
+    )
+    const mapping = buildSurveyMapping(parseSurveySchema(raw))
+
+    expect(mapping.problems).toEqual([
+      'TEMPERATURE: 서버 설문에 없는 생활습관 카테고리예요.',
+    ])
+    expect(() => toServerAnswers({}, mapping)).toThrow(SurveyMappingError)
   })
 
   it('maps every Figma option to its live code', () => {

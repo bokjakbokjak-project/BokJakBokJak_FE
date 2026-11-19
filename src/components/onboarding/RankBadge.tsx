@@ -22,7 +22,7 @@ export default function RankBadge({ rank }: { rank: Rank }) {
           className="block size-3 max-w-none -scale-x-100"
         />
       ) : (
-        // Figma has badges for ranks 1-3 only, so 4 and 5 use text (OPEN_QUESTIONS DE-9).
+        // Figma has badges for ranks 1-3 only, so 4 to 6 use text (OPEN_QUESTIONS DE-9).
         <span
           role="img"
           aria-label={`${rank}순위`}

@@ -6,6 +6,7 @@ import { getMatchStatus } from '../../lib/home/matchStatus'
 import { isFromHome } from '../../lib/home/routes'
 import { finishSituation } from '../../test/questionFade'
 import { QUESTION_COUNT, getQuestionStep } from '../question/questionData'
+import { friendlyAnswer } from '../../lib/friendlyAnswers'
 
 function renderAt(path: string) {
   render(
@@ -223,7 +224,12 @@ describe('state across screens', () => {
     openResultFromHome()
     answerAll()
 
-    const firstAnswer = getQuestionStep(0).question.options[0]
+    // The detail profile says the answer in its friendly wording.
+    const firstAnswer = friendlyAnswer(
+      'sleep-habit',
+      'self',
+      getQuestionStep(0).question.options[0],
+    )
     expect(
       screen.getByRole('heading', { name: '미리보기님' }),
     ).toBeInTheDocument()
@@ -279,7 +285,13 @@ describe('state across screens', () => {
 
     openResultFromHome()
     expect(
-      screen.getAllByText(getQuestionStep(0).question.options[0]).length,
+      screen.getAllByText(
+        friendlyAnswer(
+          'sleep-habit',
+          'self',
+          getQuestionStep(0).question.options[0],
+        ),
+      ).length,
     ).toBeGreaterThan(0)
 
     clickLink('이전')

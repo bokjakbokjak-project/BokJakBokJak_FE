@@ -2,7 +2,8 @@
  * `data` of GET /api/surveys/current as the live server sent it on 2026-11-14 (snake_case,
  * BEDTIME_H with the five Figma options), and helpers for the survey tests. Scenario and prompt
  * texts are shortened. The older Notion spec with seven BEDTIME_H options is kept as
- * `SPEC_BEDTIME_H_OPTIONS` for the blocked-save tests. Not user data.
+ * `SPEC_BEDTIME_H_OPTIONS` for the blocked-save tests. The DISHES topic is replaced by the
+ * provisional TEMPERATURE topic and category (2026-11-19). Not user data.
  */
 
 type Option = [code: string, label: string]
@@ -160,21 +161,28 @@ function topics(bedtime: Option[]): TopicFixture[] {
       ],
     },
     {
-      topic: 'DISHES',
-      category: 'PERSONAL_HYGIENE',
+      // PROVISIONAL: the temperature topic that replaces DISHES (2026-11-19), with the
+      // placeholder codes of surveyCodes.ts. Replace with the server's codes once published.
+      topic: 'TEMPERATURE',
+      category: 'TEMPERATURE',
       questions: [
-        q('DISHES_H', 13, [
-          ['IMMEDIATELY', '사용 직후 바로 정리한다'],
-          ['SAME_DAY', '그날 안에 정리한다'],
-          ['NEXT_DAY', '다음 날 정리하기도 한다'],
-          ['TWO_DAYS_PLUS', '이틀 이상 두는 경우도 있다'],
-          ['NOT_IN_ROOM', '방에서 식기를 거의 사용하지 않는다'],
+        q('TEMPERATURE_H', 13, [
+          ['ALWAYS_ON', '방에 있는 동안 계속 켜두는 편이다'],
+          ['LONG_WHEN_NEEDED', '덥거나 추울 때 일정시간 이상 켜둔다'],
+          ['SHORT_WHEN_NEEDED', '덥거나 추울 때 잠깐 켰다가 끈다'],
+          ['RARELY', '거의 사용하지 않는다'],
         ]),
-        q('DISHES_T', 14, [
-          ['IMMEDIATELY_ONLY', '사용 직후 바로 정리했으면 좋겠다'],
-          ['SAME_DAY_OK', '그날 안에만 정리하면 괜찮다'],
-          ['NEXT_DAY_OK', '다음 날까지는 괜찮다'],
-          ['NO_ISSUE_OK', '위생 문제가 없다면 더 두어도 괜찮다'],
+        q('TEMPERATURE_T', 14, [
+          ['ALWAYS_ON_OK', '방에 있는 동안 계속 켜두어도 괜찮다'],
+          [
+            'LONG_WHEN_NEEDED_OK',
+            '덥거나 추울 때 일정시간 이상 켜두어도 괜찮다',
+          ],
+          [
+            'SHORT_WHEN_NEEDED_ONLY',
+            '덥거나 추울 때 잠깐 켰다가 꺼줬으면 한다',
+          ],
+          ['RARELY_ONLY', '거의 사용하지 않았으면 좋겠다'],
         ]),
       ],
     },
@@ -204,6 +212,7 @@ const CATEGORIES = [
   ['CLEANING', '청소 청결'],
   ['PERSONAL_HYGIENE', '개인 청결'],
   ['SMOKING', '흡연 유무'],
+  ['TEMPERATURE', '온도'],
 ]
 
 /** Raw snake_case `data`, as the server sends it. */
@@ -249,8 +258,8 @@ export const FIRST_OPTION_ANSWERS = [
   ['FOOD_WASTE_T', 'IMMEDIATELY_ONLY'],
   ['BELONGINGS_H', 'IMMEDIATELY'],
   ['BELONGINGS_T', 'IMMEDIATELY_ONLY'],
-  ['DISHES_H', 'IMMEDIATELY'],
-  ['DISHES_T', 'IMMEDIATELY_ONLY'],
+  ['TEMPERATURE_H', 'ALWAYS_ON'],
+  ['TEMPERATURE_T', 'ALWAYS_ON_OK'],
   ['SMOKING_H', 'NON_SMOKER'],
   ['SMOKING_T', 'ANY_OK'],
 ].map(([question_code, option_code]) => ({ question_code, option_code }))

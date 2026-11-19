@@ -123,24 +123,26 @@ export const SURVEY_CODES: Readonly<Record<string, TopicCodes>> = {
       ],
     },
   },
-  dishes: {
+  // PROVISIONAL (2026-11-19): the backend has not published the temperature questions yet, so
+  // these codes are placeholders in the Figma option order (1377:49785). Until the server sends
+  // the same codes, the run-time check blocks the save instead of sending a wrong answer.
+  temperature: {
     self: {
-      questionCode: 'DISHES_H',
+      questionCode: 'TEMPERATURE_H',
       optionCodes: [
-        'IMMEDIATELY',
-        'SAME_DAY',
-        'NEXT_DAY',
-        'TWO_DAYS_PLUS',
-        'NOT_IN_ROOM',
+        'ALWAYS_ON',
+        'LONG_WHEN_NEEDED',
+        'SHORT_WHEN_NEEDED',
+        'RARELY',
       ],
     },
     roommate: {
-      questionCode: 'DISHES_T',
+      questionCode: 'TEMPERATURE_T',
       optionCodes: [
-        'IMMEDIATELY_ONLY',
-        'SAME_DAY_OK',
-        'NEXT_DAY_OK',
-        'NO_ISSUE_OK',
+        'ALWAYS_ON_OK',
+        'LONG_WHEN_NEEDED_OK',
+        'SHORT_WHEN_NEEDED_ONLY',
+        'RARELY_ONLY',
       ],
     },
   },

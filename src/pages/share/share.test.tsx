@@ -7,6 +7,13 @@ import {
   readSharedProfile,
   type SharedProfile,
 } from '../../lib/share/profileShare'
+import {
+  ANSWER_ROW_LABELS,
+  answerRow,
+  answerRowLabels,
+  mineSection,
+  wantedSection,
+} from '../../test/answerSections'
 import { QUESTION_COUNT, getQuestionStep } from '../question/questionData'
 
 const answers = Object.fromEntries(
@@ -43,6 +50,25 @@ describe('share link', () => {
     expect(readSharedProfile(new URL(url).hash)).toEqual(PROFILE)
   })
 
+  it('leaves out the dishes answers of a link made before 온도 replaced them', () => {
+    // A version 1 link, made when questions 13 and 14 (indexes 12 and 13) were about dishes.
+    const v1 = {
+      v: 1,
+      n: '복작이',
+      d: '소프트웨어학부',
+      p: ['sleep-habit', 'cleaning', 'smoking'],
+      a: Array.from({ length: 16 }, () => 0),
+    }
+    const bytes = new TextEncoder().encode(JSON.stringify(v1))
+    const hash = `#${btoa(String.fromCharCode(...bytes)).replace(/=+$/, '')}`
+    const shared = readSharedProfile(hash)!
+
+    expect(shared.answers[11]).toBe(getQuestionStep(11).question.options[0])
+    expect(shared.answers[12]).toBeUndefined()
+    expect(shared.answers[13]).toBeUndefined()
+    expect(shared.answers[14]).toBe(getQuestionStep(14).question.options[0])
+  })
+
   it('rejects a broken or foreign hash', () => {
     expect(readSharedProfile('#not-base64!')).toBeNull()
     expect(readSharedProfile(`#${btoa('{"v":2}')}`)).toBeNull()
@@ -67,19 +93,26 @@ describe('shared profile page (QA 15, Figma 1952:39744)', () => {
     expect(screen.getByText('??')).toBeInTheDocument()
   })
 
-  it('shows two answer cards and blurs the rest behind the prompt', () => {
+  it('shows every own answer, and blurs the wanted rows after the first (Figma 2339:26489)', () => {
     renderShared(hashOf(PROFILE))
     fireEvent.click(screen.getByRole('button', { name: '닫기' }))
 
-    expect(screen.getByRole('region', { name: '잠버릇' })).toBeVisible()
-    expect(screen.getByRole('region', { name: '기상알람' })).toBeVisible()
+    const mine = mineSection()
+    expect(answerRowLabels(mine)).toEqual(ANSWER_ROW_LABELS)
+    expect(within(mine).queryByTestId('shared-blurred')).toBeNull()
+
+    const wanted = wantedSection()
     const blurred = screen.getByTestId('shared-blurred')
+    expect(wanted).toContainElement(blurred)
     expect(blurred).toHaveAttribute('inert')
-    expect(within(blurred).getByText('청소 청결')).toBeInTheDocument()
-    expect(screen.queryByRole('region', { name: '청소 청결' })).toBeNull()
+    expect(blurred).not.toContainElement(answerRow(wanted, '잠버릇'))
+    expect(answerRowLabels(blurred)).toEqual(ANSWER_ROW_LABELS.slice(1))
+    expect(
+      within(wanted).getByText(/복작복작에서\s*설문조사하고 이어보기/),
+    ).toBeInTheDocument()
 
     fireEvent.click(
-      screen.getAllByRole('button', { name: '복작복작으로 이동하기' })[0],
+      within(wanted).getByRole('button', { name: '복작복작으로 이동' }),
     )
     expect(
       screen.getByRole('button', { name: 'Sign up with Google' }),

@@ -1,13 +1,14 @@
 import sceneAlarm from '../../assets/question/scene-alarm.png'
 import sceneBedtime from '../../assets/question/scene-bedtime.png'
 import sceneBelongings from '../../assets/question/scene-belongings.png'
-import sceneDishes from '../../assets/question/scene-dishes.png'
 import sceneFloor from '../../assets/question/scene-floor.png'
 import sceneFood from '../../assets/question/scene-food.png'
 import sceneSleep from '../../assets/question/scene-sleep.png'
 import sceneSmoking from '../../assets/question/scene-smoking.png'
+import sceneTemperature from '../../assets/question/scene-temperature.png'
 import situationBedtime from '../../assets/question/situation-bedtime.png'
 import situationSleep from '../../assets/question/situation-sleep.png'
+import situationTemperature from '../../assets/question/situation-temperature.png'
 
 export const QUESTION_ROUTES = {
   survey: '/question',
@@ -27,12 +28,15 @@ export type QuestionTopic = {
   situation: string
   scene: string
   /**
-   * Full-height picture of the STEP screen (Figma 1377:49785). Only the first two topics have
-   * one. `dark` puts white copy on the night picture (OPEN_QUESTIONS DE-10).
+   * Full-height picture of the STEP screen (Figma 1377:49785). Only the first two topics and 온도
+   * have one. `dark` puts white copy on the night picture (OPEN_QUESTIONS DE-10).
    */
   situationScene?: { src: string; tone: 'dark' | 'light' }
-  /** The smoking frames sit 15px higher with a shorter sheet (986:13764). */
-  layout: 'default' | 'compact'
+  /**
+   * The smoking frames sit 15px higher with a shorter sheet (986:13764); the 온도 frames put the
+   * picture 72px lower with a shorter sheet (2441:21272).
+   */
+  layout: 'default' | 'compact' | 'low'
   self: Question
   roommate: Question
 }
@@ -198,27 +202,31 @@ export const QUESTION_TOPICS: readonly QuestionTopic[] = [
     },
   },
   {
-    id: 'dishes',
-    situation: '방 안 책상 위에 사용한 컵이나 그릇 같은\n식기가 놓여 있어요.',
-    scene: sceneDishes,
-    layout: 'default',
+    // Replaces the dishes topic in the same place (2026-11-19). Copy from Figma 1377:49785:
+    // STEP 2441:20834, questions 2441:21272 and 2441:21608. One answer per question, like the
+    // other topics.
+    id: 'temperature',
+    situation:
+      '초여름이나 초겨울, 냉난방을 사용해요.\n계속 켜두는 사람도 있고, 필요할 때만\n잠깐 사용하는 사람도 있어요.',
+    scene: sceneTemperature,
+    situationScene: { src: situationTemperature, tone: 'light' },
+    layout: 'low',
     self: {
-      text: '나는 사용한 컵이나 식기를 보통\n언제 정리하나요?',
+      text: '평소 냉난방과 관련해 내\n경험과 가까운 것을 모두 골라주세요',
       options: [
-        '사용 직후 바로 정리한다',
-        '그날 안에 정리한다',
-        '다음 날 정리하기도 한다',
-        '이틀 이상 두는 경우도 있다',
-        '방에서 식기를 거의 사용하지 않는다',
+        '방에 있는 동안 계속 켜두는 편이다',
+        '덥거나 추울 때 일정시간 이상 켜둔다',
+        '덥거나 추울 때 잠깐 켰다가 끈다',
+        '거의 사용하지 않는다',
       ],
     },
     roommate: {
-      text: '룸메이트가 사용한 컵이나 식기를\n방 안에 두고 있다면 언제까지 괜찮을까요?',
+      text: '룸메이트의 냉난방 습관 중, 함께 지내기\n힘들 것 같은 것을 모두 골라 주세요.',
       options: [
-        '사용 직후 바로 정리했으면 좋겠다',
-        '그날 안에만 정리하면 괜찮다',
-        '다음 날까지는 괜찮다',
-        '위생 문제가 없다면 더 두어도 괜찮다',
+        '방에 있는 동안 계속 켜두어도 괜찮다',
+        '덥거나 추울 때 일정시간 이상 켜두어도 괜찮다',
+        '덥거나 추울 때 잠깐 켰다가 꺼줬으면 한다',
+        '거의 사용하지 않았으면 좋겠다',
       ],
     },
   },

@@ -77,9 +77,11 @@ const FIGMA_SAMPLE_ANSWERS: readonly AnswerRow[] = [
     partnerAnswer: '바로 정리했으면 좋겠다',
   },
   {
-    topicId: 'dishes',
-    selfAnswer: '그날 안에 정리한다',
-    partnerAnswer: '다음 날까지는 괜챃다',
+    // The dishes question became 온도 (2026-11-19); the card component has no 온도 row yet, so
+    // this pair is taken from the survey options.
+    topicId: 'temperature',
+    selfAnswer: '덥거나 추울 때 잠깐 켰다가 끈다',
+    partnerAnswer: '덥거나 추울 때 일정시간 이상 켜두어도 괜찮다',
   },
   {
     topicId: 'smoking',
@@ -206,7 +208,7 @@ const CANDIDATES: readonly RoommateCandidate[] = [
     matchRate: 71,
     avatar: avatarCheck,
     analysis: {
-      good: ['식기를 사용한 뒤 바로 정리해요.'],
+      good: ['냉난방을 쓰는 습관이 비슷해요.'],
       adjust: ['혜윤님은 알람을 5번 이상 반복해요.'],
       check: ['혜윤님은 취침 시간이 일정하지 않아요.'],
     },
@@ -278,7 +280,7 @@ const CANDIDATES: readonly RoommateCandidate[] = [
     matchRate: 66,
     avatar: avatarMask,
     analysis: {
-      good: ['식기를 사용한 뒤 바로 정리해요.'],
+      good: ['냉난방을 쓰는 습관이 비슷해요.'],
       adjust: ['하은님은 밤 10시 이전에 잠자리에 들어요.'],
       check: ['하은님은 자신의 코골이 여부를 몰라요.'],
     },
@@ -337,7 +339,7 @@ const CANDIDATES: readonly RoommateCandidate[] = [
       [3, 3],
       [4, 2],
       [1, 1],
-      [4, 2],
+      [3, 2],
       [0, 2],
     ]),
   },
@@ -374,7 +376,7 @@ const CANDIDATES: readonly RoommateCandidate[] = [
     matchRate: 58,
     avatar: avatarMask,
     analysis: {
-      good: ['식기를 그날 안에 정리해요.'],
+      good: ['냉난방을 쓰는 습관이 비슷해요.'],
       adjust: ['지우님은 자정 넘어 잠드는 편이에요.'],
       check: ['지우님은 자신의 코골이 여부를 몰라요.'],
     },

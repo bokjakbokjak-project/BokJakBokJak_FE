@@ -1,6 +1,6 @@
 import { useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router'
-import AnswerCard from '../../components/AnswerCard/AnswerCard'
+import ProfileAnswerSections from '../../components/AnswerCard/ProfileAnswerSections'
 import ChoiceDialog from '../../components/dialog/ChoiceDialog'
 import ProfileAvatar from '../../components/my/ProfileAvatar'
 import ProfileHero from '../../components/roommate/ProfileHero'
@@ -10,13 +10,11 @@ import { getAnswerSummary } from '../../lib/answerSummary'
 import { ONBOARDING_ROUTES } from '../../lib/onboarding/routes'
 import { readSharedProfile } from '../../lib/share/profileShare'
 
-/** Answer cards a reader sees before the rest is blurred (Figma note 1952:40096). */
-const OPEN_CARD_COUNT = 2
-
 /**
  * The survey result opened from a share link (QA 15, Figma 1952:39744). It has no header, no age
- * and no match rate. A popup points to 복작복작 on arrival, and the cards after the second one are
- * blurred behind the same prompt.
+ * and no match rate. A popup points to 복작복작 on arrival. The answers use the detail profile
+ * sections (Figma 2339:26489): the person's own answers in full, and of the wanted roommate only
+ * the first row, the rest blurred under a link to 복작복작.
  */
 export default function SharedProfilePage() {
   const navigate = useNavigate()
@@ -87,46 +85,26 @@ export default function SharedProfilePage() {
             ),
           }}
         />
-        <RoommateSheet labelledBy="shared-summary-title" scrolls={false}>
-          <div className="mx-auto w-full max-w-[390px] px-6 pt-[15px] pb-[35px]">
-            <h2
-              id="shared-summary-title"
-              className="text-center text-[20px] leading-[1.5] font-bold tracking-[-0.4px] text-gray-500"
-            >
-              상세 답변 요약
-            </h2>
-            <div className="mt-[15px] flex flex-col gap-3">
-              {cards.slice(0, OPEN_CARD_COUNT).map((card) => (
-                <AnswerCard key={card.category} card={card} />
-              ))}
-            </div>
-            {/* Figma 1952:40084: white at 30% with an 8px background blur over the rest. */}
-            <div className="relative mt-3">
-              <div
-                inert
-                aria-hidden
-                data-testid="shared-blurred"
-                className="flex flex-col gap-3"
-              >
-                {cards.slice(OPEN_CARD_COUNT).map((card) => (
-                  <AnswerCard key={card.category} card={card} />
-                ))}
-              </div>
-              <div className="absolute -inset-x-6 -inset-y-3 bg-white/30 backdrop-blur-[8px]">
-                <div className="sticky top-[47px] mx-auto mt-[47px] flex h-[196px] w-[285px] max-w-[calc(100%-32px)] flex-col justify-between rounded-[12px] border-2 border-brand-brown3 bg-brand-cream1 px-[23px] py-[25px] shadow-[0_4px_25px_0_rgba(0,0,0,0.25)]">
-                  <p className="text-[18px] leading-[1.5] font-semibold tracking-[-0.36px] break-keep whitespace-pre-line text-brand-brown1">
-                    {prompt}
+        <RoommateSheet scrolls={false}>
+          <div className="mx-auto w-full max-w-[390px] px-6 pt-6 pb-[35px]">
+            <ProfileAnswerSections
+              cards={cards}
+              locked={
+                // Figma 2339:26682, 37px under the top of the blurred rows.
+                <div className="sticky top-[47px] mx-auto mt-[37px] flex w-[174px] flex-col items-center gap-2.5">
+                  <p className="text-center text-[20px] leading-[1.4] font-bold tracking-[-0.4px] whitespace-pre-line text-brand-brown3">
+                    {'복작복작에서\n설문조사하고 이어보기'}
                   </p>
                   <button
                     type="button"
-                    className="h-[42px] w-full rounded-full bg-brand-brown1 text-[16px] leading-[1.5] font-semibold text-white"
+                    className="h-[42px] w-[152px] rounded-full bg-brand-brown1 text-[16px] leading-[1.4] font-bold tracking-[-0.32px] text-white"
                     onClick={goToApp}
                   >
-                    복작복작으로 이동하기
+                    복작복작으로 이동
                   </button>
                 </div>
-              </div>
-            </div>
+              }
+            />
           </div>
         </RoommateSheet>
       </div>
