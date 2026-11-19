@@ -2,18 +2,17 @@ import { Navigate, useNavigate } from 'react-router'
 import CharacterPreview from '../../components/onboarding/CharacterPreview'
 import PrimaryButton from '../../components/onboarding/PrimaryButton'
 import RoomBackground from '../../components/onboarding/RoomBackground'
-import { useOnboarding } from '../../lib/onboarding/onboardingState'
 import { ONBOARDING_ROUTES } from '../../lib/onboarding/routes'
 import {
   getTestProfileConfig,
   isUserTestEnabled,
   testerName,
 } from '../../lib/userTest/config'
-import { DEMO_ENTRY_ROUTE, liveEntryRoute } from '../../lib/userTest/routes'
+import { DEMO_ENTRY_ROUTE } from '../../lib/userTest/routes'
+import { useStartLiveSurvey } from '../../lib/userTest/useStartLiveSurvey'
 import { testOnboardingPatch } from '../../lib/userTest/testProfile'
 import {
   getParticipantId,
-  getUserTestState,
   setExperienceMode,
 } from '../../lib/userTest/userTestStore'
 
@@ -29,7 +28,7 @@ export const FEEDBACK_NOTICE =
  */
 export default function UserTestStartPage() {
   const navigate = useNavigate()
-  const { update } = useOnboarding()
+  const startLiveSurvey = useStartLiveSurvey()
   const participant = getParticipantId()
 
   if (!isUserTestEnabled()) {
@@ -43,10 +42,7 @@ export default function UserTestStartPage() {
 
   const startSurvey = () => {
     const patch = testOnboardingPatch()
-    if (!patch) return
-    update(patch)
-    setExperienceMode('live')
-    navigate(liveEntryRoute(getUserTestState()))
+    if (patch) startLiveSurvey(patch)
   }
 
   const browse = () => {

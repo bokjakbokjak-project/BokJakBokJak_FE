@@ -349,9 +349,13 @@ describe('browse mode screens', () => {
     expect(isUserTestDemo()).toBe(true)
     await act(async () => {})
     expect(screen.getByTestId('path').textContent).toBe('/home')
-    expect(
+    // Back to the real survey: the priority step, as a retake since the survey was saved.
+    fireEvent.click(
       screen.getByRole('button', { name: '직접 설문하고 매칭하기' }),
-    ).toBeInTheDocument()
+    )
+    expect(isUserTestDemo()).toBe(false)
+    await act(async () => {})
+    expect(screen.getByTestId('path').textContent).toBe('/onboarding/priority')
   })
 
   it('goes back to the real flow from the notice', async () => {

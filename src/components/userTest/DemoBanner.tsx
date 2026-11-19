@@ -1,10 +1,10 @@
 import { useNavigate } from 'react-router'
 import { isUserTestEnabled } from '../../lib/userTest/config'
 import { DEMO_NOTICE } from '../../lib/userTest/experience'
-import { DEMO_ENTRY_ROUTE, liveEntryRoute } from '../../lib/userTest/routes'
+import { DEMO_ENTRY_ROUTE } from '../../lib/userTest/routes'
+import { useStartLiveSurvey } from '../../lib/userTest/useStartLiveSurvey'
 import {
   getParticipantId,
-  getUserTestState,
   setExperienceMode,
   useUserTestState,
 } from '../../lib/userTest/userTestStore'
@@ -13,14 +13,15 @@ import {
  * The mode switch at the top of every service screen, in the 47px status area of the frame
  * (user test only, not in Figma).
  *
- * - Browse mode: the notice and `직접 설문하고 매칭하기`, which picks up the real flow where the
- *   tester left it.
+ * - Browse mode: the notice and `직접 설문하고 매칭하기`, which opens the priority step of the
+ *   real survey.
  * - Real mode: a small `예시로 둘러보기`, so a tester who finished the survey (and so never sees
  *   the start screen again) can still browse the examples (requested 2026-11-20).
  */
 export default function DemoBanner() {
   const navigate = useNavigate()
   const { mode } = useUserTestState()
+  const startLiveSurvey = useStartLiveSurvey()
   // Without a signed-in tester there is no state to switch, so nothing shows.
   if (!isUserTestEnabled() || getParticipantId() === null) return null
 
@@ -35,10 +36,7 @@ export default function DemoBanner() {
           <button
             type="button"
             className="font-bold underline underline-offset-2"
-            onClick={() => {
-              setExperienceMode('live')
-              navigate(liveEntryRoute(getUserTestState()))
-            }}
+            onClick={() => startLiveSurvey()}
           >
             직접 설문하고 매칭하기
           </button>
