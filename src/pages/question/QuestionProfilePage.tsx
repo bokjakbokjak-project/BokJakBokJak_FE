@@ -26,6 +26,7 @@ import { QUESTION_COUNT, QUESTION_ROUTES } from './questionData'
 import { useQuestion } from './questionState'
 import FeedbackPrompt from '../../components/userTest/FeedbackPrompt'
 import FullPageLoading from '../../components/LoadState/FullPageLoading'
+import ScrollHint from '../../components/roommate/ScrollHint'
 
 /**
  * Age from the birth year chosen in onboarding, counted as this year minus the birth year. The
@@ -65,6 +66,7 @@ export default function QuestionProfilePage() {
   const { answers: editingAnswers, sync } = useQuestion()
   const { data } = useOnboarding()
   const shareButtonRef = useRef<HTMLButtonElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
   // `copied` is Figma 1377:36531. `failed` is not in Figma: the link is shown to copy by hand.
   // `kakaoFailed` is not in Figma either: the link stays copied for pasting.
   const [shareState, setShareState] = useState<
@@ -181,6 +183,7 @@ export default function QuestionProfilePage() {
     <RoommatePage
       footer={
         <div className="relative z-20 shrink-0 bg-brand-cream1 pt-2.5 pb-[max(28px,env(safe-area-inset-bottom))]">
+          <ScrollHint scrollRef={scrollRef} />
           <div className="mx-auto w-full max-w-[390px] px-6">
             <button
               type="button"
@@ -215,6 +218,7 @@ export default function QuestionProfilePage() {
         }
       />
       <div
+        ref={scrollRef}
         data-testid="result-scroll"
         className="scrollbar-none flex min-h-0 flex-1 flex-col overflow-y-auto"
       >

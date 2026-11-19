@@ -34,6 +34,8 @@
   /* Full-page loading (requested 2026-11-20): the character bobs and three dots take turns. */
   --animate-loading-bob: loading-bob 1.6s ease-in-out infinite;
   --animate-loading-dot: loading-dot 1.2s ease-in-out infinite;
+  /* The down arrow over the survey result's button (requested 2026-11-20). */
+  --animate-scroll-hint: scroll-hint 1.4s ease-in-out infinite;
 
   @keyframes greet-eyes {
     0%,
@@ -76,6 +78,16 @@
     30% {
       opacity: 1;
       transform: translateY(-5px);
+    }
+  }
+
+  @keyframes scroll-hint {
+    0%,
+    100% {
+      transform: translate(-50%, 0);
+    }
+    50% {
+      transform: translate(-50%, 6px);
     }
   }
 
