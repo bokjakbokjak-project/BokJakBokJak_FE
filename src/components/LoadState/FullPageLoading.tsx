@@ -3,8 +3,8 @@ import CharacterPreview from '../onboarding/CharacterPreview'
 
 /**
  * A whole screen that waits on the server, such as the survey result reading the saved answers
- * (requested 2026-11-20: the one-line caption looked empty). The character bobs on the cream
- * page above the caption, and three dots take turns. Not in Figma; it reuses the home character
+ * (requested 2026-11-20: the one-line caption looked empty). The character, with its own
+ * shadow, bobs on the cream page above the caption, and three dots take turns. Not in Figma; it reuses the home character
  * and the brand colors. Reduced motion keeps everything still.
  */
 export default function FullPageLoading({
@@ -25,8 +25,6 @@ export default function FullPageLoading({
       className="flex flex-1 flex-col items-center justify-center gap-6 bg-brand-cream1 px-6 md:rounded-[24px]"
     >
       <div aria-hidden className="relative w-[180px]">
-        {/* The shadow stays on the floor while the character bobs. */}
-        <div className="absolute bottom-[4%] left-1/2 h-3 w-[46%] -translate-x-1/2 rounded-[50%] bg-brand-beige3" />
         <div className="motion-safe:animate-loading-bob">
           <CharacterPreview
             priorities={priorities}
