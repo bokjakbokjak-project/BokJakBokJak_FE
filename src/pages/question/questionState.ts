@@ -49,9 +49,18 @@ type QuestionContextValue = {
   answer: (index: number, option: string) => void
   /** Replaces every answer at once, such as the saved answers read from the server. */
   replaceAnswers: (answers: QuestionAnswers) => void
-  /** Kept here so the profile's back button returns to the last question. */
+  /**
+   * The step on screen (0-15), in the priority order (getTopicOrder), not the question index that
+   * keys the answers. Kept here so the profile's back button returns to the last question.
+   */
   index: number
-  setIndex: (index: number) => void
+  /**
+   * The topic order (`getTopicOrder(...).join()`) the step was taken in, or null when the step
+   * means the same in any order. When the priorities change, the survey moves the step to the same
+   * question in the new order (or to an earlier unanswered one).
+   */
+  indexOrder: string | null
+  setIndex: (index: number, order?: string | null) => void
   /** Clears every answer and returns to the first question, for retaking the survey. */
   reset: () => void
   /**
