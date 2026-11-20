@@ -9,6 +9,7 @@ import sceneTemperature from '../../assets/question/scene-temperature.png'
 import situationBedtime from '../../assets/question/situation-bedtime.png'
 import situationSleep from '../../assets/question/situation-sleep.png'
 import situationTemperature from '../../assets/question/situation-temperature.png'
+import type { CategoryId } from '../../lib/onboarding/categories'
 
 export const QUESTION_ROUTES = {
   survey: '/question',
@@ -24,6 +25,12 @@ type Question = {
 
 export type QuestionTopic = {
   id: string
+  /**
+   * The onboarding priority card the topic belongs to, as in the backend's list (2026-11-20):
+   * 기상 알람 holds the bedtime and the alarm, 청소 청결 the floor and the food waste, 개인 청결
+   * the belongings. It sets the survey order (getTopicOrder).
+   */
+  category: CategoryId
   /** Shown for a moment before the self question. */
   situation: string
   scene: string
@@ -46,6 +53,7 @@ export type QuestionTopic = {
 export const QUESTION_TOPICS: readonly QuestionTopic[] = [
   {
     id: 'sleep-habit',
+    category: 'sleep-habit',
     situation:
       '밤에 함께 자고 있는데, 한 사람이\n자는 동안 코를 골거나 잠꼬대를 해요.',
     scene: sceneSleep,
@@ -73,6 +81,7 @@ export const QUESTION_TOPICS: readonly QuestionTopic[] = [
   },
   {
     id: 'bedtime',
+    category: 'wake-alarm',
     situation:
       '밤 12시가 되었어요. 한 사람은 자려고 하고,\n다른 한 사람은 아직 잠들지 않았어요.',
     scene: sceneBedtime,
@@ -101,6 +110,7 @@ export const QUESTION_TOPICS: readonly QuestionTopic[] = [
   },
   {
     id: 'morning-alarm',
+    category: 'wake-alarm',
     situation:
       '아침 7시, 알람이 울렸어요. 그런데 알람이\n한 번으로 끝나지 않고 여러 번 반복돼요.',
     scene: sceneAlarm,
@@ -127,6 +137,7 @@ export const QUESTION_TOPICS: readonly QuestionTopic[] = [
   },
   {
     id: 'floor-cleaning',
+    category: 'cleaning',
     situation: '방 바닥에 머리카락이나 먼지가\n조금씩 보이기 시작했어요.',
     scene: sceneFloor,
     layout: 'default',
@@ -153,6 +164,7 @@ export const QUESTION_TOPICS: readonly QuestionTopic[] = [
   },
   {
     id: 'food-waste',
+    category: 'cleaning',
     situation:
       '배달 음식을 먹고 남은 음식과 용기가\n방 안에 있어요. 아직 냄새가 심하게 나지는 않아요',
     scene: sceneFood,
@@ -179,6 +191,7 @@ export const QUESTION_TOPICS: readonly QuestionTopic[] = [
   },
   {
     id: 'belongings',
+    category: 'personal-hygiene',
     situation: '옷과 가방, 책 같은 개인 물건이\n방 안에 꺼내져 있어요.',
     scene: sceneBelongings,
     layout: 'default',
@@ -203,6 +216,7 @@ export const QUESTION_TOPICS: readonly QuestionTopic[] = [
   },
   {
     id: 'smoking',
+    category: 'smoking',
     situation:
       '룸메이트가 밖에서 담배를 피우고 방으로\n돌아왔어요. 냄새가 날 수 있어요.',
     scene: sceneSmoking,
@@ -230,6 +244,7 @@ export const QUESTION_TOPICS: readonly QuestionTopic[] = [
     // (Q15·16, 2026-11-20). Copy from Figma 1377:49785: STEP 2441:20834, questions 2441:21272 and
     // 2441:21608. One answer per question, like the other topics.
     id: 'temperature',
+    category: 'temperature',
     situation:
       '초여름이나 초겨울, 냉난방을 사용해요.\n계속 켜두는 사람도 있고, 필요할 때만\n잠깐 사용하는 사람도 있어요.',
     scene: sceneTemperature,
@@ -258,6 +273,33 @@ export const QUESTION_TOPICS: readonly QuestionTopic[] = [
 
 /** Two questions per topic, so Q1 and Q2 are topic 0, Q3 and Q4 are topic 1, and so on. */
 export const QUESTION_COUNT = QUESTION_TOPICS.length * 2
+
+/**
+ * The order the topics are asked in (requested 2026-11-20): the topics of the 1st priority first,
+ * then the 2nd and so on, then the topics of the cards not chosen. Within the same card, and
+ * without priorities, the topics keep the order of QUESTION_TOPICS, which is the backend's order.
+ * Only the screens follow it: the answers stay keyed by question index (0-15), so the save sends
+ * the same `question_code`/`option_code` pairs as before.
+ */
+export function getTopicOrder(priorities: readonly CategoryId[]) {
+  const rank = (topicIndex: number) => {
+    const at = priorities.indexOf(QUESTION_TOPICS[topicIndex].category)
+    return at < 0 ? priorities.length : at
+  }
+  return QUESTION_TOPICS.map((_, topicIndex) => topicIndex).sort(
+    (a, b) => rank(a) - rank(b) || a - b,
+  )
+}
+
+/** The question index (0-15, the key of the answers) shown at a step of the survey. */
+export function getQuestionIndex(order: readonly number[], step: number) {
+  return order[Math.floor(step / 2)] * 2 + (step % 2)
+}
+
+/** The step at which a question (0-15) is asked in a topic order; getQuestionIndex reversed. */
+export function getStepOf(order: readonly number[], questionIndex: number) {
+  return order.indexOf(Math.floor(questionIndex / 2)) * 2 + (questionIndex % 2)
+}
 
 export function getQuestionStep(index: number) {
   const topic = QUESTION_TOPICS[Math.floor(index / 2)]
