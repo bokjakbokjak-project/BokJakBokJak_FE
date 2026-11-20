@@ -25,7 +25,7 @@ import {
   type QuestionTopic,
 } from './questionData'
 import { useQuestion } from './questionState'
-import SurveySkipButton from './SurveySkipButton'
+import SurveySkipButton, { ExperienceSkipButton } from './SurveySkipButton'
 import BrowseInsteadButton from '../../components/userTest/BrowseInsteadButton'
 import FullPageLoading from '../../components/LoadState/FullPageLoading'
 
@@ -380,8 +380,9 @@ function QuestionStep({ focusHeading, onMove }: QuestionStepProps) {
         </div>
 
         <div
-          className={`mt-auto flex shrink-0 flex-col justify-between rounded-t-[35px] border border-question-sheet-border bg-question-surface pt-[30px] pr-[23px] pb-[max(0px,calc(44px-env(safe-area-inset-bottom)))] pl-[23px] ${layout.sheetGap} ${layout.sheetHeight}`}
+          className={`relative mt-auto flex shrink-0 flex-col justify-between rounded-t-[35px] border border-question-sheet-border bg-question-surface pt-[30px] pr-[23px] pb-[max(0px,calc(44px-env(safe-area-inset-bottom)))] pl-[23px] ${layout.sheetGap} ${layout.sheetHeight}`}
         >
+          <ExperienceSkipButton />
           <fieldset className="flex flex-col gap-px">
             <legend className="sr-only">{question.text}</legend>
             {/* Not in Figma: shown only while the server survey does not match (BE-9). */}

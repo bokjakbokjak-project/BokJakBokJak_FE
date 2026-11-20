@@ -97,7 +97,8 @@ describe('experience chat state', () => {
 
     chat = chatReducer(chat, { type: 'agree' })
     expect(chat.messages.at(-1)).toMatchObject({
-      agreement: true,
+      kind: 'agreement',
+      title: '1. 청소 주기',
       text: '주 1회 공동 청소, 음식물 쓰레기는 당일 처리',
     })
     // Completing the agenda is not the match.
@@ -131,7 +132,10 @@ describe('experience chat state', () => {
     })
     expect(chat.phase).toBe('intro')
     expect(chat.agendaIndex).toBe(1)
-    expect(chat.messages.at(-1)?.text).toMatch(/잠드는 시간/)
+    expect(chat.messages.at(-1)).toMatchObject({
+      kind: 'agenda',
+      title: '2. 잠드는 시간',
+    })
   })
 })
 
@@ -228,9 +232,7 @@ describe('experience run (no sign-in, no request)', () => {
     )
     expect(
       screen.getByRole('dialog', { name: '대화방이 열렸어요!' }),
-    ).toHaveAccessibleDescription(
-      /실제 사용자에게 대화 요청이나 메시지가 전송되지 않아요/,
-    )
+    ).toHaveAccessibleDescription(/실제로는 전송되지 않아요/)
     fireEvent.click(screen.getByRole('button', { name: '대화 시작하기' }))
     expect(screen.getByTestId('path').textContent).toBe('/experience/chat')
 
@@ -248,15 +250,17 @@ describe('experience run (no sign-in, no request)', () => {
       screen.getAllByText('좋아요. 대신 음식물 쓰레기는 그날 치우면 좋겠어요'),
     ).toHaveLength(1)
     fireEvent.click(screen.getByRole('button', { name: '그렇게 해요' }))
-    fireEvent.click(
-      screen.getByRole('button', { name: '이 내용으로 조율 완료' }),
-    )
-    fireEvent.click(screen.getByRole('button', { name: '매칭 확정하기' }))
-    expect(screen.queryByText('매칭이 완료됐어요!')).not.toBeInTheDocument()
+    // The agreement card (확정) offers the final choice, as in the chat room.
+    fireEvent.click(screen.getByRole('button', { name: '매칭확정 하기' }))
+    fireEvent.click(screen.getByRole('button', { name: '확정하기' }))
+    // Only my choice: not matched until the partner chooses too.
+    expect(
+      screen.queryByText('🎉 매칭이 확정되었습니다'),
+    ).not.toBeInTheDocument()
     await act(async () => {
       vi.advanceTimersByTime(AUTO_REPLY_MS)
     })
-    expect(screen.getByText('매칭이 완료됐어요!')).toBeInTheDocument()
+    expect(screen.getByText('🎉 매칭이 확정되었습니다')).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: '홈으로 가기' }))
     expect(screen.getByTestId('path').textContent).toBe('/home')

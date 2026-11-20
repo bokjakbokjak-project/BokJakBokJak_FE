@@ -21,12 +21,19 @@ export type ChatPhase =
   | 'partner-confirming'
   | 'matched'
 
+/**
+ * Drawn like the chat room (Figma 1715:38109): the chatbot's cards (`intro`, `agenda` with 미정,
+ * `agreement` with 확정), the partner's and my bubbles, and short status lines.
+ */
 export type ChatMessage = {
   id: number
-  from: 'me' | 'partner' | 'system'
+  from: 'me' | 'partner' | 'ai' | 'status'
   text: string
-  /** The agreed rule, drawn as a card. */
-  agreement?: boolean
+  kind?: 'intro' | 'agenda' | 'agreement'
+  /** The card title, such as `1. 청소 주기`. */
+  title?: string
+  /** The intro card's list of agendas. */
+  agendas?: string[]
 }
 
 export type ExperiencePartner = {
@@ -73,8 +80,33 @@ export function createChat(
     agendaIndex: 0,
     phase: 'intro',
     optionId: null,
-    messages: [{ id: 1, from: 'system', text: SCENARIOS[agendas[0]].intro }],
+    messages: [
+      {
+        id: 1,
+        from: 'ai',
+        kind: 'intro',
+        title: '안건 조율을 시작할게요!',
+        text: '두 분의 분석에서 조율이 필요한 내용을 골랐어요.',
+        agendas: agendas.map((id) => SCENARIOS[id].title),
+      },
+      agendaCard(agendas, 0, 2),
+    ],
     step: 0,
+  }
+}
+
+function agendaCard(
+  agendas: ScenarioId[],
+  index: number,
+  id: number,
+): ChatMessage {
+  const scenario = SCENARIOS[agendas[index]]
+  return {
+    id,
+    from: 'ai',
+    kind: 'agenda',
+    title: `${index + 1}. ${scenario.title}`,
+    text: scenario.intro,
   }
 }
 
@@ -137,9 +169,10 @@ export function chatReducer(
       return next({
         phase: 'agreed',
         messages: add(withMine, {
-          from: 'system',
+          from: 'ai',
+          kind: 'agreement',
+          title: `${state.agendaIndex + 1}. ${currentScenario(state).title}`,
           text: option.agreement,
-          agreement: true,
         }),
       })
     }
@@ -152,17 +185,24 @@ export function chatReducer(
         phase: 'intro',
         agendaIndex,
         optionId: null,
-        messages: add(state, {
-          from: 'system',
-          text: SCENARIOS[state.agendas[agendaIndex]].intro,
-        }),
+        messages: [
+          ...state.messages,
+          agendaCard(
+            state.agendas,
+            agendaIndex,
+            (state.messages.at(-1)?.id ?? 0) + 1,
+          ),
+        ],
       })
     }
     case 'confirm': {
       if (state.phase !== 'final') return state
       return next({
         phase: 'partner-confirming',
-        messages: add(state, { from: 'system', text: '매칭을 확정했어요.' }),
+        messages: add(state, {
+          from: 'status',
+          text: '매칭 확정을 선택했어요',
+        }),
       })
     }
     case 'auto': {
@@ -179,8 +219,8 @@ export function chatReducer(
         return next({
           phase: 'matched',
           messages: add(state, {
-            from: 'system',
-            text: `${state.partner.name}님도 매칭을 확정했어요.`,
+            from: 'status',
+            text: `${state.partner.name}님도 매칭 확정을 선택했어요`,
           }),
         })
       }

@@ -42,12 +42,13 @@ export default function ExperienceChatFooter({
       {open && (
         <ChoiceDialog
           title="대화방이 열렸어요!"
+          // The chat request dialog's layout (Figma 1686:17718), saying what the experience does.
           message={
-            '조율할 내용을 함께 확인해보세요.\n\n이후 대화는 자동으로 응답하는 체험 상대와 진행돼요. 실제 사용자에게 대화 요청이나 메시지가 전송되지 않아요.'
+            '자동으로 응답하는 체험 상대와\n대화해요. 실제로는 전송되지 않아요.'
           }
-          cancelLabel="닫기"
+          cancelLabel="계속 둘러보기"
           confirmLabel="대화 시작하기"
-          autoHeight
+          offsetClass="mt-5"
           triggerRef={buttonRef}
           onCancel={() => setOpen(false)}
           onConfirm={() => {

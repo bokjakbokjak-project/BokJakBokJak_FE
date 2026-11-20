@@ -7,23 +7,24 @@ import {
   type AppMode,
 } from '../../lib/experience/mode'
 import { SHARE_ROUTE } from '../../lib/share/profileShare'
-import ChoiceDialog from '../dialog/ChoiceDialog'
+import ConfirmDialog from '../my/ConfirmDialog'
 
 const LABELS: Record<AppMode, string> = {
   experience: '핵심 체험',
   service: '전체 서비스',
 }
 
-const CONFIRM: Record<AppMode, { title: string; message: string }> = {
+// The my page's confirmation (ConfirmDialog), so the app's confirmations look alike.
+const CONFIRM: Record<AppMode, { message: string; detail: string }> = {
   experience: {
-    title: '핵심 체험으로 바꿀까요?',
-    message:
-      '로그인 없이 예시 데이터로 체험해요.\n지금 화면에서 저장하지 않은 입력은 사라져요.',
+    message: '핵심 체험으로\n바꾸시겠어요?',
+    detail:
+      '로그인 없이 예시 데이터로 체험해요.\n지금 화면에서 저장하지 않은 입력은\n사라져요.',
   },
   service: {
-    title: '전체 서비스로 바꿀까요?',
-    message:
-      '학교 계정으로 로그인해 실제 서버로 진행해요.\n지금 화면에서 저장하지 않은 입력은 사라져요.',
+    message: '전체 서비스로\n바꾸시겠어요?',
+    detail:
+      '학교 계정으로 로그인해 실제 서버로\n진행해요. 지금 화면에서 저장하지 않은\n입력은 사라져요.',
   },
 }
 
@@ -72,10 +73,9 @@ export default function ModeToggle() {
         </div>
       </div>
       {target && (
-        <ChoiceDialog
-          title={CONFIRM[target].title}
+        <ConfirmDialog
           message={CONFIRM[target].message}
-          cancelLabel="취소"
+          detail={CONFIRM[target].detail}
           confirmLabel="바꾸기"
           triggerRef={triggerRef}
           onCancel={() => setTarget(null)}

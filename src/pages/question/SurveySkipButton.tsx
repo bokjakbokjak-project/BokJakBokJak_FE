@@ -18,9 +18,8 @@ export default function SurveySkipButton() {
   const navigate = useNavigate()
   const { answer, setIndex } = useQuestion()
 
-  // The experience offers it to everyone, as example answers the result labels (요청서 4.3).
-  if (isExperienceMode()) return <ExperienceSkipButton />
-  if (!isQaMode()) return null
+  // The experience has its own, on the answer sheet (ExperienceSkipButton).
+  if (isExperienceMode() || !isQaMode()) return null
 
   const skip = () => {
     for (let index = 0; index < QUESTION_COUNT; index += 1) {
@@ -42,22 +41,26 @@ export default function SurveySkipButton() {
 }
 
 /**
- * `예시 답변으로 건너뛰기` (experience mode): fills every question with an example answer and
- * marks the session, so the result and the recommendations read as examples.
+ * `예시 답변으로 건너뛰기` (experience mode, 요청서 4.3): fills every question with an example
+ * answer and marks the session, so the result and the recommendations read as examples. It sits
+ * 3px above the top right of the answer sheet, like a skip control, and only on the question
+ * screen, not over the STEP story (requested 2026-11-20).
  */
-function ExperienceSkipButton() {
+export function ExperienceSkipButton() {
   const navigate = useNavigate()
   const { fillExampleAnswers } = useExperienceSetup()
+  if (!isExperienceMode()) return null
   return (
     <button
       type="button"
-      className="absolute bottom-[max(116px,calc(env(safe-area-inset-bottom)+92px))] left-1/2 z-40 -translate-x-1/2 whitespace-nowrap rounded-full border border-brand-brown3 bg-white/95 px-3 py-1 text-[12px] leading-[1.5] font-semibold text-brand-brown3 shadow-[0_2px_6px_rgba(97,71,53,0.15)]"
+      className="absolute right-5 bottom-[calc(100%+3px)] z-10 flex items-center gap-0.5 rounded-full bg-white/90 px-3 py-1 text-[12px] leading-[1.5] font-semibold whitespace-nowrap text-brand-brown3 shadow-[0_2px_6px_rgba(97,71,53,0.15)]"
       onClick={() => {
         fillExampleAnswers()
         navigate(QUESTION_ROUTES.loading)
       }}
     >
       예시 답변으로 건너뛰기
+      <span aria-hidden>›</span>
     </button>
   )
 }

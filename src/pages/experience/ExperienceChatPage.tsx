@@ -1,32 +1,49 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router'
-import RoommateHeader from '../../components/roommate/RoommateHeader'
-import RoommatePage from '../../components/roommate/RoommatePage'
+import cardArrow from '../../assets/chat/card-arrow-right.svg'
+import cardCheck from '../../assets/chat/card-check-circle.svg'
+import backArrow from '../../assets/question/back-arrow-brown.svg'
+import ChoiceDialog from '../../components/dialog/ChoiceDialog'
 import {
   AUTO_REPLY_MS,
   currentScenario,
   isWaitingForPartner,
+  type ChatMessage,
   type ExperienceChatState,
 } from '../../lib/experience/chatMachine'
 import { dispatchExperienceChat } from '../../lib/experience/experienceChat'
 import { isExperienceMode } from '../../lib/experience/mode'
-import { useExperienceSession } from '../../lib/experience/session'
 import { AGREE_TEXT } from '../../lib/experience/scenarios'
+import { useExperienceSession } from '../../lib/experience/session'
+import { CHAT_ROUTES } from '../../lib/chat/routes'
 import { HOME_ROUTES } from '../../lib/home/routes'
 import { ROOMMATE_ROUTES } from '../../lib/roommate/routes'
-import { BUBBLE_TEXT, LEFT_BUBBLE } from '../chat/chatRoomStyles'
+import AiCard from '../chat/AiCard'
+import { AI_TILE, PARTNER_TILE } from '../chat/chatAvatars'
+import {
+  BOT_NAME,
+  BUBBLE_TEXT,
+  CARD_BUTTON,
+  LEFT_BUBBLE,
+  ROUND_BUTTON,
+} from '../chat/chatRoomStyles'
 import ExperienceRestartButtons from './ExperienceRestartButtons'
 
-const ACTION_BUTTON =
-  'flex min-h-[52px] w-full items-center justify-center rounded-[10px] px-4 py-2.5 text-center text-[16px] leading-[1.5] font-semibold break-keep'
-const PRIMARY = `${ACTION_BUTTON} bg-brand-brown1 text-white`
-const OPTION = `${ACTION_BUTTON} border border-brand-cream3 bg-white text-brand-brown1`
+/** A reply to pick, drawn like my own bubble so it reads as what I will say. */
+const REPLY =
+  'w-full rounded-[12px] border border-brand-cream3 bg-brand-cream2 px-4 py-2.5 text-left text-[14px] leading-[1.5] font-medium break-keep text-gray-black transition-colors hover:bg-brand-beige1'
+
+const NOTE =
+  'rounded-[10px] bg-white/80 px-3 py-2 text-center text-[12px] leading-[1.5] font-medium break-keep text-gray-500'
+
+type Sender = ChatMessage['from']
 
 /**
- * The experience chat (요청서 6): a scripted talk with an experience partner who answers by
- * itself. The user picks a reply instead of typing, so every answer fits what was said. It never
- * calls a chat or matching API; the state lives in the experience session, so the home shows
- * the match it ends with.
+ * The experience chat (요청서 6) in the chat room's own design (Figma 1715:38109): the chatbot's
+ * agenda cards with 미정 and 확정, the partner's and my bubbles, and the card's
+ * `다음안건으로` / `매칭확정 하기`. The partner answers by itself, and the reply is picked
+ * instead of typed, so every answer fits what was said. No chat or matching API is called; the
+ * state lives in the experience session, so the home shows the match it ends with.
  */
 export default function ExperienceChatPage() {
   const session = useExperienceSession()
@@ -45,165 +62,293 @@ export default function ExperienceChatPage() {
     return () => window.clearTimeout(timer)
   }, [waiting, step])
 
-  if (!chat) {
-    return (
-      <RoommatePage>
-        <RoommateHeader backTo={ROOMMATE_ROUTES.list} title="체험 대화" />
-        <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
-          <p className="text-[16px] leading-[1.5] font-medium break-keep text-gray-500">
-            아직 시작한 체험 대화가 없어요.
-            <br />
-            룸메이트 후보의 매칭 분석에서 대화를 시작해보세요.
-          </p>
+  return (
+    <div className="flex h-[calc(100dvh-env(safe-area-inset-top)-env(safe-area-inset-bottom))] flex-col bg-brand-cream1 md:h-auto md:min-h-0 md:flex-1">
+      <header className="shrink-0 pt-[max(0px,calc(47px-env(safe-area-inset-top)))]">
+        <div className="relative flex h-14 items-center px-6">
           <Link
-            to={ROOMMATE_ROUTES.list}
-            className="rounded-full bg-brand-brown1 px-6 py-2.5 text-[16px] font-semibold text-white"
+            to={CHAT_ROUTES.list}
+            aria-label="채팅 목록으로 돌아가기"
+            className={`${ROUND_BUTTON} flex items-center justify-center`}
           >
-            룸메이트 보러 가기
+            <img src={backArrow} alt="" />
           </Link>
-        </main>
-      </RoommatePage>
-    )
-  }
-
-  return (
-    <RoommatePage footer={<ChatActions chat={chat} />}>
-      <RoommateHeader
-        backTo={ROOMMATE_ROUTES.list}
-        title={chat.partner.name}
-        action={
-          chat.partner.candidateId ? (
-            <Link
-              to={ROOMMATE_ROUTES.analysis(chat.partner.candidateId)}
-              className="rounded-full border border-brand-cream3 bg-white px-2.5 py-0.5 text-[12px] leading-[1.5] font-semibold whitespace-nowrap text-brand-brown3"
-            >
-              분석 보기
-            </Link>
-          ) : undefined
-        }
-      />
-      <Notices chat={chat} />
-      <Messages chat={chat} />
-    </RoommatePage>
-  )
-}
-
-function Notices({ chat }: { chat: ExperienceChatState }) {
-  const scenario = currentScenario(chat)
-  return (
-    <div className="mx-6 flex shrink-0 flex-col gap-1.5">
-      <p
-        role="note"
-        className="rounded-[10px] bg-white/85 px-3 py-2 text-center text-[12px] leading-[1.5] font-medium break-keep text-gray-500"
-      >
-        자동으로 응답하는 체험 상대와의 대화예요. 실제 사용자에게 대화 요청이나
-        메시지가 전송되지 않아요.
-      </p>
-      {chat.switchedToExample && (
-        <p
-          role="note"
-          className="rounded-[10px] bg-roommate-pink/40 px-3 py-2 text-center text-[12px] leading-[1.5] font-medium break-keep text-brand-brown1"
-        >
-          선택한 후보의 분석에는 준비된 조율 안건이 없어서, 예시 두 사람(나와{' '}
-          {chat.partner.name}님)의 대화로 체험해요.
-        </p>
-      )}
-      <p className="text-center text-[13px] leading-[1.5] font-bold text-brand-brown3">
-        안건 {chat.agendaIndex + 1}/{chat.agendas.length} · {scenario.title}
-      </p>
+          <h1 className="absolute left-1/2 max-w-[calc(100%-136px)] -translate-x-1/2 truncate text-[18px] leading-[1.5] font-bold text-brand-brown1">
+            {chat ? `${chat.partner.name}님` : '체험 대화'}
+          </h1>
+        </div>
+      </header>
+      {chat ? <Room chat={chat} /> : <NoChat />}
     </div>
   )
 }
 
-function Messages({ chat }: { chat: ExperienceChatState }) {
-  const endRef = useRef<HTMLDivElement>(null)
+function NoChat() {
+  return (
+    <main className="flex flex-1 flex-col items-center justify-center gap-4 px-6 text-center">
+      <p className="text-[16px] leading-[1.5] font-medium break-keep text-gray-500">
+        아직 시작한 체험 대화가 없어요.
+        <br />
+        룸메이트 후보의 매칭 분석에서 대화를 시작해보세요.
+      </p>
+      <Link
+        to={ROOMMATE_ROUTES.list}
+        className="rounded-full bg-brand-brown1 px-6 py-2.5 text-[16px] font-semibold text-white"
+      >
+        룸메이트 보러 가기
+      </Link>
+    </main>
+  )
+}
+
+function Room({ chat }: { chat: ExperienceChatState }) {
+  const listRef = useRef<HTMLOListElement>(null)
+  const agendaRef = useRef<HTMLButtonElement>(null)
+  const matchRef = useRef<HTMLButtonElement>(null)
+  const [confirming, setConfirming] = useState<'agenda' | 'match' | null>(null)
+
   const count = chat.messages.length
   useEffect(() => {
-    endRef.current?.scrollIntoView?.({ block: 'end' })
+    const list = listRef.current
+    if (list) list.scrollTop = list.scrollHeight
   }, [count, chat.phase])
 
-  return (
-    <div
-      data-testid="experience-messages"
-      className="scrollbar-none mt-3 flex min-h-0 flex-1 flex-col gap-2.5 overflow-y-auto px-6 pb-4"
-      aria-live="polite"
-    >
-      {chat.messages.map((message) =>
-        message.from === 'system' ? (
-          message.agreement ? (
-            <div
-              key={message.id}
-              className="mx-auto w-full rounded-[12px] border-2 border-brand-brown3 bg-brand-cream2 px-4 py-3 text-center"
-            >
-              <p className="text-[12px] leading-[1.5] font-semibold text-brand-brown3">
-                합의 예시
-              </p>
-              <p className="mt-0.5 text-[15px] leading-[1.5] font-bold break-keep text-brand-brown1">
-                {message.text}
-              </p>
-            </div>
-          ) : (
-            <p
-              key={message.id}
-              className="mx-auto max-w-[300px] rounded-[10px] bg-brand-beige1 px-3 py-2 text-center text-[13px] leading-[1.5] font-medium break-keep text-brand-brown1"
-            >
-              {message.text}
-            </p>
-          )
-        ) : message.from === 'partner' ? (
-          <div key={message.id} className="flex flex-col items-start gap-1">
-            <span className="text-[12px] font-semibold text-gray-500">
-              {chat.partner.name} · 체험 상대
-            </span>
-            <p className={`max-w-[258px] ${LEFT_BUBBLE} ${BUBBLE_TEXT}`}>
-              {message.text}
-            </p>
-          </div>
-        ) : (
-          <p
-            key={message.id}
-            className={`ml-auto max-w-[258px] rounded-tl-[12px] rounded-b-[12px] bg-brand-brown1 px-3 py-2 text-white ${BUBBLE_TEXT}`}
+  const isLastAgenda = chat.agendaIndex + 1 >= chat.agendas.length
+  // The card choices sit on the agreement of the agenda just settled (Figma 1715:38109).
+  const cardActions =
+    chat.phase === 'agreed' ? (
+      <div className="mt-2 flex flex-col gap-[5px]">
+        {isLastAgenda ? (
+          <button
+            ref={matchRef}
+            type="button"
+            className={CARD_BUTTON}
+            onClick={() => setConfirming('match')}
           >
-            {message.text}
-          </p>
-        ),
-      )}
-      {isWaitingForPartner(chat) && (
-        <p className="text-[12px] leading-[1.5] font-medium text-gray-400">
-          {chat.partner.name}님이{' '}
-          {chat.phase === 'partner-confirming'
-            ? '확정을 고민하는'
-            : '답장을 쓰는'}{' '}
-          중이에요…
+            <img src={cardCheck} alt="" className="size-5" />
+            매칭확정 하기
+          </button>
+        ) : (
+          <button
+            ref={agendaRef}
+            type="button"
+            className={CARD_BUTTON}
+            onClick={() => setConfirming('agenda')}
+          >
+            <img src={cardArrow} alt="" className="size-5" />
+            다음안건으로
+          </button>
+        )}
+      </div>
+    ) : undefined
+  const lastAgreementId = chat.messages.findLast(
+    (message) => message.kind === 'agreement',
+  )?.id
+
+  return (
+    <>
+      <div className="mx-6 mt-2 flex shrink-0 flex-col gap-1.5">
+        <p role="note" className={NOTE}>
+          자동으로 응답하는 체험 상대예요. 실제로는 전송되지 않아요.
         </p>
+        {chat.switchedToExample && (
+          <p role="note" className={NOTE}>
+            선택한 후보의 분석에는 준비된 조율 안건이 없어서, 예시 두 사람의
+            대화로 체험해요.
+          </p>
+        )}
+      </div>
+      <ol
+        ref={listRef}
+        aria-label="대화 내용"
+        aria-live="polite"
+        className="scrollbar-none flex min-h-0 flex-1 flex-col overflow-y-auto px-6 pt-[22px] pb-6"
+      >
+        {chat.messages.map((message, index) => {
+          const previous = chat.messages[index - 1]
+          const startsGroup = !previous || previous.from !== message.from
+          // Figma keeps 10px inside a group and 20px between groups.
+          const gap = index === 0 ? '' : startsGroup ? 'mt-5' : 'mt-2.5'
+          const view = (
+            <MessageView
+              message={message}
+              actions={message.id === lastAgreementId ? cardActions : undefined}
+            />
+          )
+          if (message.from === 'me' || message.from === 'status') {
+            return (
+              <li key={message.id} className={`flex flex-col ${gap}`}>
+                {message.from === 'me' && <span className="sr-only">나</span>}
+                {view}
+              </li>
+            )
+          }
+          return (
+            <li key={message.id} className={`flex gap-[9px] ${gap}`}>
+              {startsGroup ? (
+                <SenderTile sender={message.from} chat={chat} />
+              ) : (
+                <span className="w-[50px] shrink-0" />
+              )}
+              <div className="flex min-w-0 flex-1 flex-col gap-[5px]">
+                {startsGroup && (
+                  <p className="text-[14px] leading-[1.5] font-medium text-black">
+                    {message.from === 'ai' ? BOT_NAME : chat.partner.name}
+                  </p>
+                )}
+                {view}
+              </div>
+            </li>
+          )
+        })}
+        {isWaitingForPartner(chat) && (
+          <li className="mt-2.5 self-center text-[12px] leading-[1.5] font-medium text-gray-400">
+            {chat.partner.name}님이{' '}
+            {chat.phase === 'partner-confirming'
+              ? '매칭 확정을 고민하고 있어요…'
+              : '답장을 쓰고 있어요…'}
+          </li>
+        )}
+      </ol>
+      <Footer chat={chat} />
+      {confirming === 'agenda' && (
+        <ChoiceDialog
+          title="다음 안건으로 넘어가시겠습니까?"
+          message={
+            '안건을 확정하면 다시 수정할 수 없어요\nAI가 다음 안건으로 이동해요'
+          }
+          cancelLabel="취소하기"
+          confirmLabel="확정하기"
+          triggerRef={agendaRef}
+          onCancel={() => setConfirming(null)}
+          onConfirm={() => {
+            setConfirming(null)
+            dispatchExperienceChat({ type: 'complete-agenda' })
+          }}
+        />
       )}
-      <div ref={endRef} />
-    </div>
+      {confirming === 'match' && (
+        // Figma 1858:18674, as in the chat room.
+        <ChoiceDialog
+          title="매칭을 확정하시겠습니까?"
+          message={'서로 확정하기를 선택할 시 최종\n매칭이 완료됩니다'}
+          cancelLabel="취소하기"
+          confirmLabel="확정하기"
+          triggerRef={matchRef}
+          onCancel={() => setConfirming(null)}
+          onConfirm={() => {
+            setConfirming(null)
+            // Settling the last agenda is not the match: the match needs both choices.
+            dispatchExperienceChat({ type: 'complete-agenda' })
+            dispatchExperienceChat({ type: 'confirm' })
+          }}
+        />
+      )}
+    </>
   )
 }
 
-function ChatActions({ chat }: { chat: ExperienceChatState }) {
+function MessageView({
+  message,
+  actions,
+}: {
+  message: ChatMessage
+  actions?: ReactNode
+}) {
+  if (message.from === 'ai') {
+    if (message.kind === 'intro') {
+      return (
+        <AiCard title={message.title ?? ''}>
+          <p>{message.text}</p>
+          <p className="mt-[18px] font-semibold">[ 조율안건 ]</p>
+          <ol className="list-inside list-decimal pl-1">
+            {message.agendas?.map((agenda) => (
+              <li key={agenda}>{agenda}</li>
+            ))}
+          </ol>
+        </AiCard>
+      )
+    }
+    return (
+      <AiCard
+        title={message.title ?? ''}
+        badge={
+          message.kind === 'agreement'
+            ? { text: '확정', tone: 'done' }
+            : { text: '미정', tone: 'open' }
+        }
+        actions={actions}
+      >
+        {message.text}
+      </AiCard>
+    )
+  }
+  if (message.from === 'status') {
+    return (
+      <p className="self-center rounded-[6px] bg-white px-1.5 text-[12px] leading-[1.5] font-medium tracking-[-0.12px] text-black">
+        {message.text}
+      </p>
+    )
+  }
+  return message.from === 'me' ? (
+    <p
+      className={`max-w-[min(292px,100%)] self-end rounded-tl-[12px] rounded-b-[12px] border border-brand-cream3 bg-brand-cream2 px-4 py-2 text-gray-black ${BUBBLE_TEXT}`}
+    >
+      {message.text}
+    </p>
+  ) : (
+    <p
+      className={`${LEFT_BUBBLE} max-w-[min(284px,100%)] self-start ${BUBBLE_TEXT}`}
+    >
+      {message.text}
+    </p>
+  )
+}
+
+/** 50px tile beside the first chatbot or partner item of a group, as in the chat room. */
+function SenderTile({
+  sender,
+  chat,
+}: {
+  sender: Sender
+  chat: ExperienceChatState
+}) {
+  if (sender === 'ai') {
+    return <img src={AI_TILE} alt="" className="size-[50px] shrink-0" />
+  }
+  const tile = <img src={PARTNER_TILE} alt="" className="size-[50px]" />
+  if (!chat.partner.candidateId) return <span className="shrink-0">{tile}</span>
+  return (
+    <Link
+      to={ROOMMATE_ROUTES.analysis(chat.partner.candidateId)}
+      aria-label={`${chat.partner.name}님 프로필 보기`}
+      className="shrink-0 self-start rounded-[15px]"
+    >
+      {tile}
+    </Link>
+  )
+}
+
+function Footer({ chat }: { chat: ExperienceChatState }) {
   const navigate = useNavigate()
-  const footer = (children: React.ReactNode) => (
-    <div className="relative z-20 shrink-0 bg-brand-cream1 px-6 pt-3 pb-[max(24px,env(safe-area-inset-bottom))]">
-      <div className="mx-auto flex w-full max-w-[342px] flex-col gap-2">
-        {children}
-      </div>
-    </div>
+  const wrap = (children: ReactNode) => (
+    <footer className="flex shrink-0 flex-col gap-2 px-6 pb-[max(7px,calc(41px-env(safe-area-inset-bottom)))]">
+      {children}
+    </footer>
   )
 
   switch (chat.phase) {
     case 'intro':
-      return footer(
+      return wrap(
         <>
-          <p className="text-[13px] leading-[1.5] font-semibold text-gray-500">
-            내 의견을 골라보세요
+          <p className="text-[12px] leading-[1.5] font-semibold text-gray-500">
+            보낼 답장을 골라주세요
           </p>
           {currentScenario(chat).options.map((option) => (
             <button
               key={option.id}
               type="button"
-              className={OPTION}
+              className={REPLY}
               onClick={() =>
                 dispatchExperienceChat({ type: 'choose', optionId: option.id })
               }
@@ -213,63 +358,28 @@ function ChatActions({ chat }: { chat: ExperienceChatState }) {
           ))}
         </>,
       )
-    case 'partner-replying':
-    case 'partner-confirming':
-      return footer(
-        <button type="button" disabled className={`${OPTION} opacity-60`}>
-          상대의 응답을 기다리는 중이에요
-        </button>,
-      )
     case 'agree':
-      return footer(
+      return wrap(
         <button
           type="button"
-          className={OPTION}
+          className={REPLY}
           onClick={() => dispatchExperienceChat({ type: 'agree' })}
         >
           {AGREE_TEXT}
         </button>,
       )
-    case 'agreed':
-      return footer(
-        <button
-          type="button"
-          className={PRIMARY}
-          onClick={() => dispatchExperienceChat({ type: 'complete-agenda' })}
-        >
-          이 내용으로 조율 완료
-        </button>,
-      )
-    case 'final':
-      return footer(
+    case 'matched':
+      return wrap(
         <>
-          <p className="text-center text-[13px] leading-[1.5] font-medium break-keep text-gray-500">
-            조율을 마쳤어요. 두 사람이 모두 확정해야 매칭이 완료돼요.
+          <p
+            role="status"
+            className="flex h-10 items-center self-center rounded-[62px] bg-brand-beige1 p-2.5 text-[14px] leading-[1.5] font-semibold text-chat-badge-text"
+          >
+            🎉 매칭이 확정되었습니다
           </p>
           <button
             type="button"
-            className={PRIMARY}
-            onClick={() => dispatchExperienceChat({ type: 'confirm' })}
-          >
-            매칭 확정하기
-          </button>
-        </>,
-      )
-    case 'matched':
-      return footer(
-        <>
-          <div className="rounded-[12px] bg-white px-4 py-3 text-center">
-            <p className="text-[18px] leading-[1.5] font-bold text-brand-brown1">
-              매칭이 완료됐어요!
-            </p>
-            <p className="text-[13px] leading-[1.5] font-medium break-keep text-gray-500">
-              {chat.partner.name}님과의 체험 매칭이에요. 실제 매칭으로 저장되지
-              않아요.
-            </p>
-          </div>
-          <button
-            type="button"
-            className={PRIMARY}
+            className="flex h-12 w-full items-center justify-center rounded-[10px] bg-brand-brown1 text-[16px] leading-[1.5] font-semibold text-white"
             onClick={() => navigate(HOME_ROUTES.home)}
           >
             홈으로 가기
@@ -277,5 +387,8 @@ function ChatActions({ chat }: { chat: ExperienceChatState }) {
           {isExperienceMode() && <ExperienceRestartButtons />}
         </>,
       )
+    default:
+      // Waiting for the partner, or for the choice on the agreement card.
+      return null
   }
 }
