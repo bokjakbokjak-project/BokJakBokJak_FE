@@ -5,6 +5,7 @@ import { useAuth } from '../auth/authState'
 import { routeForNextStep } from '../auth/nextStep'
 import { fetchMyStatus } from '../auth/statusApi'
 import { fetchMyProfile } from '../profile/profileApi'
+import { userTestStartRoute } from '../userTest/signIn'
 import { QUESTION_ROUTES } from '../../pages/question/questionData'
 
 /**
@@ -85,7 +86,9 @@ export function useSharedViewer(sharerId: number | undefined) {
           route:
             nextStep === 'HOME'
               ? QUESTION_ROUTES.survey
-              : routeForNextStep(nextStep),
+              : // The user test sends a tester without a survey to its start screen.
+                (userTestStartRoute(routeForNextStep(nextStep)) ??
+                routeForNextStep(nextStep)),
         })
         return
       }

@@ -40,6 +40,15 @@ import DetailProfilePage from '../pages/roommate/DetailProfilePage'
 import SharedProfilePage from '../pages/share/SharedProfilePage'
 import MatchAnalysisPage from '../pages/roommate/MatchAnalysisPage'
 import RoommateListPage from '../pages/roommate/RoommateListPage'
+import UserTestLayer from '../components/userTest/UserTestLayer'
+import { USER_TEST_ROUTES } from '../lib/userTest/routes'
+import UserTestStartPage from '../pages/userTest/UserTestStartPage'
+import ExperienceLayer from '../components/experience/ExperienceLayer'
+import ModeLayout from '../components/experience/ModeLayout'
+import { EXPERIENCE_ROUTES } from '../lib/experience/mode'
+import ExperienceChatPage from '../pages/experience/ExperienceChatPage'
+import ExperienceStartPage from '../pages/experience/ExperienceStartPage'
+import ModeEntry from '../pages/experience/ModeEntry'
 
 export default function AppRoutes() {
   return (
@@ -47,150 +56,182 @@ export default function AppRoutes() {
       {isDemoMode() && <DemoNotice />}
       <Routes>
         <Route element={<MobileLayout />}>
-          {/* The login screen moved to `/`. Old `/login` links still land on it. */}
-          <Route
-            path="/login"
-            element={<Navigate to={ONBOARDING_ROUTES.login} replace />}
-          />
-          {/* These stay mounted across the screens below, so moving between them keeps the
+          {/* 핵심 체험 | 전체 서비스, in builds with the experience (VITE_EXPERIENCE). */}
+          <Route element={<ModeLayout />}>
+            <Route
+              path={EXPERIENCE_ROUTES.service}
+              element={<ModeEntry mode="service" />}
+            />
+            {/* The login screen moved to `/`. Old `/login` links still land on it. */}
+            <Route
+              path="/login"
+              element={<Navigate to={ONBOARDING_ROUTES.login} replace />}
+            />
+            {/* These stay mounted across the screens below, so moving between them keeps the
               onboarding answers, the survey answers, and the roommate list state. */}
-          {/* Server mode: a new session remounts everything below (SessionBoundary), and every
+            {/* Server mode: a new session remounts everything below (SessionBoundary), and every
               screen except the login needs a session (RequireAuth). Sample mode skips both checks. */}
-          <Route element={<SessionBoundary />}>
-            <Route element={<OnboardingProvider />}>
-              <Route element={<QuestionProvider />}>
-                <Route element={<RoommateProvider />}>
-                  <Route element={<OnboardingSurface />}>
-                    <Route
-                      path={ONBOARDING_ROUTES.login}
-                      element={<LoginPage />}
-                    />
-                    {/* 체험하기: before sign-in, so outside RequireAuth like the login screen. */}
-                    <Route
-                      path={ONBOARDING_ROUTES.guest}
-                      element={<GuestPage />}
-                    />
-                    <Route element={<RequireAuth />}>
+            <Route element={<SessionBoundary />}>
+              <Route element={<OnboardingProvider />}>
+                <Route element={<QuestionProvider />}>
+                  <Route element={<RoommateProvider />}>
+                    <Route element={<ExperienceLayer />}>
                       <Route
-                        path={ONBOARDING_ROUTES.school}
-                        element={<SchoolInfoPage />}
-                      />
-                      <Route
-                        path={ONBOARDING_ROUTES.profile}
+                        path={EXPERIENCE_ROUTES.start}
                         element={
-                          <OnboardingStepGuard
-                            route={ONBOARDING_ROUTES.profile}
-                          >
-                            <ProfilePage />
-                          </OnboardingStepGuard>
+                          <ModeEntry mode="experience">
+                            <ExperienceStartPage />
+                          </ModeEntry>
                         }
                       />
                       <Route
-                        path={ONBOARDING_ROUTES.dormitory}
-                        element={
-                          <OnboardingStepGuard
-                            route={ONBOARDING_ROUTES.dormitory}
-                          >
-                            <DormitoryPage />
-                          </OnboardingStepGuard>
-                        }
+                        path={EXPERIENCE_ROUTES.chat}
+                        element={<ExperienceChatPage />}
                       />
-                      <Route
-                        path={ONBOARDING_ROUTES.priority}
-                        element={
-                          <OnboardingStepGuard
-                            route={ONBOARDING_ROUTES.priority}
-                          >
-                            <PriorityPage />
-                          </OnboardingStepGuard>
-                        }
-                      />
-                      <Route
-                        path={ONBOARDING_ROUTES.complete}
-                        element={
-                          <OnboardingStepGuard
-                            route={ONBOARDING_ROUTES.complete}
-                          >
-                            <CompletePage />
-                          </OnboardingStepGuard>
-                        }
-                      />
-                      <Route
-                        path={QUESTION_ROUTES.survey}
-                        element={<QuestionPage />}
-                      />
-                      <Route
-                        path={QUESTION_ROUTES.loading}
-                        element={<QuestionLoadingPage />}
-                      />
-                      <Route
-                        path={QUESTION_ROUTES.profile}
-                        element={<QuestionProfilePage />}
-                      />
-                      {import.meta.env.DEV && (
+                      <Route element={<OnboardingSurface />}>
                         <Route
-                          path="/dev/onboarding"
-                          element={<DevPreviewPage />}
+                          path={ONBOARDING_ROUTES.login}
+                          element={<LoginPage />}
                         />
-                      )}
+                        {/* 체험하기: before sign-in, so outside RequireAuth like the login screen. */}
+                        <Route
+                          path={ONBOARDING_ROUTES.guest}
+                          element={<GuestPage />}
+                        />
+                        <Route element={<RequireAuth />}>
+                          <Route
+                            path={ONBOARDING_ROUTES.school}
+                            element={<SchoolInfoPage />}
+                          />
+                          <Route
+                            path={ONBOARDING_ROUTES.profile}
+                            element={
+                              <OnboardingStepGuard
+                                route={ONBOARDING_ROUTES.profile}
+                              >
+                                <ProfilePage />
+                              </OnboardingStepGuard>
+                            }
+                          />
+                          <Route
+                            path={ONBOARDING_ROUTES.dormitory}
+                            element={
+                              <OnboardingStepGuard
+                                route={ONBOARDING_ROUTES.dormitory}
+                              >
+                                <DormitoryPage />
+                              </OnboardingStepGuard>
+                            }
+                          />
+                          <Route
+                            path={ONBOARDING_ROUTES.priority}
+                            element={
+                              <OnboardingStepGuard
+                                route={ONBOARDING_ROUTES.priority}
+                              >
+                                <PriorityPage />
+                              </OnboardingStepGuard>
+                            }
+                          />
+                          <Route
+                            path={ONBOARDING_ROUTES.complete}
+                            element={
+                              <OnboardingStepGuard
+                                route={ONBOARDING_ROUTES.complete}
+                              >
+                                <CompletePage />
+                              </OnboardingStepGuard>
+                            }
+                          />
+                          <Route
+                            path={USER_TEST_ROUTES.start}
+                            element={<UserTestStartPage />}
+                          />
+                          <Route
+                            path={QUESTION_ROUTES.survey}
+                            element={<QuestionPage />}
+                          />
+                          <Route
+                            path={QUESTION_ROUTES.loading}
+                            element={<QuestionLoadingPage />}
+                          />
+                          <Route
+                            path={QUESTION_ROUTES.profile}
+                            element={<QuestionProfilePage />}
+                          />
+                          {import.meta.env.DEV && (
+                            <Route
+                              path="/dev/onboarding"
+                              element={<DevPreviewPage />}
+                            />
+                          )}
+                        </Route>
+                      </Route>
+                      <Route element={<RequireAuth />}>
+                        <Route element={<UserTestLayer />}>
+                          <Route
+                            path={HOME_ROUTES.home}
+                            element={<HomePage />}
+                          />
+                          <Route path={MY_ROUTES.my} element={<MyPage />} />
+                          <Route
+                            path={MY_ROUTES.editName}
+                            element={<EditNamePage />}
+                          />
+                          <Route
+                            path={HOME_ROUTES.notifications}
+                            element={<NotificationsPage />}
+                          />
+                          {import.meta.env.DEV && (
+                            <>
+                              <Route
+                                path={HOME_ROUTES.previewMatched}
+                                element={<HomePage matchStatus="matched" />}
+                              />
+                              <Route
+                                path={HOME_ROUTES.previewTodayNotifications}
+                                element={
+                                  <NotificationsPage sample="withToday" />
+                                }
+                              />
+                            </>
+                          )}
+                          <Route
+                            path={ROOMMATE_ROUTES.list}
+                            element={<RoommateListPage />}
+                          />
+                          <Route
+                            path={ROOMMATE_ROUTES.analysis(':candidateId')}
+                            element={<MatchAnalysisPage />}
+                          />
+                          <Route
+                            path={ROOMMATE_ROUTES.profile(':candidateId')}
+                            element={<DetailProfilePage />}
+                          />
+                          {/* Inside the providers too, so a visit to the chat tab keeps the session state. */}
+                          <Route
+                            path={CHAT_ROUTE_PATTERNS.list}
+                            element={<ChatListPage />}
+                          />
+                          <Route
+                            path={CHAT_ROUTE_PATTERNS.room}
+                            element={<ChatRoomPage />}
+                          />
+                          <Route
+                            path={CHAT_ROUTE_PATTERNS.menu}
+                            element={<ChatMenuPage />}
+                          />
+                        </Route>
+                      </Route>
                     </Route>
-                  </Route>
-                  <Route element={<RequireAuth />}>
-                    <Route path={HOME_ROUTES.home} element={<HomePage />} />
-                    <Route path={MY_ROUTES.my} element={<MyPage />} />
-                    <Route
-                      path={MY_ROUTES.editName}
-                      element={<EditNamePage />}
-                    />
-                    <Route
-                      path={HOME_ROUTES.notifications}
-                      element={<NotificationsPage />}
-                    />
-                    {import.meta.env.DEV && (
-                      <>
-                        <Route
-                          path={HOME_ROUTES.previewMatched}
-                          element={<HomePage matchStatus="matched" />}
-                        />
-                        <Route
-                          path={HOME_ROUTES.previewTodayNotifications}
-                          element={<NotificationsPage sample="withToday" />}
-                        />
-                      </>
-                    )}
-                    <Route
-                      path={ROOMMATE_ROUTES.list}
-                      element={<RoommateListPage />}
-                    />
-                    <Route
-                      path={ROOMMATE_ROUTES.analysis(':candidateId')}
-                      element={<MatchAnalysisPage />}
-                    />
-                    <Route
-                      path={ROOMMATE_ROUTES.profile(':candidateId')}
-                      element={<DetailProfilePage />}
-                    />
-                    {/* Inside the providers too, so a visit to the chat tab keeps the session state. */}
-                    <Route
-                      path={CHAT_ROUTE_PATTERNS.list}
-                      element={<ChatListPage />}
-                    />
-                    <Route
-                      path={CHAT_ROUTE_PATTERNS.room}
-                      element={<ChatRoomPage />}
-                    />
-                    <Route
-                      path={CHAT_ROUTE_PATTERNS.menu}
-                      element={<ChatMenuPage />}
-                    />
                   </Route>
                 </Route>
               </Route>
             </Route>
+            {/* Opened by anyone with a share link, so it needs none of the session state. */}
+            <Route path={SHARE_ROUTE} element={<SharedProfilePage />} />
+            <Route path="*" element={<NotFoundPage />} />
           </Route>
-          {/* Opened by anyone with a share link, so it needs none of the session state. */}
-          <Route path={SHARE_ROUTE} element={<SharedProfilePage />} />
-          <Route path="*" element={<NotFoundPage />} />
         </Route>
       </Routes>
     </AuthProvider>

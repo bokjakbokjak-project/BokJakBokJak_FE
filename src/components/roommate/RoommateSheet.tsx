@@ -32,6 +32,7 @@ export default function RoommateSheet({
       {scrolls ? (
         <div
           data-testid="roommate-scroll"
+          data-scroll-hint-target
           className="scrollbar-none min-h-0 flex-1 overflow-y-auto"
         >
           {children}

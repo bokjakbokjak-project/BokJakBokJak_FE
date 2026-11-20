@@ -14,6 +14,7 @@ import {
 } from '../../lib/auth/googleIdentity'
 import { useStartRouteRedirect } from '../../lib/auth/useStartRouteRedirect'
 import { ONBOARDING_ROUTES } from '../../lib/onboarding/routes'
+import { userTestRouteAfterSignIn } from '../../lib/userTest/signIn'
 import { useStepNavigation } from '../../lib/onboarding/useStepNavigation'
 
 /** Google draws its button between 200px and 400px wide. */
@@ -79,7 +80,9 @@ function ServerLogin() {
       setError(null)
       try {
         // The sign-in remounts this screen with the new session; the effect above moves on.
-        await signIn(credential)
+        const result = await signIn(credential)
+        // The user test records the tester for this session.
+        userTestRouteAfterSignIn(result)
       } catch (signInError) {
         if (!isCurrent) return
         // The server's messages are written for users (Notion spec, POST /api/auth/login).

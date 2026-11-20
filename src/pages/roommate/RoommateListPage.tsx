@@ -3,6 +3,7 @@ import roomBackground from '../../assets/home/room-bg.png'
 import chevronDown from '../../assets/roommate/chevron-down.svg'
 import refreshIcon from '../../assets/roommate/refresh.svg'
 import AppLogo from '../../components/AppLogo/AppLogo'
+import ExperienceNotice from '../../components/experience/ExperienceNotice'
 import BottomNav from '../../components/BottomNav/BottomNav'
 import { usePendingNotice } from '../../components/BottomNav/usePendingNotice'
 import {
@@ -16,15 +17,18 @@ import {
   sampleRoommateCard,
   type RoommateCardData,
 } from '../../components/roommate/roommateCardData'
-import { isServerMode } from '../../lib/api/config'
+import { usesServerData } from '../../lib/userTest/experience'
 import { errorText } from '../../lib/api/errorText'
 import {
   refreshRecommendations,
   type Recommendation,
 } from '../../lib/roommate/recommendationApi'
+import { isExperienceMode } from '../../lib/experience/mode'
+import { useExperienceSession } from '../../lib/experience/session'
 import { getCandidates } from '../../lib/roommate/roommateData'
 import { useRoommate } from '../../lib/roommate/roommateState'
 import { ROOMMATE_ROUTES } from '../../lib/roommate/routes'
+import FeedbackPrompt from '../../components/userTest/FeedbackPrompt'
 
 /** A server candidate's card. The card opens the analysis of that `user_id` (채희 spec 7.1). */
 function serverCard(item: Recommendation): RoommateCardData {
@@ -57,14 +61,21 @@ export default function RoommateListPage() {
   const listRef = useRef<HTMLDivElement>(null)
   const notice = usePendingNotice()
   const [isRefreshing, setIsRefreshing] = useState(false)
-  const isServer = isServerMode()
+  const isServer = usesServerData()
 
   useEffect(() => {
     if (isServer) loadRecommendations()
   }, [isServer, loadRecommendations])
 
+  // The experience hides the roommates this person already matched with (the chat's 다음 참가자).
+  const experienceSession = useExperienceSession()
+  const passed = isExperienceMode()
+    ? (experienceSession?.passedCandidateIds ?? [])
+    : []
   const cards: RoommateCardData[] | null = !isServer
-    ? getCandidates().map(sampleRoommateCard)
+    ? getCandidates()
+        .filter((candidate) => !passed.includes(candidate.id))
+        .map(sampleRoommateCard)
     : recommendations.status === 'ready'
       ? recommendations.items.map(serverCard)
       : null
@@ -162,6 +173,9 @@ export default function RoommateListPage() {
         {cards?.length === 0 && (
           <EmptyState text="아직 추천할 수 있는 후보가 없어요" />
         )}
+        <div className="mx-auto w-full max-w-[390px] px-6">
+          <ExperienceNotice kind="candidates" className="mb-2.5" />
+        </div>
         <ul className="mx-auto flex w-full max-w-[390px] flex-col gap-2.5 px-6 pb-[15px]">
           {cards?.slice(0, visibleCount).map((card) => (
             <li key={card.to}>
@@ -181,6 +195,8 @@ export default function RoommateListPage() {
         )}
       </div>
       <BottomNav active="roommate" notice={notice} />
+      {/* Back from a profile or a comparison: Q2 or Q3, one per visit. */}
+      <FeedbackPrompt allowed={['q2_understanding', 'q3_negotiation']} />
     </div>
   )
 }

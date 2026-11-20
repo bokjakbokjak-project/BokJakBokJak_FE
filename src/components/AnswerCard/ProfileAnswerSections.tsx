@@ -69,9 +69,11 @@ function AnswerRow({
             raw &&
             friendlyAnswer(topicId, side === 'mine' ? 'self' : 'roommate', raw)
           return (
+            // Balanced lines, so a long answer splits into two even lines instead of leaving one
+            // word alone on the second (requested 2026-11-20).
             <p
               key={topicId}
-              className={answer ? 'text-gray-500' : 'text-gray-300'}
+              className={`text-balance ${answer ? 'text-gray-500' : 'text-gray-300'}`}
             >
               {answer ?? UNANSWERED}
             </p>

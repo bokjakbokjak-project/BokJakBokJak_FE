@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useRef,
   useState,
@@ -21,6 +22,7 @@ import {
   QUESTION_COUNT,
   QUESTION_ROUTES,
   QUESTION_TOPICS,
+  SURVEY_IMAGES,
   getQuestionIndex,
   getQuestionStep,
   getStepOf,
@@ -28,7 +30,8 @@ import {
 } from './questionData'
 import { useQuestion } from './questionState'
 import { useQuestionOrder } from './useQuestionOrder'
-import SurveySkipButton from './SurveySkipButton'
+import SurveySkipButton, { ExperienceSkipButton } from './SurveySkipButton'
+import BrowseInsteadButton from '../../components/userTest/BrowseInsteadButton'
 import FullPageLoading from '../../components/LoadState/FullPageLoading'
 
 // Prototype in Figma 1377:49785: the STEP screen waits, then dissolves into the question over
@@ -168,6 +171,9 @@ type SituationScreenProps = {
   onShowQuestion: () => void
   onBack: () => void
   onFadeEnd: (event: TransitionEvent<HTMLElement>) => void
+  /** The picture has loaded (or failed), so it can be revealed and the wait can start. */
+  isLoaded: boolean
+  onLoaded: () => void
 }
 
 /**
@@ -183,8 +189,21 @@ function SituationScreen({
   onShowQuestion,
   onBack,
   onFadeEnd,
+  isLoaded,
+  onLoaded,
 }: SituationScreenProps) {
   const tone = topic.situationScene?.tone ?? 'light'
+  // The picture shows only once it has fully loaded, and the copy fades in after it (requested
+  // 2026-11-20), instead of painting in line by line on a slow network. The survey loads every picture ahead (SURVEY_IMAGES), so this is usually at once.
+  const onLoad = onLoaded
+  // A picture the browser already holds (preloaded or cached) counts as loaded at once.
+  const imageRef = useRef<HTMLImageElement>(null)
+  useEffect(() => {
+    if (imageRef.current?.complete) onLoaded()
+  }, [onLoaded])
+  // Without the top-down wipe (dropped on request, 2026-11-20): the picture just appears once
+  // loaded, so it never paints in line by line.
+  const artClass = isLoaded ? '' : 'invisible'
   return (
     <section
       aria-label={`STEP ${topicIndex + 1} 상황`}
@@ -194,33 +213,47 @@ function SituationScreen({
       onTransitionEnd={onFadeEnd}
       className={`absolute inset-0 z-20 isolate overflow-hidden bg-question-surface ${layerClass(isVisible)}`}
     >
-      {topic.situationScene ? (
-        <>
-          <img
-            src={topic.situationScene.src}
-            alt=""
-            className="absolute inset-0 -z-10 size-full object-cover object-bottom"
-          />
-          {/* QA 4: the light STEP frames (1528:26236, 1377:28501) fade the scene into the page
-              color behind the text, and the exported image does not include it. */}
-          {tone === 'light' && (
-            <div
-              data-testid="situation-bottom-fade"
-              className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-[292px] bg-[linear-gradient(to_top,var(--color-question-surface)_70%,rgba(255,255,255,0)_100%)]"
+      <div
+        data-testid="situation-art"
+        data-loaded={isLoaded || undefined}
+        className={`absolute inset-0 -z-10 ${artClass}`}
+      >
+        {topic.situationScene ? (
+          <>
+            <img
+              src={topic.situationScene.src}
+              alt=""
+              ref={imageRef}
+              decoding="async"
+              onLoad={onLoad}
+              onError={onLoad}
+              className="absolute inset-0 -z-10 size-full object-cover object-bottom"
             />
-          )}
-        </>
-      ) : (
-        <>
-          <img
-            src={topic.scene}
-            alt=""
-            className="absolute inset-x-0 bottom-[204px] -z-20 w-full"
-          />
-          <div className="absolute inset-x-0 top-0 -z-10 h-[340px] bg-[linear-gradient(to_bottom,var(--color-question-surface)_45%,rgba(255,255,255,0)_100%)]" />
-          <div className="absolute inset-x-0 bottom-0 -z-10 h-[330px] bg-[linear-gradient(to_top,var(--color-question-surface)_62%,rgba(255,255,255,0)_100%)]" />
-        </>
-      )}
+            {/* QA 4: the light STEP frames (1528:26236, 1377:28501) fade the scene into the page
+                color behind the text, and the exported image does not include it. */}
+            {tone === 'light' && (
+              <div
+                data-testid="situation-bottom-fade"
+                className="pointer-events-none absolute inset-x-0 bottom-0 -z-10 h-[292px] bg-[linear-gradient(to_top,var(--color-question-surface)_70%,rgba(255,255,255,0)_100%)]"
+              />
+            )}
+          </>
+        ) : (
+          <>
+            <img
+              src={topic.scene}
+              alt=""
+              ref={imageRef}
+              decoding="async"
+              onLoad={onLoad}
+              onError={onLoad}
+              className="absolute inset-x-0 bottom-[204px] -z-20 w-full"
+            />
+            <div className="absolute inset-x-0 top-0 -z-10 h-[340px] bg-[linear-gradient(to_bottom,var(--color-question-surface)_45%,rgba(255,255,255,0)_100%)]" />
+            <div className="absolute inset-x-0 bottom-0 -z-10 h-[330px] bg-[linear-gradient(to_top,var(--color-question-surface)_62%,rgba(255,255,255,0)_100%)]" />
+          </>
+        )}
+      </div>
 
       <div className="pt-[max(0px,calc(47px-env(safe-area-inset-top)))]">
         <SurveyHeader onBack={onBack}>
@@ -242,7 +275,9 @@ function SituationScreen({
 
       {/* Every STEP frame starts the badge 215px above the bottom (y 629 of 844), so a third line
           of copy (온도, 2441:21048) grows down instead of pushing the badge up. */}
-      <div className="absolute top-[calc(100%-215px)] left-[25px] flex flex-col items-start gap-3 pr-6">
+      <div
+        className={`absolute top-[calc(100%-215px)] left-[25px] flex flex-col items-start gap-3 pr-6 ${isLoaded ? 'motion-safe:animate-situation-copy' : 'opacity-0'}`}
+      >
         <p className="rounded-full bg-question-outline px-3 py-1.5 text-[14px] leading-[1.5] font-semibold tracking-[-0.28px] text-white">
           STEP {topicIndex + 1}
         </p>
@@ -315,11 +350,14 @@ function QuestionStep({
       setShown((current) => (current === null ? otherLayer(from) : current))
     }
 
+  // The STEP picture has loaded: the wait starts only then, so a slow network still shows it.
+  const [isStepLoaded, setIsStepLoaded] = useState(false)
+  const markStepLoaded = useCallback(() => setIsStepLoaded(true), [])
   useEffect(() => {
-    if (shown !== 'step' || fromQuestion) return
+    if (shown !== 'step' || fromQuestion || !isStepLoaded) return
     const timer = setTimeout(() => leave('step'), SITUATION_DURATION)
     return () => clearTimeout(timer)
-  }, [shown, fromQuestion])
+  }, [shown, fromQuestion, isStepLoaded])
 
   const headingRef = useRef<HTMLHeadingElement>(null)
   const situationButtonRef = useRef<HTMLButtonElement>(null)
@@ -341,14 +379,15 @@ function QuestionStep({
     else onMove(index - 1)
   }
 
-  // Back on a topic's first question opens its STEP screen again (requested 2026-11-20). It stays,
-  // with 질문 다시보기, so back on it can still leave as before instead of racing the fade.
+  // Back on a topic's first question opens its STEP screen again (requested 2026-11-20), and it
+  // moves on to the question by itself after the same wait as when the topic first opened
+  // (requested 2026-11-21). Back on the STEP screen still leaves as before.
   const backFromQuestion = () => {
     if (!isSelf) {
       goBack()
       return
     }
-    setFromQuestion(true)
+    setFromQuestion(false)
     leave('question')
   }
 
@@ -407,8 +446,9 @@ function QuestionStep({
         </div>
 
         <div
-          className={`mt-auto flex shrink-0 flex-col justify-between rounded-t-[35px] border border-question-sheet-border bg-question-surface pt-[30px] pr-[23px] pb-[max(0px,calc(44px-env(safe-area-inset-bottom)))] pl-[23px] ${layout.sheetGap} ${layout.sheetHeight}`}
+          className={`relative mt-auto flex shrink-0 flex-col justify-between rounded-t-[35px] border border-question-sheet-border bg-question-surface pt-[30px] pr-[23px] pb-[max(0px,calc(44px-env(safe-area-inset-bottom)))] pl-[23px] ${layout.sheetGap} ${layout.sheetHeight}`}
         >
+          <ExperienceSkipButton />
           <fieldset className="flex flex-col gap-px">
             <legend className="sr-only">{question.text}</legend>
             {/* Not in Figma: shown only while the server survey does not match (BE-9). */}
@@ -471,8 +511,11 @@ function QuestionStep({
         onShowQuestion={() => leave('step')}
         onBack={goBack}
         onFadeEnd={handleFadeEnd('step')}
+        isLoaded={isStepLoaded}
+        onLoaded={markStepLoaded}
       />
       <SurveySkipButton />
+      <BrowseInsteadButton />
     </div>
   )
 }
@@ -486,6 +529,20 @@ function firstUnanswered(
     if (answers[getQuestionIndex(order, step)] === undefined) return step
   }
   return null
+}
+
+/**
+ * Loads every survey picture once, when the survey opens, so each STEP screen and question shows
+ * its picture at once instead of waiting for it on a slow network (requested 2026-11-20).
+ */
+function usePreloadSurveyImages() {
+  useEffect(() => {
+    for (const src of SURVEY_IMAGES) {
+      const image = new Image()
+      image.decoding = 'async'
+      image.src = src
+    }
+  }, [])
 }
 
 /**
@@ -506,6 +563,7 @@ function moveToOrder(
 }
 
 export default function QuestionPage() {
+  usePreloadSurveyImages()
   const {
     index: savedIndex,
     indexOrder,

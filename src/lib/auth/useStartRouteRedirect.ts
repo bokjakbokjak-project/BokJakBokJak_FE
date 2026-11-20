@@ -4,6 +4,7 @@ import { HOME_ROUTES } from '../home/routes'
 import { takeShareReturn } from '../share/shareReturn'
 import { useAuth } from './authState'
 import { resolveStartRoute } from './startRoute'
+import { userTestStartRoute } from '../userTest/signIn'
 
 /**
  * For the screens before sign-in (`/` and the 체험하기 name screen): a signed-in user does not stay
@@ -23,8 +24,10 @@ export function useStartRouteRedirect() {
   useEffect(() => {
     if (status !== 'authenticated') return
     let isCurrent = true
-    resolveStartRoute().then((route) => {
+    resolveStartRoute().then((statusRoute) => {
       if (!isCurrent) return
+      // The user test sends a tester who still has to take the survey to its start screen.
+      const route = userTestStartRoute(statusRoute)
       if (route)
         navigate(
           route === HOME_ROUTES.home ? (takeShareReturn() ?? route) : route,

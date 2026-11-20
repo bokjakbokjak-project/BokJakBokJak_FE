@@ -8,7 +8,7 @@ import roomBackground from '../../assets/home/room-bg.png'
 import AppLogo from '../../components/AppLogo/AppLogo'
 import BottomNav from '../../components/BottomNav/BottomNav'
 import CharacterPreview from '../../components/onboarding/CharacterPreview'
-import { isServerMode } from '../../lib/api/config'
+import { usesServerData } from '../../lib/userTest/experience'
 import { STAGE } from '../../lib/onboarding/character'
 import { useMatchStatus, type MatchStatus } from '../../lib/home/matchStatus'
 import {
@@ -19,6 +19,7 @@ import { getUnreadNotificationCount } from '../../lib/home/notificationApi'
 import { FROM_HOME_STATE, HOME_ROUTES } from '../../lib/home/routes'
 import { useDisplayProfile } from '../../lib/profile/myProfile'
 import { QUESTION_ROUTES } from '../question/questionData'
+import FeedbackPrompt from '../../components/userTest/FeedbackPrompt'
 
 // The two Figma frames also differ in the bell and a 1px shift (OPEN_QUESTIONS DE-H1). The logo is
 // the same on both and on the roommate list (AppLogo).
@@ -61,7 +62,7 @@ const toHeightPercent = (value: number) => `${(value / FRAME.height) * 100}%`
  * polling, so it does not ask again while the home stays open. A failed read shows no dot.
  */
 function useHasNewNotification() {
-  const isServer = isServerMode()
+  const isServer = usesServerData()
   const [count, setCount] = useState(0)
 
   useEffect(() => {
@@ -193,6 +194,9 @@ export default function HomePage({
         </main>
       </div>
       <BottomNav active="home" />
+      <FeedbackPrompt
+        allowed={['q1_discovery', 'q2_understanding', 'q3_negotiation']}
+      />
     </div>
   )
 }

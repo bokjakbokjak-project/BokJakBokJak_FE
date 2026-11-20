@@ -8,7 +8,7 @@ import {
   LoadingState,
 } from '../../components/LoadState/LoadState'
 import CharacterAvatar from '../../components/roommate/CharacterAvatar'
-import { isServerMode } from '../../lib/api/config'
+import { usesServerData } from '../../lib/userTest/experience'
 import {
   chatApi,
   isChatSampleOnly,
@@ -23,6 +23,8 @@ import { CHAT_ROUTES } from '../../lib/chat/routes'
 import { seoulDayLabel } from '../../lib/time/seoulDate'
 import { LIST_AVATARS } from './chatAvatars'
 import SampleNotice from './SampleNotice'
+import ExperienceChatEntry from './ExperienceChatEntry'
+import FeedbackPrompt from '../../components/userTest/FeedbackPrompt'
 
 // Preview copy per room state, from the Figma list frames 1057:13344 and 1349:19651.
 const STATUS_TEXT: Record<ChatRoom['status'], string> = {
@@ -154,7 +156,7 @@ type Loaded =
 
 /** The sample rooms, or the server's rooms in server mode. */
 function useRows(attempt: number): Loaded {
-  const isServer = isServerMode()
+  const isServer = usesServerData()
   const [loaded, setLoaded] = useState<{ attempt: number; value: Loaded }>()
 
   useEffect(() => {
@@ -188,7 +190,7 @@ function useRows(attempt: number): Loaded {
 export default function ChatListPage() {
   const [attempt, setAttempt] = useState(0)
   const rows = useRows(attempt)
-  const showSampleNotice = isChatSampleOnly && !isServerMode()
+  const showSampleNotice = isChatSampleOnly && !usesServerData()
 
   return (
     // The page is as tall as the screen (the 844px frame on PC), so the bar stays at the bottom
@@ -214,8 +216,9 @@ export default function ChatListPage() {
         data-testid="chat-list-scroll"
         className="scrollbar-none min-h-0 flex-1 overflow-y-auto px-6 pt-[19px] pb-6"
       >
+        <ExperienceChatEntry />
         {showSampleNotice && <SampleNotice className="mb-3" />}
-        {rows.status === 'loading' && isServerMode() && (
+        {rows.status === 'loading' && usesServerData() && (
           <LoadingState label="채팅방을 불러오는 중이에요" />
         )}
         {rows.status === 'error' && (
@@ -237,6 +240,7 @@ export default function ChatListPage() {
         </ul>
       </main>
       <BottomNav active="chat" />
+      <FeedbackPrompt allowed={['q2_understanding', 'q3_negotiation']} />
     </div>
   )
 }

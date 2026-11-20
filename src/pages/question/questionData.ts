@@ -1,14 +1,14 @@
-import sceneAlarm from '../../assets/question/scene-alarm.png'
-import sceneBedtime from '../../assets/question/scene-bedtime.png'
-import sceneBelongings from '../../assets/question/scene-belongings.png'
-import sceneFloor from '../../assets/question/scene-floor.png'
-import sceneFood from '../../assets/question/scene-food.png'
-import sceneSleep from '../../assets/question/scene-sleep.png'
-import sceneSmoking from '../../assets/question/scene-smoking.png'
-import sceneTemperature from '../../assets/question/scene-temperature.png'
-import situationBedtime from '../../assets/question/situation-bedtime.png'
-import situationSleep from '../../assets/question/situation-sleep.png'
-import situationTemperature from '../../assets/question/situation-temperature.png'
+import sceneAlarm from '../../assets/question/scene-alarm.webp'
+import sceneBedtime from '../../assets/question/scene-bedtime.webp'
+import sceneBelongings from '../../assets/question/scene-belongings.webp'
+import sceneFloor from '../../assets/question/scene-floor.webp'
+import sceneFood from '../../assets/question/scene-food.webp'
+import sceneSleep from '../../assets/question/scene-sleep.webp'
+import sceneSmoking from '../../assets/question/scene-smoking.webp'
+import sceneTemperature from '../../assets/question/scene-temperature.webp'
+import situationBedtime from '../../assets/question/situation-bedtime.webp'
+import situationSleep from '../../assets/question/situation-sleep.webp'
+import situationTemperature from '../../assets/question/situation-temperature.webp'
 import type { CategoryId } from '../../lib/onboarding/categories'
 
 export const QUESTION_ROUTES = {
@@ -273,6 +273,14 @@ export const QUESTION_TOPICS: readonly QuestionTopic[] = [
 
 /** Two questions per topic, so Q1 and Q2 are topic 0, Q3 and Q4 are topic 1, and so on. */
 export const QUESTION_COUNT = QUESTION_TOPICS.length * 2
+
+/** Every survey picture, loaded ahead when the survey opens so no STEP screen waits on one. */
+export const SURVEY_IMAGES: readonly string[] = QUESTION_TOPICS.flatMap(
+  (topic) =>
+    topic.situationScene
+      ? [topic.scene, topic.situationScene.src]
+      : [topic.scene],
+)
 
 /**
  * The order the topics are asked in (requested 2026-11-20): the topics of the 1st priority first,

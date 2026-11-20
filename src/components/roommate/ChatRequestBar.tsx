@@ -1,4 +1,5 @@
 import type { Ref } from 'react'
+import ScrollHint from './ScrollHint'
 
 /**
  * Bottom action of the match analysis and the detail profile (Figma 1057:14810, 1377:36887): a
@@ -21,6 +22,8 @@ export default function ChatRequestBar({
       data-testid="chat-request-bar"
       className="relative z-20 shrink-0 bg-brand-cream1 pt-2.5 pb-[max(28px,env(safe-area-inset-bottom))]"
     >
+      {/* The arrow over the button while the page above can scroll (requested 2026-11-20). */}
+      <ScrollHint />
       <div className="mx-auto w-full max-w-[390px] px-6">
         <button
           ref={buttonRef}

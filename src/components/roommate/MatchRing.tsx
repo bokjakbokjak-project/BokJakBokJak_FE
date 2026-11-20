@@ -1,3 +1,5 @@
+import { isUserTestDemo } from '../../lib/userTest/userTestStore'
+import { isExperienceMode } from '../../lib/experience/mode'
 /** Ring geometry: the drawing size, the stroke's center radius and the stroke width. */
 type RingShape = { size: number; radius: number; stroke: number }
 
@@ -109,6 +111,8 @@ export default function MatchRing({
   className,
   nullMeaning = 'shared',
 }: MatchRingProps) {
+  // The user test's browse mode and the experience mode show example rates, labeled as such.
+  const example = isUserTestDemo() || isExperienceMode()
   if (rate === null && nullMeaning === 'insufficient') {
     return variant === 'list' ? (
       <InsufficientRing
@@ -143,10 +147,14 @@ export default function MatchRing({
             <span className="text-[16px]">{rate}</span>
             <span className="text-[12px] tracking-[0.24px]">%</span>
           </p>
-          <p className="text-[10px] text-gray-300">매칭률</p>
+          <p className="text-[10px] text-gray-300">
+            {example ? '예시' : '매칭률'}
+          </p>
         </div>
         {/* The visible text reads as "87%매칭률", so screen readers get the label first. */}
-        <span className="sr-only">매칭률 {rate}%</span>
+        <span className="sr-only">
+          {example ? '예시 매칭률' : '매칭률'} {rate}%
+        </span>
       </div>
     )
   }
@@ -165,7 +173,7 @@ export default function MatchRing({
         <span className="text-[16px]">%</span>
       </p>
       <p className="absolute top-[43.23px] left-[16px] text-[12.329px] leading-[normal] whitespace-pre text-gray-300">
-        {' 매칭률'}
+        {example ? ' 예시' : ' 매칭률'}
       </p>
     </div>
   )

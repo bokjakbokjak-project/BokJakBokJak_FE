@@ -18,7 +18,7 @@ import {
   type ChatItem,
   type ChatRoom,
 } from '../../lib/chat/chatApi'
-import { isServerMode } from '../../lib/api/config'
+import { usesServerData } from '../../lib/userTest/experience'
 import { parseId } from '../../lib/api/parse'
 import { CHAT_ROUTES, fromChatState } from '../../lib/chat/routes'
 import { ROOMMATE_ROUTES } from '../../lib/roommate/routes'
@@ -183,7 +183,7 @@ function CardActions({
 /** A server room in server mode (the route id is its `matching_id`), the samples otherwise. */
 export default function ChatRoomPage() {
   const { roomId } = useParams()
-  if (!isServerMode()) return <SampleChatRoom roomId={roomId} />
+  if (!usesServerData()) return <SampleChatRoom roomId={roomId} />
   const matchingId = parseId(roomId)
   if (matchingId === null) return <Navigate to={CHAT_ROUTES.list} replace />
   return <ServerChatRoom key={matchingId} matchingId={matchingId} />

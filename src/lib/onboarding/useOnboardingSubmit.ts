@@ -12,6 +12,7 @@ import {
   saveOnboarding,
 } from './onboardingApi'
 import { savedAnswersKey, useOnboarding } from './onboardingState'
+import { markOnboardingCompleted } from '../userTest/userTestStore'
 
 export type SubmitState =
   | { status: 'idle' }
@@ -108,6 +109,7 @@ export function useOnboardingSubmit(
       await saveOnboarding(buildOnboardingRequest(answers, roomType.id))
       checkpoint()
       markSaved(savedAnswersKey(answers))
+      markOnboardingCompleted()
       if (isMountedRef.current) onSaved()
     } catch (caught) {
       if (!isMountedRef.current) return

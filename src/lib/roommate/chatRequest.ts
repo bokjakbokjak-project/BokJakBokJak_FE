@@ -1,8 +1,9 @@
 import { isApiError } from '../api/apiError'
-import { isServerMode } from '../api/config'
 import { parseId } from '../api/parse'
 import { chatApi } from '../chat/chatApi'
 import { canUseTemporaryFlow } from '../onboarding/demoMode'
+import { usesServerData } from '../userTest/experience'
+import { isUserTestDemo } from '../userTest/userTestStore'
 import { requestChat } from './recommendationApi'
 
 export type ChatRequestResult =
@@ -53,6 +54,9 @@ const serverChatRequestApi: ChatRequestApi = {
  * instead of showing a request that was never made.
  */
 export function getChatRequestApi(): ChatRequestApi | null {
-  if (isServerMode()) return serverChatRequestApi
-  return canUseTemporaryFlow() ? temporaryChatRequestApi : null
+  if (usesServerData()) return serverChatRequestApi
+  // The user test's browse mode only pretends to send, like the development sample.
+  return canUseTemporaryFlow() || isUserTestDemo()
+    ? temporaryChatRequestApi
+    : null
 }

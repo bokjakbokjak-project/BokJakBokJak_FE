@@ -101,6 +101,19 @@ export function saveTokens(tokens: TokenPair) {
   }
 }
 
+const clearListeners = new Set<() => void>()
+
+/**
+ * Runs when the session ends (sign-out, a refused refresh, another sign-in), so data kept for
+ * the signed-in user, such as the user test participant, goes with the tokens.
+ */
+export function onTokensCleared(listener: () => void) {
+  clearListeners.add(listener)
+  return () => {
+    clearListeners.delete(listener)
+  }
+}
+
 export function clearTokens() {
   sessionGeneration += 1
   accessToken = null
@@ -113,4 +126,5 @@ export function clearTokens() {
   } catch {
     // Nothing was stored.
   }
+  for (const listener of clearListeners) listener()
 }

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Navigate, useLocation, useParams } from 'react-router'
 import ProfileAnswerSections from '../../components/AnswerCard/ProfileAnswerSections'
 import { ErrorState, LoadingState } from '../../components/LoadState/LoadState'
@@ -10,7 +10,7 @@ import RoommatePage from '../../components/roommate/RoommatePage'
 import RoommateSheet from '../../components/roommate/RoommateSheet'
 import { serverProfileCard } from '../../components/roommate/serverProfileCard'
 import { getAnswerSummary } from '../../lib/answerSummary'
-import { isServerMode } from '../../lib/api/config'
+import { usesServerData } from '../../lib/userTest/experience'
 import { errorCode } from '../../lib/api/errorText'
 import { parseId } from '../../lib/api/parse'
 import { getChatReturnPath } from '../../lib/chat/routes'
@@ -26,6 +26,8 @@ import {
 } from '../../lib/roommate/roommateData'
 import { useRoommate } from '../../lib/roommate/roommateState'
 import { ROOMMATE_ROUTES } from '../../lib/roommate/routes'
+import { useQueuePrompt } from '../../lib/userTest/useQueuePrompt'
+import { useSeen } from '../../lib/userTest/useSeen'
 
 type Loaded<T> =
   | { status: 'loading' }
@@ -151,6 +153,13 @@ function ServerDetailProfile({ userId }: { userId: number }) {
     recommendations.status === 'ready'
       ? recommendations.items.find((item) => item.userId === userId)
       : undefined
+  // User test: Q2 is queued once the answers were on screen, and asked back on the analysis.
+  const answersRef = useRef<HTMLDivElement>(null)
+  const answersSeen = useSeen(
+    answersRef,
+    profile.status === 'ready' || summary.status === 'ready',
+  )
+  useQueuePrompt('q2_understanding', id, answersSeen)
 
   return (
     <RoommatePage
@@ -170,6 +179,7 @@ function ServerDetailProfile({ userId }: { userId: number }) {
         data-testid="roommate-scroll"
         // The back card of ProfileHero is tilted 9px above the block, so the scroll area starts
         // 9px higher and pads it back, instead of cutting the card off at its top edge.
+        data-scroll-hint-target
         className="scrollbar-none -mt-[9px] flex min-h-0 flex-1 flex-col overflow-y-auto pt-[9px]"
       >
         {profile.status === 'ready' ? (
@@ -197,10 +207,13 @@ function ServerDetailProfile({ userId }: { userId: number }) {
             {/* No Figma frame shows the AI summary on the new layout (2339:27404); it stays above
                 the answer sections (RM-9). */}
             <LifestyleSummarySection summary={summary} onRetry={retrySummary} />
-            {/* The candidate's own answers (A's profile), as in the sample. */}
-            {profile.status === 'ready' && profile.value.cards && (
-              <ProfileAnswerSections cards={profile.value.cards} />
-            )}
+            {/* The candidate's own answers (A's profile), as in the sample. The user test counts
+                them as seen (Q2) from this wrapper. */}
+            <div ref={answersRef}>
+              {profile.status === 'ready' && profile.value.cards && (
+                <ProfileAnswerSections cards={profile.value.cards} />
+              )}
+            </div>
           </div>
         </RoommateSheet>
       </div>
@@ -217,6 +230,9 @@ function ServerDetailProfile({ userId }: { userId: number }) {
 function SampleDetailProfile({ candidateId }: { candidateId?: string }) {
   const { state } = useLocation()
   const candidate = getCandidate(candidateId)
+  const answersRef = useRef<HTMLDivElement>(null)
+  const answersSeen = useSeen(answersRef, candidate !== undefined)
+  useQueuePrompt('q2_understanding', candidate?.id ?? null, answersSeen)
 
   if (!candidate) {
     return <Navigate to={ROOMMATE_ROUTES.list} replace />
@@ -234,11 +250,15 @@ function SampleDetailProfile({ candidateId }: { candidateId?: string }) {
         data-testid="roommate-scroll"
         // The back card of ProfileHero is tilted 9px above the block, so the scroll area starts
         // 9px higher and pads it back, instead of cutting the card off at its top edge.
+        data-scroll-hint-target
         className="scrollbar-none -mt-[9px] flex min-h-0 flex-1 flex-col overflow-y-auto pt-[9px]"
       >
         <ProfileHero profile={candidateCard(candidate)} />
         <RoommateSheet scrolls={false}>
-          <div className="mx-auto w-full max-w-[390px] px-6 pt-6 pb-[35px]">
+          <div
+            ref={answersRef}
+            className="mx-auto w-full max-w-[390px] px-6 pt-6 pb-[35px]"
+          >
             <ProfileAnswerSections
               cards={getAnswerSummary(getCandidateAnswers(candidate))}
             />
@@ -251,7 +271,8 @@ function SampleDetailProfile({ candidateId }: { candidateId?: string }) {
 
 export default function DetailProfilePage() {
   const { candidateId } = useParams()
-  if (!isServerMode()) return <SampleDetailProfile candidateId={candidateId} />
+  if (!usesServerData())
+    return <SampleDetailProfile candidateId={candidateId} />
   const userId = parseId(candidateId)
   if (userId === null) return <Navigate to={ROOMMATE_ROUTES.list} replace />
   return <ServerDetailProfile key={userId} userId={userId} />

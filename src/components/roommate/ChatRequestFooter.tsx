@@ -6,6 +6,10 @@ import { getChatRequestApi } from '../../lib/roommate/chatRequest'
 import ChoiceDialog from '../dialog/ChoiceDialog'
 import ChatRequestBar from './ChatRequestBar'
 import ChatRequestDialog from './ChatRequestDialog'
+import ExperienceChatFooter, {
+  type ExperienceChatTarget,
+} from './ExperienceChatFooter'
+import { chatGoesToExperience } from '../../lib/experience/experienceChat'
 
 type RequestState =
   | { status: 'idle' }
@@ -33,15 +37,28 @@ const STATE_CHANGING_CODES = new Set([
 export default function ChatRequestFooter({
   candidateId,
   onChanged,
+  experienceTarget,
 }: {
   candidateId: string
   /** Called when the request changed the pair's relation, so the list can show it. */
   onChanged?: () => void
+  /** The real candidate's name and analysis, for the experience chat of the user test. */
+  experienceTarget?: ExperienceChatTarget
 }) {
   const navigate = useNavigate()
   const buttonRef = useRef<HTMLButtonElement>(null)
   const [request, setRequest] = useState<RequestState>({ status: 'idle' })
   const api = getChatRequestApi()
+
+  // The experience and the user test chat with an experience partner instead: nothing is sent.
+  if (chatGoesToExperience()) {
+    return (
+      <ExperienceChatFooter
+        candidateId={candidateId}
+        target={experienceTarget}
+      />
+    )
+  }
 
   const send = async () => {
     if (!api) return
