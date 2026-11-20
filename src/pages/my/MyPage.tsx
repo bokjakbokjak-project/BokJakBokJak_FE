@@ -4,7 +4,7 @@ import menuChevron from '../../assets/my/menu-chevron.svg'
 import pencil from '../../assets/my/pencil.svg'
 import BottomNav from '../../components/BottomNav/BottomNav'
 import { usePendingNotice } from '../../components/BottomNav/usePendingNotice'
-import ConfirmDialog from '../../components/my/ConfirmDialog'
+import RetakeConfirmDialog from '../../components/my/RetakeConfirmDialog'
 import ProfileAvatar from '../../components/my/ProfileAvatar'
 import ProfileHeader from '../../components/my/ProfileHeader'
 import { isServerMode } from '../../lib/api/config'
@@ -126,17 +126,10 @@ export default function MyPage() {
       </div>
       <BottomNav active="my" notice={notice} />
       {isConfirming && (
-        <ConfirmDialog
-          message={'우선순위와 설문 답변을\n다시 설정하시겠어요?'}
-          // Saving a changed survey restarts the agenda talks of an ongoing chat, and the
-          // messages stay (Notion 설문 제출·수정, 재설문 연동).
-          detail={
-            '이전 답변이 미리 채워져 있어요.\n답변이나 우선순위를 바꿔 저장하면\n진행 중인 대화의 안건 조율이 처음부터\n다시 시작돼요. 대화 내용은 그대로 남아요.'
-          }
-          confirmLabel="다시 하기"
+        <RetakeConfirmDialog
           triggerRef={retakeButtonRef}
           onConfirm={retake.start}
-          confirmDisabled={retake.isBusy}
+          busy={retake.isBusy}
           onCancel={cancelRetake}
         />
       )}

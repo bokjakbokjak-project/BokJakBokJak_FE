@@ -5,6 +5,8 @@ import { useStepNavigation } from '../../lib/onboarding/useStepNavigation'
 type OnboardingScreenProps = {
   step: 1 | 2 | 3 | 4
   backTo: string
+  /** Replaces `backTo`, such as going back to the screen a survey retake started from. */
+  onBack?: () => void
   children: ReactNode
   /** Main bottom button. Every step shows it in the same place. */
   footer: ReactNode
@@ -42,6 +44,7 @@ const FOOTER_CLASS = `${CONTENT_WIDTH_CLASS} relative z-20 shrink-0 px-6 pb-[max
 export default function OnboardingScreen({
   step,
   backTo,
+  onBack,
   children,
   footer,
   headerAction,
@@ -65,7 +68,7 @@ export default function OnboardingScreen({
             type="button"
             aria-label="이전"
             className="absolute top-4 left-6 size-7 overflow-hidden rounded-full border-[1.5px] border-transparent transition-colors hover:border-brand-brown3 hover:bg-brand-beige1 focus-visible:border-brand-brown3 focus-visible:bg-brand-beige1"
-            onClick={() => go(backTo)}
+            onClick={onBack ?? (() => go(backTo))}
           >
             <span className="absolute inset-[calc(25%-0.38px)]">
               <span className="absolute inset-[-7.14%_-7.16%_-7.14%_-7.12%]">
