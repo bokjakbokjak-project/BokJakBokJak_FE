@@ -422,22 +422,26 @@ describe('server survey: onboarding priorities after a new sign-in', () => {
 })
 
 describe('server survey: home', () => {
-  it('starts the retake from 내 설문 다시보기 with the saved survey, and saves nothing', async () => {
+  it('opens the detail profile from 내 설문 다시보기 with the saved answers, and saves nothing', async () => {
+    handlers['GET /api/me/survey'] = () =>
+      ok(
+        mySurveyData({
+          revision: 2,
+          completed: true,
+          priorities: SAVED_PRIORITIES,
+          answers: FIRST_OPTION_ANSWERS,
+        }),
+      )
     renderAt('/home')
-    await until(() =>
-      screen.getByRole('button', { name: '내 설문 다시보기 →' }),
-    )
+    await until(() => screen.getByRole('link', { name: '내 설문 다시보기 →' }))
 
-    fireEvent.click(screen.getByRole('button', { name: '내 설문 다시보기 →' }))
-    // Nothing is read before the confirmation.
-    expect(path()).toBe('/home')
-    fireEvent.click(screen.getByRole('button', { name: '다시 하기' }))
+    fireEvent.click(screen.getByRole('link', { name: '내 설문 다시보기 →' }))
 
-    // The priority step of the retake, with the saved priorities chosen.
-    await until(() => expect(path()).toBe(ONBOARDING_ROUTES.priority))
+    await until(() => expect(path()).toBe(QUESTION_ROUTES.profile))
     await until(() =>
-      expect(screen.getAllByRole('button', { pressed: true })).toHaveLength(3),
+      screen.getByRole('heading', { name: '전 이런 사람이에요' }),
     )
+    expect(path()).not.toBe(ONBOARDING_ROUTES.priority)
     expect(puts()).toHaveLength(0)
   })
 })
