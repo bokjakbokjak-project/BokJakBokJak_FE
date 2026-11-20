@@ -33,7 +33,7 @@ const REPLY =
   'w-full rounded-[12px] border border-brand-cream3 bg-brand-cream2 px-4 py-2.5 text-left text-[14px] leading-[1.5] font-medium break-keep text-gray-black transition-colors hover:bg-brand-beige1'
 
 const NOTE =
-  'rounded-[10px] bg-white/80 px-3 py-2 text-center text-[12px] leading-[1.5] font-medium break-keep text-gray-500'
+  'rounded-[10px] border border-brand-brown3 bg-white/80 px-3 py-2 text-center text-[12px] leading-[1.5] font-medium break-keep text-gray-500'
 
 type Sender = ChatMessage['from']
 
