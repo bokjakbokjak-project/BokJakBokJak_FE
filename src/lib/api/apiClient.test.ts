@@ -451,12 +451,12 @@ describe('across sessions', () => {
 })
 
 describe('tokens', () => {
-  it('keeps the access token out of storage and the refresh token in this tab only', () => {
+  it('keeps the access token in memory and shares the refresh token across tabs', () => {
     saveTokens({ accessToken: 'access-0', refreshToken: 'refresh-0' })
 
-    expect(sessionStorage.getItem('bokjak-auth-refresh')).toBe('refresh-0')
+    expect(localStorage.getItem('bokjak-auth-refresh')).toBe('refresh-0')
     expect(JSON.stringify({ ...sessionStorage })).not.toContain('access-0')
-    expect(localStorage).toHaveLength(0)
+    expect(JSON.stringify({ ...localStorage })).not.toContain('access-0')
   })
 
   it('works in memory when storage is blocked', () => {
@@ -470,6 +470,40 @@ describe('tokens', () => {
     saveTokens({ accessToken: 'access-0', refreshToken: 'refresh-0' })
     expect(getRefreshToken()).toBe('refresh-0')
     vi.restoreAllMocks()
+  })
+})
+
+describe('cross-tab refresh', () => {
+  it('uses the newest shared token inside the refresh lock', async () => {
+    saveTokens({ accessToken: 'access-0', refreshToken: 'refresh-0' })
+    const request = vi.fn(
+      async (_name: string, callback: () => Promise<void>) => {
+        // Another tab rotated the token before this tab acquired the lock.
+        localStorage.setItem('bokjak-auth-refresh', 'refresh-other-tab')
+        return callback()
+      },
+    )
+    vi.stubGlobal('navigator', { locks: { request } })
+    serve(() => ok(tokenData(2)))
+
+    await refreshSession()
+    expect(request).toHaveBeenCalledWith('bokjak-refresh', expect.any(Function))
+    expect(bodyOf(callsTo('/api/auth/refresh')[0])).toEqual({
+      refresh_token: 'refresh-other-tab',
+    })
+    expect(getAccessToken()).toBe('access-2')
+  })
+
+  it('does not restore a token removed by another tab during refresh', async () => {
+    saveTokens({ accessToken: 'access-0', refreshToken: 'refresh-0' })
+    serve(() => {
+      localStorage.removeItem('bokjak-auth-refresh')
+      return ok(tokenData(1))
+    })
+    await expect(refreshSession()).rejects.toMatchObject({
+      code: 'SESSION_CHANGED',
+    })
+    expect(localStorage.getItem('bokjak-auth-refresh')).toBeNull()
   })
 })
 

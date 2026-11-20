@@ -72,19 +72,23 @@ export function useSharedViewer(sharerId: number | undefined) {
     }
     const check = async () => {
       let nextStep
+      let surveyCompleted
       try {
-        nextStep = (await fetchMyStatus()).nextStep
+        ;({ nextStep, surveyCompleted } = await fetchMyStatus())
       } catch {
         settle({ kind: 'error' })
         return
       }
-      if (nextStep !== 'HOME') {
-        // The user test sends a tester without a survey to its own start screen.
+      if (nextStep !== 'HOME' || !surveyCompleted) {
         settle({
           kind: 'needs-survey',
+          // HOME without a finished survey: the survey itself.
           route:
-            userTestStartRoute(routeForNextStep(nextStep)) ??
-            routeForNextStep(nextStep),
+            nextStep === 'HOME'
+              ? QUESTION_ROUTES.survey
+              : // The user test sends a tester without a survey to its start screen.
+                (userTestStartRoute(routeForNextStep(nextStep)) ??
+                routeForNextStep(nextStep)),
         })
         return
       }

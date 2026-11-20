@@ -86,7 +86,7 @@ describe('shared profile for each visitor', () => {
     vi.clearAllMocks()
     sessionStorage.clear()
     mocks.auth.mockReturnValue({ status: 'authenticated' })
-    mocks.status.mockResolvedValue({ nextStep: 'HOME' })
+    mocks.status.mockResolvedValue({ nextStep: 'HOME', surveyCompleted: true })
     mocks.myProfile.mockResolvedValue({ userId: 7 })
     mocks.request.mockResolvedValue({ target_user_id: 42, match_score: 87 })
   })
@@ -140,7 +140,10 @@ describe('shared profile for each visitor', () => {
   })
 
   it('sends a signed-in user without a survey to it, keeping the link', async () => {
-    mocks.status.mockResolvedValue({ nextStep: 'SURVEY' })
+    mocks.status.mockResolvedValue({
+      nextStep: 'SURVEY',
+      surveyCompleted: false,
+    })
     show(42)
     const dialog = await screen.findByRole('dialog')
     expect(blurred()).toBeInTheDocument()
@@ -152,8 +155,22 @@ describe('shared profile for each visitor', () => {
     expect(mocks.request).not.toHaveBeenCalled()
   })
 
+  it('keeps the rows closed when the status says HOME but the survey is not finished', async () => {
+    mocks.status.mockResolvedValue({ nextStep: 'HOME', surveyCompleted: false })
+    show(42)
+    const dialog = await screen.findByRole('dialog')
+    expect(blurred()).toBeInTheDocument()
+    fireEvent.click(
+      within(dialog).getByRole('button', { name: '설문조사 하러 가기' }),
+    )
+    expect(await screen.findByText('Survey')).toBeInTheDocument()
+  })
+
   it('starts a new account at the onboarding', async () => {
-    mocks.status.mockResolvedValue({ nextStep: 'ONBOARDING' })
+    mocks.status.mockResolvedValue({
+      nextStep: 'ONBOARDING',
+      surveyCompleted: false,
+    })
     show(42)
     await screen.findByRole('dialog')
     fireEvent.click(
