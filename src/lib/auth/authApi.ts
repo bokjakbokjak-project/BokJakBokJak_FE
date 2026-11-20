@@ -9,18 +9,29 @@ import {
   startSession,
 } from './tokenStore'
 
-/** POST /api/auth/login with the Google ID token. Saves the tokens only after a valid answer. */
-export async function loginWithGoogle(idToken: string): Promise<SignInResult> {
-  const data = await apiRequest('/api/auth/login', {
-    method: 'POST',
-    auth: false,
-    body: { id_token: idToken },
-  })
+/** Starts a session from a login answer. Saves the tokens only after a valid answer. */
+async function signInWith(path: string, body: unknown): Promise<SignInResult> {
+  const data = await apiRequest(path, { method: 'POST', auth: false, body })
   const { tokens, result } = parseLoginResponse(data)
   startSession(tokens)
   // Kept for the new session before any screen reacts to it (startRoute.ts).
   rememberSignInStep(result.nextStep)
   return result
+}
+
+/** POST /api/auth/login with the Google ID token. */
+export function loginWithGoogle(idToken: string): Promise<SignInResult> {
+  return signInWith('/api/auth/login', { id_token: idToken })
+}
+
+/**
+ * POST /api/auth/guest-login (BE PR #84): 체험하기 for judges and demo visitors. Each call creates a
+ * new test account with only this name (the server fills school, dormitory and gender so that
+ * the account meets the personas as candidates). The answer is the Google login's answer, with
+ * `next_step` SURVEY. The server can switch it off (404).
+ */
+export function loginAsGuest(nickname: string): Promise<SignInResult> {
+  return signInWith('/api/auth/guest-login', { nickname })
 }
 
 /**

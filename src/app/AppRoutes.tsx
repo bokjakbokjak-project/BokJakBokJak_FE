@@ -24,6 +24,7 @@ import ChatRoomPage from '../pages/chat/ChatRoomPage'
 import CompletePage from '../pages/onboarding/CompletePage'
 import DevPreviewPage from '../pages/onboarding/DevPreviewPage'
 import DormitoryPage from '../pages/onboarding/DormitoryPage'
+import GuestPage from '../pages/onboarding/GuestPage'
 import LoginPage from '../pages/onboarding/LoginPage'
 import PriorityPage from '../pages/onboarding/PriorityPage'
 import ProfilePage from '../pages/onboarding/ProfilePage'
@@ -63,6 +64,11 @@ export default function AppRoutes() {
                     <Route
                       path={ONBOARDING_ROUTES.login}
                       element={<LoginPage />}
+                    />
+                    {/* 체험하기: before sign-in, so outside RequireAuth like the login screen. */}
+                    <Route
+                      path={ONBOARDING_ROUTES.guest}
+                      element={<GuestPage />}
                     />
                     <Route element={<RequireAuth />}>
                       <Route

@@ -1,4 +1,11 @@
-import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import {
+  act,
+  cleanup,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from '@testing-library/react'
 import { StrictMode } from 'react'
 import { MemoryRouter, useLocation, useNavigate } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -97,6 +104,9 @@ function LocationProbe() {
       <output data-testid="path">{useLocation().pathname}</output>
       <button type="button" onClick={() => navigate('/')}>
         probe: open login
+      </button>
+      <button type="button" onClick={() => navigate('/guest')}>
+        probe: open guest
       </button>
     </>
   )
@@ -235,8 +245,8 @@ describe('server mode: sign-in', () => {
     // Google ignores presses on a button it cannot see, so nothing may hide it.
     expect(slot.closest('[class*="opacity-0"]')).toBeNull()
     expect(slot).not.toHaveClass('pointer-events-none')
-    // The Figma button's 61px row, with Google's 40px button at its top (1036:26154).
-    expect(slot).toHaveClass('h-[61px]', 'items-start')
+    // A row as tall as Google's 40px button, which the 체험하기 button below matches.
+    expect(slot).toHaveClass('h-10', 'items-start')
     expect(screen.getByRole('button', { name: 'Google' })).toBeVisible()
     // The Figma button is not drawn over or under it, and One Tap is not used instead.
     expect(loginButton()).not.toBeInTheDocument()
@@ -765,5 +775,256 @@ describe('server mode: start screen from GET /api/me/status', () => {
 
     await waitFor(() => expect(path()).toBe('/home'))
     expect(callsTo('/api/me/status')).toHaveLength(1)
+  })
+})
+
+describe('server mode: 체험하기 (POST /api/auth/guest-login)', () => {
+  beforeEach(() => {
+    useServerMode()
+    installGoogle()
+  })
+
+  const guestLink = () =>
+    screen.getByRole('link', { name: '지금 바로 체험하기 →' })
+  const nameField = () => screen.getByLabelText('이름')
+  const startButton = () =>
+    screen.getByRole('button', { name: /체험 시작하기|시작하는 중/ })
+
+  async function openGuest() {
+    renderAt('/')
+    await waitFor(() => expect(google.renderButton).toHaveBeenCalled())
+    fireEvent.click(guestLink())
+    await waitFor(() => expect(path()).toBe('/guest'))
+  }
+
+  it('sits under Google’s button with the same width and height', async () => {
+    renderAt('/')
+    await waitFor(() => expect(google.renderButton).toHaveBeenCalled())
+
+    const slot = screen.getByTestId('google-signin-button')
+    const link = guestLink()
+    // Google's button is 40px (GIS `large`) and as wide as the row, up to 400px.
+    expect(slot).toHaveClass('h-10', 'w-full')
+    const [, options] = google.renderButton.mock.calls[0] as unknown as [
+      HTMLElement,
+      Record<string, unknown>,
+    ]
+    expect(options).toEqual(expect.objectContaining({ size: 'large' }))
+    expect(link).toHaveClass('h-10', 'w-full', 'max-w-[400px]', 'min-w-[200px]')
+    // Figma 2708:21189: the brown pill 10px under it.
+    expect(link).toHaveClass('mt-[10px]', 'rounded-full', 'bg-brand-brown1')
+    expect(link).toHaveClass('text-[18px]', 'font-semibold', 'text-white')
+    expect(slot.nextElementSibling).toBe(link)
+    expect(link).toHaveAttribute('href', '/guest')
+  })
+
+  it('starts a guest session with the name and follows the status to the survey', async () => {
+    serve((requestPath) => {
+      if (requestPath === '/api/auth/guest-login')
+        return ok(loginData('SURVEY'))
+      if (requestPath === '/api/me/status') {
+        return ok({
+          onboarding_completed: true,
+          survey_completed: false,
+          survey_update_required: false,
+          next_step: 'SURVEY',
+          matched: false,
+          matching_id: null,
+        })
+      }
+      return fail(404, 'NOT_FOUND')
+    })
+    await openGuest()
+
+    expect(
+      screen.getByRole('heading', { name: '체험하기' }),
+    ).toBeInTheDocument()
+    expect(startButton()).toBeDisabled()
+    fireEvent.change(nameField(), { target: { value: '  홍길동  ' } })
+    expect(startButton()).toBeEnabled()
+    fireEvent.click(startButton())
+
+    await waitFor(() => expect(path()).toBe('/question'))
+    const [call] = callsTo('/api/auth/guest-login')
+    expect(call.init.method).toBe('POST')
+    expect(bodyOf(call)).toEqual({ nickname: '홍길동' })
+    expect(authOf(call)).toBeNull()
+    expect(getAccessToken()).toBe('access-1')
+    expect(sessionStorage.getItem(STORAGE_KEY)).toBe('refresh-1')
+    expect(callsTo('/api/auth/guest-login')).toHaveLength(1)
+  })
+
+  it('follows the login answer when the status cannot be read', async () => {
+    serve((requestPath) =>
+      requestPath === '/api/auth/guest-login'
+        ? ok(loginData('SURVEY'))
+        : fail(500, 'INTERNAL_ERROR'),
+    )
+    await openGuest()
+    fireEvent.change(nameField(), { target: { value: '부스방문자' } })
+    fireEvent.click(startButton())
+
+    await waitFor(() => expect(path()).toBe('/question'))
+  })
+
+  it('says why a name is refused and stays signed out', async () => {
+    serve(() =>
+      json(400, {
+        success: false,
+        code: 'INVALID_NICKNAME',
+        message: '닉네임은 1~20자로 입력해주세요.',
+        errors: { nickname: 'INVALID_FORMAT' },
+      }),
+    )
+    await openGuest()
+    fireEvent.change(nameField(), { target: { value: '이름' } })
+    fireEvent.click(startButton())
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      '줄바꿈이나 보이지 않는 문자 없이',
+    )
+    expect(path()).toBe('/guest')
+    expect(getRefreshToken()).toBeNull()
+    expect(startButton()).toBeEnabled()
+  })
+
+  it('says when the server has switched 체험하기 off', async () => {
+    serve(() => fail(404, 'RESOURCE_NOT_FOUND'))
+    await openGuest()
+    fireEvent.change(nameField(), { target: { value: '심사위원' } })
+    fireEvent.click(startButton())
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      '지금은 체험하기를 사용할 수 없어요.',
+    )
+    expect(getRefreshToken()).toBeNull()
+  })
+
+  it('checks the length before sending anything', async () => {
+    await openGuest()
+    fireEvent.change(nameField(), { target: { value: '가'.repeat(21) } })
+
+    expect(screen.getByRole('alert')).toHaveTextContent(
+      '이름은 1~20자로 입력해주세요.',
+    )
+    expect(startButton()).toBeDisabled()
+    fireEvent.change(nameField(), { target: { value: '   ' } })
+    expect(startButton()).toBeDisabled()
+    expect(callsTo('/api/auth/guest-login')).toHaveLength(0)
+  })
+
+  it('says 체험하기 is unavailable on a server without it (401 for an unknown public path)', async () => {
+    serve(() =>
+      fail(401, 'UNAUTHORIZED', '로그인이 필요하거나 인증이 만료되었습니다.'),
+    )
+    await openGuest()
+    fireEvent.change(nameField(), { target: { value: '심사위원' } })
+    fireEvent.click(startButton())
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      '지금은 체험하기를 사용할 수 없어요.',
+    )
+    expect(getRefreshToken()).toBeNull()
+  })
+
+  it('starts no second account when the name screen is left and opened again mid sign-in', async () => {
+    let answer: (response: Response) => void = () => {}
+    serve((requestPath) =>
+      requestPath === '/api/auth/guest-login'
+        ? new Promise<Response>((resolve) => {
+            answer = resolve
+          })
+        : fail(404, 'NOT_FOUND'),
+    )
+    await openGuest()
+    fireEvent.change(nameField(), { target: { value: '첫번째' } })
+    fireEvent.click(startButton())
+    await waitFor(() =>
+      expect(callsTo('/api/auth/guest-login')).toHaveLength(1),
+    )
+
+    // Back to the login screen and into 체험하기 again while the first request is out.
+    fireEvent.click(screen.getByRole('button', { name: '뒤로' }))
+    await waitFor(() => expect(path()).toBe('/'))
+    expect(guestLink()).toHaveAttribute('inert')
+    fireEvent.click(screen.getByRole('button', { name: 'probe: open guest' }))
+    await waitFor(() => expect(path()).toBe('/guest'))
+    fireEvent.change(nameField(), { target: { value: '두번째' } })
+    expect(startButton()).toBeDisabled()
+    fireEvent.submit(nameField().closest('form')!)
+    expect(callsTo('/api/auth/guest-login')).toHaveLength(1)
+
+    await act(async () => {
+      answer(ok(loginData('SURVEY')))
+    })
+    await waitFor(() => expect(path()).toBe('/question'))
+    expect(callsTo('/api/auth/guest-login')).toHaveLength(1)
+  })
+
+  it('keeps 체험하기 closed while a Google sign-in is out', async () => {
+    let answer: (response: Response) => void = () => {}
+    serve((requestPath) =>
+      requestPath === '/api/auth/login'
+        ? new Promise<Response>((resolve) => {
+            answer = resolve
+          })
+        : fail(404, 'NOT_FOUND'),
+    )
+    renderAt('/')
+    await chooseGoogleAccount()
+    await waitFor(() => expect(callsTo('/api/auth/login')).toHaveLength(1))
+
+    expect(guestLink()).toHaveAttribute('inert')
+    expect(guestLink()).toHaveAttribute('aria-disabled', 'true')
+    fireEvent.click(screen.getByRole('button', { name: 'probe: open guest' }))
+    await waitFor(() => expect(path()).toBe('/guest'))
+    fireEvent.change(nameField(), { target: { value: '부스' } })
+    expect(startButton()).toBeDisabled()
+
+    await act(async () => {
+      answer(ok(loginData('HOME')))
+    })
+    expect(callsTo('/api/auth/guest-login')).toHaveLength(0)
+  })
+
+  it('returns to the login screen with the back button', async () => {
+    await openGuest()
+    fireEvent.click(screen.getByRole('button', { name: '뒤로' }))
+    expect(path()).toBe('/')
+  })
+
+  it('does not keep a signed-in user on the name screen', async () => {
+    sessionStorage.setItem(STORAGE_KEY, 'refresh-0')
+    serve((requestPath) => {
+      if (requestPath === '/api/auth/refresh') return ok(tokens(1))
+      if (requestPath === '/api/me/status') {
+        return ok({
+          onboarding_completed: true,
+          survey_completed: true,
+          survey_update_required: false,
+          next_step: 'HOME',
+          matched: false,
+          matching_id: null,
+        })
+      }
+      return fail(404, 'NOT_FOUND')
+    })
+    renderAt('/guest')
+
+    await waitFor(() => expect(path()).toBe('/home'))
+    expect(callsTo('/api/auth/guest-login')).toHaveLength(0)
+  })
+})
+
+describe('sample mode: no 체험하기', () => {
+  it('shows no 체험하기 button and sends /guest back to the login screen', () => {
+    renderAt('/')
+    expect(
+      screen.queryByRole('link', { name: '지금 바로 체험하기 →' }),
+    ).not.toBeInTheDocument()
+
+    cleanup()
+    renderAt('/guest')
+    expect(path()).toBe('/')
   })
 })
