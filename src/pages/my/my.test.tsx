@@ -420,8 +420,8 @@ describe('retaking the survey', () => {
     expect(
       screen.getByRole('heading', { name: '미리보기님' }),
     ).toBeInTheDocument()
-    fireEvent.click(button('홈화면으로 가기'))
-    expect(screen.getByTestId('home-scroll')).toBeInTheDocument()
+    fireEvent.click(button('룸메이트 보러 가기'))
+    expect(screen.getByTestId('roommate-list')).toBeInTheDocument()
 
     fireEvent.click(link('마이'))
     expect(

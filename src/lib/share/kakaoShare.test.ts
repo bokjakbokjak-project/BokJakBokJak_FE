@@ -51,7 +51,7 @@ describe('KakaoTalk sharing', () => {
       objectType: 'feed',
       content: {
         title: '수연님의 룸메이트 프로필',
-        description: '함께 살기 전, 나의 생활습관을 확인해 보세요',
+        description: '수연님의 프로필을 확인해보세요!',
         imageUrl: 'https://example.com/share/kakao-profile.png',
         imageWidth: 684,
         imageHeight: 428,

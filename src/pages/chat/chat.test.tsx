@@ -57,6 +57,30 @@ describe('chat', () => {
     expect(screen.getByText('1. 시험기간, 밤늦은 공부')).toBeInTheDocument()
   })
 
+  it('wraps the message field: Enter sends and Shift+Enter starts a new line', async () => {
+    renderAt('/chat/kimhyena')
+    const input = await screen.findByRole('textbox', { name: '메시지 입력' })
+    expect(input.tagName).toBe('TEXTAREA')
+
+    fireEvent.change(input, { target: { value: '첫 줄' } })
+    fireEvent.keyDown(input, { key: 'Enter', shiftKey: true })
+    expect(input).toHaveValue('첫 줄')
+
+    // Enter that ends Korean composition only finishes the syllable.
+    fireEvent.keyDown(input, { key: 'Enter', isComposing: true })
+    expect(input).toHaveValue('첫 줄')
+
+    fireEvent.change(input, { target: { value: '첫 줄\n둘째 줄' } })
+    fireEvent.keyDown(input, { key: 'Enter' })
+    const list = screen.getByRole('list', { name: '대화 내용' })
+    expect(
+      await within(list).findByText(
+        (_, node) => node?.textContent === '첫 줄\n둘째 줄',
+      ),
+    ).toBeInTheDocument()
+    expect(input).toHaveValue('')
+  })
+
   it('sends a message only when there is text', async () => {
     renderAt('/chat/kimhyena')
     const input = await screen.findByRole('textbox', { name: '메시지 입력' })
@@ -299,7 +323,9 @@ describe('chat', () => {
     )
     click('메시지 보내기')
 
-    const bubble = await screen.findByText(long)
+    const bubble = await within(
+      screen.getByRole('list', { name: '대화 내용' }),
+    ).findByText(long)
     expect(bubble).toHaveClass(
       'max-w-[min(292px,100%)]',
       '[overflow-wrap:anywhere]',

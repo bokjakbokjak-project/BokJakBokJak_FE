@@ -228,13 +228,16 @@ describe('state across screens', () => {
       screen.getByRole('heading', { name: '미리보기님' }),
     ).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: '홈화면으로 가기' }))
+    // The result leads to the roommate list (requested 2026-11-17).
+    fireEvent.click(screen.getByRole('button', { name: '룸메이트 보러 가기' }))
+    expect(
+      screen.getByRole('heading', { name: '룸메이트 매칭 결과' }),
+    ).toBeInTheDocument()
+
+    clickLink('홈')
     expect(
       screen.getByRole('heading', { name: /안녕하세요 미리보기님/ }),
     ).toBeInTheDocument()
-
-    clickLink('룸메이트')
-    clickLink('홈')
     expect(
       screen
         .getByRole('img', { name: /캐릭터/ })
@@ -247,8 +250,8 @@ describe('state across screens', () => {
     ).toBeInTheDocument()
     expect(screen.getAllByText(firstAnswer).length).toBeGreaterThan(0)
 
-    fireEvent.click(screen.getByRole('button', { name: '홈화면으로 가기' }))
-    expect(screen.getByTestId('home-scroll')).toBeInTheDocument()
+    fireEvent.click(screen.getByRole('button', { name: '룸메이트 보러 가기' }))
+    expect(screen.getByTestId('roommate-list')).toBeInTheDocument()
   })
 
   it('returns to the home through the my page, keeping everything', () => {
@@ -256,8 +259,7 @@ describe('state across screens', () => {
     openSeededHome()
     openResultFromHome()
     answerAll()
-    fireEvent.click(screen.getByRole('button', { name: '홈화면으로 가기' }))
-    clickLink('룸메이트')
+    fireEvent.click(screen.getByRole('button', { name: '룸메이트 보러 가기' }))
     fireEvent.click(screen.getByRole('button', { name: '리스트 더보기' }))
     clickLink('홈')
 

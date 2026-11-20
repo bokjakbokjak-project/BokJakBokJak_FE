@@ -10,7 +10,6 @@ import { Link, Navigate, useNavigate, useParams } from 'react-router'
 import cardArrow from '../../assets/chat/card-arrow-right.svg'
 import cardCheck from '../../assets/chat/card-check-circle.svg'
 import exitIcon from '../../assets/chat/exit-round.svg'
-import sendIcon from '../../assets/chat/send-round.svg'
 import backArrow from '../../assets/question/back-arrow-brown.svg'
 import ChoiceDialog from '../../components/dialog/ChoiceDialog'
 import {
@@ -25,6 +24,7 @@ import { CHAT_ROUTES, fromChatState } from '../../lib/chat/routes'
 import { ROOMMATE_ROUTES } from '../../lib/roommate/routes'
 import { AI_TILE, PARTNER_TILE } from './chatAvatars'
 import AiCard from './AiCard'
+import ChatInput from './ChatInput'
 import {
   agendaTitle,
   BOT_NAME,
@@ -390,25 +390,13 @@ function SampleChatRoom({ roomId }: { roomId: string | undefined }) {
               {ERROR_TEXT}
             </p>
           )}
-          <form className="relative" onSubmit={send}>
-            <input
-              type="text"
-              aria-label="메시지 입력"
-              placeholder="메세지 입력"
-              value={draft}
-              disabled={isEnded}
-              className="h-[42px] w-full rounded-[20px] border border-gray-100 bg-white pr-12 pl-3 text-[16px] leading-[1.5] text-gray-black outline-none placeholder:text-gray-500 focus-visible:border-brand-brown2 disabled:opacity-60"
-              onChange={(event) => setDraft(event.target.value)}
-            />
-            <button
-              type="submit"
-              aria-label="메시지 보내기"
-              disabled={!canSend}
-              className="absolute top-[7px] right-3 size-7 disabled:opacity-40"
-            >
-              <img src={sendIcon} alt="" />
-            </button>
-          </form>
+          <ChatInput
+            value={draft}
+            disabled={isEnded}
+            canSend={canSend}
+            onChange={setDraft}
+            onSubmit={send}
+          />
         </div>
       </footer>
       {confirming === 'agenda' && (
