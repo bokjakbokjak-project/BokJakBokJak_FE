@@ -198,6 +198,31 @@ describe('match analysis and chat request', () => {
     analyzed_at: '2026-11-10T12:03:00Z',
   }
 
+  it('shows the illustrated loading screen until the analysis arrives', async () => {
+    let finish: (response: Response) => void = () => {}
+    handler = (call) =>
+      call.path === '/api/recommendations/12/analysis'
+        ? new Promise<Response>((resolve) => {
+            finish = resolve
+          })
+        : undefined
+    renderAt('/roommate/12')
+
+    expect(
+      await screen.findByRole('status', {
+        name: 'AI가 두 분의 매칭 결과를 분석하고 있어요',
+      }),
+    ).toHaveTextContent('매칭을 분석하고 있어요')
+    expect(screen.getByRole('link', { name: '이전' })).toHaveAttribute(
+      'href',
+      '/roommate',
+    )
+    await act(async () => finish(ok(analysis)))
+    expect(
+      await screen.findByText('민수정님과의 나의 매칭결과'),
+    ).toBeInTheDocument()
+  })
+
   it('hides an empty section and sends receiver_id to open the new room', async () => {
     handler = (call) => {
       if (call.path === '/api/recommendations/12/analysis') return ok(analysis)

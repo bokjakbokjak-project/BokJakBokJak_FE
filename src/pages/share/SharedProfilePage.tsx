@@ -34,6 +34,7 @@ export default function SharedProfilePage() {
   const { status } = useAuth()
   const [isPromptOpen, setIsPromptOpen] = useState(true)
   const [surveyRequired, setSurveyRequired] = useState(false)
+  const [surveyComplete, setSurveyComplete] = useState(false)
   const [matchRate, setMatchRate] = useState<number | null>(null)
   const [matchError, setMatchError] = useState<string | null>(null)
   const userId = profile?.userId
@@ -43,17 +44,19 @@ export default function SharedProfilePage() {
       return () => {
         active = false
       }
-    if (status !== 'authenticated' || !userId)
+    if (status !== 'authenticated')
       return () => {
         active = false
       }
     fetchMyStatus()
       .then((current) => {
         if (!active) return null
-        if (current.nextStep !== 'HOME') {
+        if (current.nextStep !== 'HOME' || !current.surveyCompleted) {
           setSurveyRequired(true)
           return null
         }
+        setSurveyComplete(true)
+        if (!userId) return null
         return apiRequest(`/api/share/${userId}/match-score`, {
           retried401: 'fail',
         })
@@ -82,9 +85,10 @@ export default function SharedProfilePage() {
           isApiError(error) &&
           error.status === 409 &&
           error.code === 'SURVEY_REQUIRED'
-        )
+        ) {
+          setSurveyComplete(false)
           setSurveyRequired(true)
-        else
+        } else
           setMatchError('매칭률을 불러올 수 없어요. 잠시 후 다시 시도해주세요.')
       })
     return () => {
@@ -177,19 +181,21 @@ export default function SharedProfilePage() {
             <ProfileAnswerSections
               cards={cards}
               locked={
-                // Figma 2339:26682, 37px under the top of the blurred rows.
-                <div className="sticky top-[47px] mx-auto mt-[37px] flex w-[174px] flex-col items-center gap-2.5">
-                  <p className="text-center text-[20px] leading-[1.4] font-bold tracking-[-0.4px] whitespace-pre-line text-brand-brown3">
-                    {'복작복작에서\n설문조사하고 이어보기'}
-                  </p>
-                  <button
-                    type="button"
-                    className="h-[42px] w-[152px] rounded-full bg-brand-brown1 text-[16px] leading-[1.4] font-bold tracking-[-0.32px] text-white"
-                    onClick={goToApp}
-                  >
-                    복작복작으로 이동
-                  </button>
-                </div>
+                status === 'authenticated' && surveyComplete ? undefined : (
+                  // Figma 2339:26682, 37px under the top of the blurred rows.
+                  <div className="sticky top-[47px] mx-auto mt-[37px] flex w-[174px] flex-col items-center gap-2.5">
+                    <p className="text-center text-[20px] leading-[1.4] font-bold tracking-[-0.4px] whitespace-pre-line text-brand-brown3">
+                      {'복작복작에서\n설문조사하고 이어보기'}
+                    </p>
+                    <button
+                      type="button"
+                      className="h-[42px] w-[152px] rounded-full bg-brand-brown1 text-[16px] leading-[1.4] font-bold tracking-[-0.32px] text-white"
+                      onClick={goToApp}
+                    >
+                      복작복작으로 이동
+                    </button>
+                  </div>
+                )
               }
             />
           </div>
@@ -197,7 +203,7 @@ export default function SharedProfilePage() {
       </div>
       {isPromptOpen &&
         status !== 'restoring' &&
-        (status !== 'authenticated' || !userId || surveyRequired) && (
+        (status !== 'authenticated' || surveyRequired) && (
           // Figma 1952:40072, shown when the link opens.
           <ChoiceDialog
             title={prompt}
