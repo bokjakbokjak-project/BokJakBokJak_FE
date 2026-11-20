@@ -149,7 +149,8 @@ function Room({ chat }: { chat: ExperienceChatState }) {
     <>
       <div className="mx-6 mt-2 flex shrink-0 flex-col gap-1.5">
         <p role="note" className={NOTE}>
-          자동으로 응답하는 체험 상대예요. 실제로는 전송되지 않아요.
+          자동으로 응답하는 체험 상대라 답장을 골라 보내요. 실제 서비스에서는
+          입력창에 직접 메시지를 써서 대화할 수 있어요.
         </p>
         {chat.switchedToExample && (
           <p role="note" className={NOTE}>
