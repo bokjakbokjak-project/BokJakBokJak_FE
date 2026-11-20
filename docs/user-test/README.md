@@ -20,12 +20,15 @@
 
 ### 로컬 서버로 실행
 
-운영 링크와 별개로 로컬에서 운영 빌드와 같은 방식으로 띄운다.
+운영 링크와 별개로 로컬에서 띄운다. 위 변수는 저장소의 `.env.usertest`에 들어 있어서 따로 설정할 것이 없다. 이 파일은 `--mode usertest`일 때만 읽히므로 `npm run dev`와 Vercel 배포에는 영향이 없다. 값을 바꿔 보려면 `.env.usertest.local`(.gitignore 대상)에 덮어쓴다.
 
 ```bash
-# .env.usertest.local 에 위 변수를 넣는다(.gitignore 대상)
-npx vite build --mode usertest --outDir dist/usertest
-npx vite preview --mode usertest --outDir dist/usertest --port 5173 --strictPort
+npm ci
+npm run usertest            # 개발 서버, http://localhost:5173
+
+# 또는 운영 빌드와 같은 방식으로
+npm run usertest:build
+npm run usertest:preview    # http://localhost:5173
 ```
 
 백엔드 CORS와 Google 로그인 허용 출처가 `http://localhost:5173`만 등록되어 있어 포트는 5173이어야 한다. 다른 포트나 별도 도메인을 쓰려면 백엔드 CORS와 Google Cloud Console의 승인된 JavaScript 출처에 그 주소를 추가해야 한다.

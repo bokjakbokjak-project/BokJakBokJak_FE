@@ -8,6 +8,9 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
+    "usertest": "vite --mode usertest --port 5173 --strictPort",
+    "usertest:build": "tsc -b && vite build --mode usertest --outDir dist/usertest",
+    "usertest:preview": "vite preview --mode usertest --outDir dist/usertest --port 5173 --strictPort",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest"
