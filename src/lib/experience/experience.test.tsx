@@ -20,10 +20,13 @@ import { getAppMode, isExperienceMode, setAppMode } from './mode'
 import { scenarioForAdjust } from './scenarios'
 import {
   getExperienceSession,
+  pickAnotherRoommate,
   resetExperienceSessionCacheForTests,
   restartAttempt,
   startNewParticipant,
+  updateExperienceSession,
 } from './session'
+import { getCandidate, getCandidates } from '../roommate/roommateData'
 
 const PARTNER = {
   name: '김혜나',
@@ -215,6 +218,86 @@ function Path() {
 }
 
 describe('experience run (no sign-in, no request)', () => {
+  it('keeps the same person’s answers and drops only the match when picking another roommate', () => {
+    useExperienceBuild()
+    setAppMode('experience')
+    startNewParticipant('booth')
+    updateExperienceSession((session) => ({
+      ...session,
+      priorities: ['cleaning', 'smoking', 'sleep-habit'],
+      answers: { 0: '자주 있다는 말을 들었다' },
+    }))
+    startExperienceChat({ ...PARTNER, adjust: ['청소'] })
+    const id = getExperienceSession()!.id
+
+    pickAnotherRoommate()
+    expect(getExperienceSession()).toMatchObject({
+      id,
+      attempt: 1,
+      priorities: ['cleaning', 'smoking', 'sleep-habit'],
+      answers: { 0: '자주 있다는 말을 들었다' },
+      chat: null,
+      matched: null,
+      passedCandidateIds: ['hyena'],
+    })
+
+    // 처음부터 forgets them again.
+    restartAttempt()
+    expect(getExperienceSession()!.passedCandidateIds).toEqual([])
+  })
+
+  it('goes from the end of a matched chat to the roommate list without that roommate (다음 참가자)', async () => {
+    useExperienceBuild()
+    setAppMode('experience')
+    startNewParticipant('booth')
+    updateExperienceSession((session) => ({
+      ...session,
+      priorities: ['cleaning', 'smoking', 'sleep-habit'],
+    }))
+    vi.useFakeTimers({ shouldAdvanceTime: true })
+    render(
+      <MemoryRouter initialEntries={['/roommate/hyena']}>
+        <AppRoutes />
+        <Path />
+      </MemoryRouter>,
+    )
+    fireEvent.click(
+      await screen.findByRole('button', { name: '대화 요청하기' }),
+    )
+    fireEvent.click(screen.getByRole('button', { name: '대화 시작하기' }))
+    fireEvent.click(
+      screen.getByRole('button', { name: '주 1회 함께 청소하면 좋겠어요' }),
+    )
+    await act(async () => {
+      vi.advanceTimersByTime(AUTO_REPLY_MS)
+    })
+    fireEvent.click(screen.getByRole('button', { name: '그렇게 해요' }))
+    fireEvent.click(screen.getByRole('button', { name: '매칭확정 하기' }))
+    fireEvent.click(screen.getByRole('button', { name: '확정하기' }))
+    await act(async () => {
+      vi.advanceTimersByTime(AUTO_REPLY_MS)
+    })
+    expect(screen.getByText('🎉 매칭이 확정되었습니다')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole('button', { name: '다음 참가자' }))
+
+    // The roommate list, not the start screen, and the same person.
+    expect(screen.getByTestId('path').textContent).toBe('/roommate')
+    expect(getExperienceSession()!.priorities).toEqual([
+      'cleaning',
+      'smoking',
+      'sleep-habit',
+    ])
+    const hyena = getCandidate('hyena')!
+    const list = screen.getByTestId('roommate-list')
+    expect(list).not.toHaveTextContent(hyena.name)
+    const others = getCandidates().filter(({ id }) => id !== 'hyena')
+    expect(list).toHaveTextContent(others[0].name)
+    // The home no longer shows the earlier match.
+    expect(getExperienceSession()!.matched).toBeNull()
+    expect(fetchMock).not.toHaveBeenCalled()
+  })
+
   it('goes from the analysis through the chat to the matched home', async () => {
     useExperienceBuild()
     setAppMode('experience')

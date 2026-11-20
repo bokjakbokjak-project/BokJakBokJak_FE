@@ -23,6 +23,8 @@ import {
   refreshRecommendations,
   type Recommendation,
 } from '../../lib/roommate/recommendationApi'
+import { isExperienceMode } from '../../lib/experience/mode'
+import { useExperienceSession } from '../../lib/experience/session'
 import { getCandidates } from '../../lib/roommate/roommateData'
 import { useRoommate } from '../../lib/roommate/roommateState'
 import { ROOMMATE_ROUTES } from '../../lib/roommate/routes'
@@ -65,8 +67,15 @@ export default function RoommateListPage() {
     if (isServer) loadRecommendations()
   }, [isServer, loadRecommendations])
 
+  // The experience hides the roommates this person already matched with (the chat's 다음 참가자).
+  const experienceSession = useExperienceSession()
+  const passed = isExperienceMode()
+    ? (experienceSession?.passedCandidateIds ?? [])
+    : []
   const cards: RoommateCardData[] | null = !isServer
-    ? getCandidates().map(sampleRoommateCard)
+    ? getCandidates()
+        .filter((candidate) => !passed.includes(candidate.id))
+        .map(sampleRoommateCard)
     : recommendations.status === 'ready'
       ? recommendations.items.map(serverCard)
       : null

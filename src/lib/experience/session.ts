@@ -11,7 +11,8 @@ import { isExperienceMode } from './mode'
  * Nothing here is sent to the server or saved as a real match.
  *
  * - The experience mode keeps it under a local session id (`demoSessionId`), never a user id.
- *   A reload keeps the session; `다음 참가자` starts a new one, and `처음부터` a new attempt of it.
+ *   A reload keeps the session; the presenter menu's `다음 참가자` starts a new one, `처음부터` a
+ *   new attempt of it, and the chat's `다음 참가자` another roommate for the same person.
  * - The user test (service mode, signed-in tester) keeps it per cohort and tester, so a chat
  *   there, which never reaches the real candidate, belongs to that tester only.
  */
@@ -30,6 +31,11 @@ export type ExperienceSession = {
   chat: ExperienceChatState | null
   /** The partner of a finished experience match. */
   matched: { name: string } | null
+  /**
+   * Candidates this person already matched with in this session. The chat's 「다음 참가자」 goes
+   * back to the list without them, so the same person can try another roommate.
+   */
+  passedCandidateIds: string[]
 }
 
 const LOCAL_SCOPE_KEY = 'bokjak-experience-session'
@@ -78,6 +84,7 @@ function emptySession(
     surveySkipped: false,
     chat: null,
     matched: null,
+    passedCandidateIds: [],
   }
 }
 
@@ -152,7 +159,29 @@ export function restartAttempt() {
     surveySkipped: false,
     chat: null,
     matched: null,
+    passedCandidateIds: [],
   }))
+}
+
+/**
+ * The chat's 「다음 참가자」 after a match: the same person, with the same priorities and answers,
+ * picks another roommate. The finished chat and match are cleared, and the partner leaves the
+ * list for the rest of this session. (The presenter menu's 「다음 참가자」 still starts a new
+ * person.)
+ */
+export function pickAnotherRoommate() {
+  updateExperienceSession((session) => {
+    const partner = session.chat?.partner.candidateId ?? null
+    return {
+      ...session,
+      chat: null,
+      matched: null,
+      passedCandidateIds:
+        partner && !session.passedCandidateIds.includes(partner)
+          ? [...session.passedCandidateIds, partner]
+          : session.passedCandidateIds,
+    }
+  })
 }
 
 function subscribe(listener: () => void) {
