@@ -9,7 +9,7 @@ const SDK_INTEGRITY =
   'sha384-BGX7Wb16GmRFagri4bLJV2DgipVZaU2AI812GZtHtHzzDQJnfHasDXN5houxv45w'
 
 /** Image of the feed card, served from `public/` so Kakao can fetch it by an absolute URL. */
-export const KAKAO_SHARE_IMAGE_PATH = '/share/kakao-profile.png'
+export const KAKAO_SHARE_IMAGE_PATH = '/share/profile-card.png'
 
 type KakaoLink = { webUrl: string; mobileWebUrl: string }
 
