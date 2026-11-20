@@ -28,6 +28,8 @@ type ChoiceDialogProps = {
   confirmDisabled?: boolean
   /** Moves the box down from the frame's center, as the chat request dialog does (Figma 1686:17718). */
   offsetClass?: string
+  /** Lets the box grow past 196px for a longer message (not in Figma). */
+  autoHeight?: boolean
 }
 
 const BUTTON_CLASS =
@@ -50,6 +52,7 @@ export default function ChoiceDialog({
   onConfirm,
   confirmDisabled = false,
   offsetClass = '',
+  autoHeight = false,
 }: ChoiceDialogProps) {
   const overlayRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
@@ -72,7 +75,7 @@ export default function ChoiceDialog({
           aria-labelledby={titleId}
           aria-describedby={message ? messageId : undefined}
           tabIndex={-1}
-          className={`relative flex h-[196px] w-[285px] max-w-[calc(100%-32px)] flex-col gap-9 rounded-[12px] border-2 border-brand-brown3 bg-brand-cream1 px-[23px] pt-[25px] pb-[18px] shadow-[0_4px_25px_0_rgba(0,0,0,0.25)] outline-none ${offsetClass}`}
+          className={`relative flex ${autoHeight ? 'min-h-[196px]' : 'h-[196px]'} w-[285px] max-w-[calc(100%-32px)] flex-col gap-9 rounded-[12px] border-2 border-brand-brown3 bg-brand-cream1 px-[23px] pt-[25px] pb-[18px] shadow-[0_4px_25px_0_rgba(0,0,0,0.25)] outline-none ${offsetClass}`}
           onClick={(event) => event.stopPropagation()}
           onKeyDown={(event) => {
             if (event.key === 'Escape') onCancel()
@@ -98,7 +101,7 @@ export default function ChoiceDialog({
             {message && (
               <p
                 id={messageId}
-                className="text-[14px] tracking-[-0.28px] whitespace-pre-line text-gray-400"
+                className="text-[14px] tracking-[-0.28px] break-keep whitespace-pre-line text-gray-400 [overflow-wrap:anywhere]"
               >
                 {message}
               </p>

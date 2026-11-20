@@ -3,6 +3,7 @@ import CharacterPreview from '../../components/onboarding/CharacterPreview'
 import PrimaryButton from '../../components/onboarding/PrimaryButton'
 import RoomBackground from '../../components/onboarding/RoomBackground'
 import { ONBOARDING_ROUTES } from '../../lib/onboarding/routes'
+import { isExperienceEnabled, switchAppMode } from '../../lib/experience/mode'
 import {
   getTestProfileConfig,
   isUserTestEnabled,
@@ -46,6 +47,11 @@ export default function UserTestStartPage() {
   }
 
   const browse = () => {
+    // With the experience, browsing is 핵심 체험: no sign-in data, example results throughout.
+    if (isExperienceEnabled()) {
+      switchAppMode('experience')
+      return
+    }
     setExperienceMode('demo')
     navigate(DEMO_ENTRY_ROUTE)
   }

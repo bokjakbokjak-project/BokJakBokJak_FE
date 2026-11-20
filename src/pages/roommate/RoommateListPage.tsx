@@ -3,6 +3,7 @@ import roomBackground from '../../assets/home/room-bg.png'
 import chevronDown from '../../assets/roommate/chevron-down.svg'
 import refreshIcon from '../../assets/roommate/refresh.svg'
 import AppLogo from '../../components/AppLogo/AppLogo'
+import ExperienceNotice from '../../components/experience/ExperienceNotice'
 import BottomNav from '../../components/BottomNav/BottomNav'
 import { usePendingNotice } from '../../components/BottomNav/usePendingNotice'
 import {
@@ -163,6 +164,9 @@ export default function RoommateListPage() {
         {cards?.length === 0 && (
           <EmptyState text="아직 추천할 수 있는 후보가 없어요" />
         )}
+        <div className="mx-auto w-full max-w-[390px] px-6">
+          <ExperienceNotice kind="candidates" className="mb-2.5" />
+        </div>
         <ul className="mx-auto flex w-full max-w-[390px] flex-col gap-2.5 px-6 pb-[15px]">
           {cards?.slice(0, visibleCount).map((card) => (
             <li key={card.to}>

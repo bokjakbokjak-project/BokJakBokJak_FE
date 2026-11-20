@@ -19,4 +19,6 @@ interface ImportMetaEnv {
   readonly VITE_USER_TEST_DORMITORY?: string
   /** `on` sends feedback to the proposed collection API. Off until the server has it. */
   readonly VITE_USER_TEST_FEEDBACK_API?: string
+  /** `true` offers 핵심 체험 | 전체 서비스 (src/lib/experience/mode.ts). */
+  readonly VITE_EXPERIENCE?: string
 }

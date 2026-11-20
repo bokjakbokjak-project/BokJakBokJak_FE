@@ -192,6 +192,12 @@ function ServerMatchAnalysis({ userId }: { userId: number }) {
         <ChatRequestFooter
           candidateId={id}
           onChanged={() => loadRecommendations(true)}
+          // The user test's experience chat talks about this real analysis's difference.
+          experienceTarget={{
+            name: analysis.target.nickname,
+            adjust: analysis.adjust,
+            source: 'real',
+          }}
         />
       }
     >

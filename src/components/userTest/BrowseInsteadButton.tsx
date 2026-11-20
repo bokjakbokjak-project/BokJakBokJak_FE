@@ -3,6 +3,7 @@ import { isUserTestEnabled } from '../../lib/userTest/config'
 import { DEMO_ENTRY_ROUTE } from '../../lib/userTest/routes'
 import { setExperienceMode } from '../../lib/userTest/userTestStore'
 import TestPill from './TestPill'
+import { isExperienceEnabled } from '../../lib/experience/mode'
 
 /**
  * `둘러보기로 넘어가기` on the priority step and the survey (user test only, not in Figma). It
@@ -11,7 +12,8 @@ import TestPill from './TestPill'
  */
 export default function BrowseInsteadButton() {
   const navigate = useNavigate()
-  if (!isUserTestEnabled()) return null
+  // With the experience, the top switch's 핵심 체험 is the way to browse, in its place.
+  if (!isUserTestEnabled() || isExperienceEnabled()) return null
 
   // Centered in the status area at the top, like the switch on the service screens.
   return (

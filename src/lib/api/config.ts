@@ -3,9 +3,13 @@
  * build without that flag keeps the existing in-memory sample flow (the dormitory, chat, and
  * roommate samples), and the two never mix. Values are read on each call so tests can stub them.
  */
+import { isExperienceMode } from '../experience/mode'
+
 export type ApiMode = 'server' | 'mock'
 
 export function getApiMode(): ApiMode {
+  // The experience mode (핵심 체험) runs the sample flow on any build: no sign-in, no request.
+  if (isExperienceMode()) return 'mock'
   return import.meta.env.VITE_API_MODE === 'server' ? 'server' : 'mock'
 }
 

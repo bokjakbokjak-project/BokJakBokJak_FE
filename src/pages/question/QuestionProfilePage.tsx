@@ -29,6 +29,7 @@ import { useQuestion } from './questionState'
 import FeedbackPrompt from '../../components/userTest/FeedbackPrompt'
 import FullPageLoading from '../../components/LoadState/FullPageLoading'
 import ScrollHint from '../../components/roommate/ScrollHint'
+import ExperienceNotice from '../../components/experience/ExperienceNotice'
 
 /**
  * Age from the birth year chosen in onboarding, counted as this year minus the birth year. The
@@ -235,6 +236,7 @@ export default function QuestionProfilePage() {
         // 9px higher and pads it back, instead of cutting the card off at its top edge.
         className="scrollbar-none -mt-[9px] flex min-h-0 flex-1 flex-col overflow-y-auto pt-[9px]"
       >
+        <ExperienceNotice kind="result" className="mx-6 mb-2 shrink-0" />
         {/* QA 12: the card sits where the roommate analysis has it. */}
         <ProfileHero
           profile={{

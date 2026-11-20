@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import { usesServerData } from '../userTest/experience'
 import { getSessionGeneration } from '../auth/tokenStore'
 import { listMyRooms, type RoomSummary } from '../chat/matchingApi'
+import { useExperienceSession } from '../experience/session'
 
 export type MatchStatus = 'before' | 'matched'
 
@@ -42,6 +43,9 @@ function knownStatus(): MatchStatus | null {
 export function useMatchStatus(preview?: MatchStatus): MatchStatus | null {
   const isServer = usesServerData() && preview === undefined
   const [status, setStatus] = useState<MatchStatus | null>(knownStatus)
+  // The experience chat's match (experience mode, or a user test tester): the home follows the
+  // chat that finished it, but it is never a match on the server.
+  const experienceMatched = useExperienceSession()?.matched != null
 
   useEffect(() => {
     if (!isServer) return
@@ -65,5 +69,6 @@ export function useMatchStatus(preview?: MatchStatus): MatchStatus | null {
   }, [isServer])
 
   if (preview !== undefined) return preview
+  if (experienceMatched) return 'matched'
   return isServer ? status : getMatchStatus()
 }

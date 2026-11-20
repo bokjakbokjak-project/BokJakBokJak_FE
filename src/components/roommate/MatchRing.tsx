@@ -1,4 +1,5 @@
 import { isUserTestDemo } from '../../lib/userTest/userTestStore'
+import { isExperienceMode } from '../../lib/experience/mode'
 /** Ring geometry: the drawing size, the stroke's center radius and the stroke width. */
 type RingShape = { size: number; radius: number; stroke: number }
 
@@ -110,8 +111,8 @@ export default function MatchRing({
   className,
   nullMeaning = 'shared',
 }: MatchRingProps) {
-  // The user test's browse mode shows example rates, labeled as such (requested 2026-11-17).
-  const example = isUserTestDemo()
+  // The user test's browse mode and the experience mode show example rates, labeled as such.
+  const example = isUserTestDemo() || isExperienceMode()
   if (rate === null && nullMeaning === 'insufficient') {
     return variant === 'list' ? (
       <InsufficientRing

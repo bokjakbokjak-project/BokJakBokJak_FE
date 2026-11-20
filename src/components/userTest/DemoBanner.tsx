@@ -9,6 +9,7 @@ import {
   useUserTestState,
 } from '../../lib/userTest/userTestStore'
 import TestPill from './TestPill'
+import { isExperienceEnabled } from '../../lib/experience/mode'
 
 /**
  * The mode switch at the top of every service screen, in the 47px status area of the frame
@@ -25,6 +26,8 @@ export default function DemoBanner() {
   const startLiveSurvey = useStartLiveSurvey()
   // Without a signed-in tester there is no state to switch, so nothing shows.
   if (!isUserTestEnabled() || getParticipantId() === null) return null
+  // With the experience, the top switch (핵심 체험 | 전체 서비스) takes this place.
+  if (isExperienceEnabled()) return null
 
   return (
     <div

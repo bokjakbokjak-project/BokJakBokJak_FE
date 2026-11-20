@@ -23,6 +23,7 @@ import { CHAT_ROUTES } from '../../lib/chat/routes'
 import { seoulDayLabel } from '../../lib/time/seoulDate'
 import { LIST_AVATARS } from './chatAvatars'
 import SampleNotice from './SampleNotice'
+import ExperienceChatEntry from './ExperienceChatEntry'
 import FeedbackPrompt from '../../components/userTest/FeedbackPrompt'
 
 // Preview copy per room state, from the Figma list frames 1057:13344 and 1349:19651.
@@ -215,6 +216,7 @@ export default function ChatListPage() {
         data-testid="chat-list-scroll"
         className="scrollbar-none min-h-0 flex-1 overflow-y-auto px-6 pt-[19px] pb-6"
       >
+        <ExperienceChatEntry />
         {showSampleNotice && <SampleNotice className="mb-3" />}
         {rows.status === 'loading' && usesServerData() && (
           <LoadingState label="채팅방을 불러오는 중이에요" />
