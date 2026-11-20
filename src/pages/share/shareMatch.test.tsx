@@ -43,7 +43,7 @@ describe('shared match score', () => {
     vi.clearAllMocks()
     sessionStorage.clear()
     mocks.auth.mockReturnValue({ status: 'authenticated' })
-    mocks.status.mockResolvedValue({ nextStep: 'HOME' })
+    mocks.status.mockResolvedValue({ nextStep: 'HOME', surveyCompleted: true })
   })
   it('shows the score without a prompt for a completed user', async () => {
     mocks.request.mockResolvedValue({ target_user_id: 42, match_score: 87 })
@@ -54,22 +54,34 @@ describe('shared match score', () => {
       }),
     )
     expect(await screen.findByText('87')).toBeInTheDocument()
+    expect(screen.queryByTestId('shared-blurred')).not.toBeInTheDocument()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
   it('prompts an incomplete user without calling the score API', async () => {
     mocks.status.mockResolvedValue({ nextStep: 'SURVEY' })
     show(42)
     expect(await screen.findByRole('dialog')).toBeInTheDocument()
+    expect(screen.getByTestId('shared-blurred')).toBeInTheDocument()
     expect(mocks.request).not.toHaveBeenCalled()
   })
-  it('keeps old links profile-only', () => {
+  it('unlocks an old link after survey completion without requesting a score', async () => {
     show()
-    expect(screen.getByRole('dialog')).toBeInTheDocument()
+    await waitFor(() =>
+      expect(screen.queryByTestId('shared-blurred')).not.toBeInTheDocument(),
+    )
     expect(mocks.request).not.toHaveBeenCalled()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+  it('unlocks the profile even when the score request fails', async () => {
+    mocks.request.mockRejectedValue(new Error('network'))
+    show(42)
+    expect(await screen.findByRole('alert')).toBeInTheDocument()
+    expect(screen.queryByTestId('shared-blurred')).not.toBeInTheDocument()
   })
   it('keeps the share link when a signed-out visitor starts login', async () => {
     mocks.auth.mockReturnValue({ status: 'unauthenticated' })
     show(42)
+    expect(screen.getByTestId('shared-blurred')).toBeInTheDocument()
     fireEvent.click(
       within(screen.getByRole('dialog')).getAllByRole('button')[1],
     )
