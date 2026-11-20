@@ -206,15 +206,20 @@ describe('state across screens', () => {
   it('starts the survey retake from 내 설문 다시보기, with the priorities kept', async () => {
     openSeededHome()
 
-    // Straight to the my page's 설문조사 다시 하기 (requested 2026-11-20), without the my page.
+    // The my page's 설문조사 다시 하기 (requested 2026-11-20), with its confirmation.
+    fireEvent.click(screen.getByRole('button', { name: '내 설문 다시보기 →' }))
+    const confirm = screen.getByRole('alertdialog')
+    expect(confirm).toHaveTextContent(
+      /우선순위와 설문 답변을\s*다시 설정하시겠어요?/,
+    )
     await act(async () => {
       fireEvent.click(
-        screen.getByRole('button', { name: '내 설문 다시보기 →' }),
+        within(confirm).getByRole('button', { name: '다시 하기' }),
       )
     })
 
     expect(
-      await screen.findByRole('button', { name: '완료하기' }),
+      await screen.findByRole('button', { name: '다음으로' }),
     ).toBeInTheDocument()
     expect(
       screen.queryByRole('button', { name: '설문조사 다시 하기' }),
@@ -222,6 +227,12 @@ describe('state across screens', () => {
     expect(
       screen.getAllByRole('button', { pressed: true }).length,
     ).toBeGreaterThan(0)
+
+    // Back returns to the home it started from, not to the onboarding's dormitory step.
+    fireEvent.click(screen.getByRole('button', { name: '이전' }))
+    expect(
+      screen.getByRole('button', { name: '내 설문 다시보기 →' }),
+    ).toBeInTheDocument()
   })
 
   it('keeps the name, the character, and the answers through home and roommate', () => {
