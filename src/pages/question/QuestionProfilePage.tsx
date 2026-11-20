@@ -26,6 +26,7 @@ import { useMyProfile } from '../../lib/profile/myProfile'
 import { useSavedSurvey } from '../../lib/survey/useSurvey'
 import { QUESTION_COUNT, QUESTION_ROUTES } from './questionData'
 import { useQuestion } from './questionState'
+import ScrollHint from '../../components/roommate/ScrollHint'
 import FullPageLoading from '../../components/LoadState/FullPageLoading'
 
 /**
@@ -67,6 +68,7 @@ export default function QuestionProfilePage() {
   const { answers: editingAnswers, sync } = useQuestion()
   const { data } = useOnboarding()
   const shareButtonRef = useRef<HTMLButtonElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
   // `copied` is Figma 1377:36531. `failed` is not in Figma: the link is shown to copy by hand.
   // `kakaoFailed` is not in Figma either: the link stays copied for pasting.
   const [shareState, setShareState] = useState<
@@ -183,6 +185,7 @@ export default function QuestionProfilePage() {
     <RoommatePage
       footer={
         <div className="relative z-20 shrink-0 bg-brand-cream1 pt-2.5 pb-[max(28px,env(safe-area-inset-bottom))]">
+          <ScrollHint scrollRef={scrollRef} />
           <div className="mx-auto w-full max-w-[390px] px-6">
             <button
               type="button"
@@ -224,6 +227,7 @@ export default function QuestionProfilePage() {
         }
       />
       <div
+        ref={scrollRef}
         data-testid="result-scroll"
         // The back card of ProfileHero is tilted 9px above the block, so the scroll area starts
         // 9px higher and pads it back, instead of cutting the card off at its top edge.
