@@ -258,7 +258,7 @@ describe('experience run (no sign-in, no request)', () => {
     expect(getExperienceSession()!.passedCandidateIds).toEqual([])
   })
 
-  it('goes from the end of a matched chat to the roommate list without that roommate (다음 참가자)', async () => {
+  it('ends a matched chat with only 홈으로 가기, and can still drop that roommate from the list', async () => {
     useExperienceBuild()
     setAppMode('experience')
     startNewParticipant('booth')
@@ -291,9 +291,19 @@ describe('experience run (no sign-in, no request)', () => {
     })
     expect(screen.getByText('🎉 매칭이 확정되었습니다')).toBeInTheDocument()
 
-    fireEvent.click(screen.getByRole('button', { name: '다음 참가자' }))
+    // 처음부터 and 다음 참가자 left the end of the chat (requested 2026-11-20); the presenter
+    // menu keeps its own.
+    expect(
+      screen.queryByRole('button', { name: '처음부터' }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('button', { name: '다음 참가자' }),
+    ).not.toBeInTheDocument()
 
-    // The roommate list, not the start screen, and the same person.
+    // Trying another roommate (pickAnotherRoommate) keeps the person and drops the match.
+    fireEvent.click(screen.getByRole('button', { name: '홈으로 가기' }))
+    act(() => pickAnotherRoommate())
+    fireEvent.click(screen.getByRole('link', { name: '룸메이트' }))
     expect(screen.getByTestId('path').textContent).toBe('/roommate')
     expect(getExperienceSession()!.priorities).toEqual([
       'cleaning',

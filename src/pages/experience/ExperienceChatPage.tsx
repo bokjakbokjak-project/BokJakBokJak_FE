@@ -12,7 +12,6 @@ import {
   type ExperienceChatState,
 } from '../../lib/experience/chatMachine'
 import { dispatchExperienceChat } from '../../lib/experience/experienceChat'
-import { isExperienceMode } from '../../lib/experience/mode'
 import { AGREE_TEXT } from '../../lib/experience/scenarios'
 import { useExperienceSession } from '../../lib/experience/session'
 import { CHAT_ROUTES } from '../../lib/chat/routes'
@@ -27,7 +26,6 @@ import {
   LEFT_BUBBLE,
   ROUND_BUTTON,
 } from '../chat/chatRoomStyles'
-import ExperienceRestartButtons from './ExperienceRestartButtons'
 
 /** A reply to pick, drawn like my own bubble so it reads as what I will say. */
 const REPLY =
@@ -385,7 +383,6 @@ function Footer({ chat }: { chat: ExperienceChatState }) {
           >
             홈으로 가기
           </button>
-          {isExperienceMode() && <ExperienceRestartButtons />}
         </>,
       )
     default:
