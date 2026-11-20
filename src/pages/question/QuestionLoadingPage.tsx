@@ -13,6 +13,7 @@ import {
   isSchemaMismatch,
   useSurveySubmit,
 } from '../../lib/survey/useSurvey'
+import { takeShareReturn } from '../../lib/share/shareReturn'
 import { QUESTION_COUNT, QUESTION_ROUTES } from './questionData'
 import { useQuestion } from './questionState'
 
@@ -81,7 +82,7 @@ export default function QuestionLoadingPage() {
   // Replaces this entry, so back from the result returns to the survey, not to this screen.
   useEffect(() => {
     if (hasWaited && isProfileReady) {
-      navigate(QUESTION_ROUTES.profile, { replace: true })
+      navigate(takeShareReturn() ?? QUESTION_ROUTES.profile, { replace: true })
     }
   }, [hasWaited, isProfileReady, navigate])
 

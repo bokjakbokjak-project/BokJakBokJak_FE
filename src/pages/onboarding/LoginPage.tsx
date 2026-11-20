@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState, type ReactNode } from 'react'
-import { useNavigate } from 'react-router'
+import { Link } from 'react-router'
 import googleLogo from '../../assets/icons/google.svg'
 import logo from '../../assets/onboarding/logo.svg'
 import tooltipTail from '../../assets/icons/tooltip-tail.svg'
@@ -12,16 +12,9 @@ import {
   loadGoogleIdentity,
   setCredentialHandler,
 } from '../../lib/auth/googleIdentity'
-import { resolveStartRoute } from '../../lib/auth/startRoute'
+import { useStartRouteRedirect } from '../../lib/auth/useStartRouteRedirect'
 import { ONBOARDING_ROUTES } from '../../lib/onboarding/routes'
-import {
-  userTestRouteAfterSignIn,
-  userTestStartRoute,
-} from '../../lib/userTest/signIn'
-import {
-  takeShareReturn,
-  type SharedReturnState,
-} from '../../lib/share/shareReturn'
+import { userTestRouteAfterSignIn } from '../../lib/userTest/signIn'
 import { useStepNavigation } from '../../lib/onboarding/useStepNavigation'
 
 /** Google draws its button between 200px and 400px wide. */
@@ -57,40 +50,10 @@ type Phase = 'loading' | 'ready' | 'signing-in' | 'unavailable'
  * https://developers.google.com/identity/gsi/web/guides/display-button
  */
 function ServerLogin() {
-  const navigate = useNavigate()
-  const { signIn, status } = useAuth()
+  const { signIn, isSigningIn: signInPending } = useAuth()
   const clientId = getGoogleClientId()
-  // A signed-in user does not stay here: GET /api/me/status picks the screen (startRoute.ts),
-  // both when the app starts with a stored session and right after a sign-in. Without an answer
-  // a restored session stays here, as before.
-  const [stayHere, setStayHere] = useState(false)
-  const isResolving =
-    status === 'restoring' || (status === 'authenticated' && !stayHere)
-
-  useEffect(() => {
-    if (status !== 'authenticated') return
-    let isCurrent = true
-    resolveStartRoute().then((statusRoute) => {
-      if (!isCurrent) return
-      const route = userTestStartRoute(statusRoute)
-      // Came from `복작복작으로 이동` on a shared profile: back to it, to unlock it or to start
-      // the survey from there (requested 2026-11-20).
-      const sharedReturn = takeShareReturn()
-      if (sharedReturn) {
-        const state: SharedReturnState = {
-          continueShared: true,
-          startRoute: route,
-        }
-        navigate(sharedReturn, { replace: true, state })
-        return
-      }
-      if (route) navigate(route, { replace: true })
-      else setStayHere(true)
-    })
-    return () => {
-      isCurrent = false
-    }
-  }, [status, navigate])
+  // Both Google and guest sign-in use the shared redirect hook.
+  const isResolving = useStartRouteRedirect()
   // Read by Google's callback, which outlives renders.
   const isResolvingRef = useRef(isResolving)
   useEffect(() => {
@@ -172,9 +135,8 @@ function ServerLogin() {
   return (
     <LoginLayout
       googleButton={
-        // Keeps the Figma button's 61px row, so nothing around it moves while Google loads.
-        // Google's 40px button sits at the top of the row: its top edge, its width and its 17px
-        // gap to the tooltip match Figma (1036:26154), and only its lower 21px is missing.
+        // Google's 40px button (GIS `large`), as wide as the row up to 400px. The row is that
+        // height, so nothing around it moves while Google loads.
         <div
           ref={buttonRef}
           data-testid="google-signin-button"
@@ -186,10 +148,27 @@ function ServerLogin() {
             isResolving ||
             undefined
           }
-          className={`flex h-[61px] w-full items-start justify-center ${
+          className={`flex h-10 w-full items-start justify-center ${
             phase === 'ready' && !isResolving ? '' : 'pointer-events-none'
           }`}
         />
+      }
+      guestButton={
+        // 체험하기 (Figma 2708:21189): the brown pill under Google's button, 10px apart. Same
+        // width and height as Google's button as rendered (40px, row width up to 400px), as
+        // the designer asked, instead of the 61px of the Figma frame; GIS keeps its button
+        // between 200px and 400px wide, and so does this one.
+        <Link
+          to={ONBOARDING_ROUTES.guest}
+          // Not while a sign-in (Google's) is out or the screen is moving on.
+          inert={isResolving || signInPending}
+          aria-disabled={isResolving || signInPending || undefined}
+          className={`mt-[10px] flex h-10 w-full max-w-[400px] min-w-[200px] items-center justify-center rounded-full bg-brand-brown1 text-[18px] leading-[1.5] font-semibold tracking-[-0.36px] whitespace-nowrap text-white ${
+            isResolving || signInPending ? 'pointer-events-none' : ''
+          }`}
+        >
+          지금 바로 체험하기 →
+        </Link>
       }
       error={error}
     />
@@ -201,10 +180,17 @@ type LoginLayoutProps = {
   onPress?: () => void
   /** Server mode: Google's own button in place of the Figma button. */
   googleButton?: ReactNode
+  /** Server mode: 체험하기 under Google's button. */
+  guestButton?: ReactNode
   error?: string | null
 }
 
-function LoginLayout({ onPress, googleButton, error }: LoginLayoutProps) {
+function LoginLayout({
+  onPress,
+  googleButton,
+  guestButton,
+  error,
+}: LoginLayoutProps) {
   return (
     <div className="mx-auto flex w-full max-w-[390px] flex-1 flex-col items-center pt-[max(0px,calc(277px-env(safe-area-inset-top)))]">
       <main className="flex flex-col items-center">
@@ -219,7 +205,15 @@ function LoginLayout({ onPress, googleButton, error }: LoginLayoutProps) {
           상황으로 찾는 룸메이트
         </p>
       </main>
-      <div className="mt-auto flex w-full flex-col items-center pt-6 pr-[27px] pb-[max(0px,calc(76px-env(safe-area-inset-bottom)))] pl-7">
+      {/* With 체험하기 the buttons end 44px above the bottom, as in Figma 1036:26146; without it
+          (sample mode) the single button keeps its earlier 76px. */}
+      <div
+        className={`mt-auto flex w-full flex-col items-center pt-6 pr-[27px] pl-7 ${
+          guestButton
+            ? 'pb-[max(0px,calc(44px-env(safe-area-inset-bottom)))]'
+            : 'pb-[max(0px,calc(76px-env(safe-area-inset-bottom)))]'
+        }`}
+      >
         <div className="relative mb-[17px] flex h-[31px] w-[159px] items-center justify-center rounded-[100px] bg-gray-black">
           <p className="text-[14px] leading-[1.5] font-medium whitespace-nowrap text-white">
             <EmojiText
@@ -235,7 +229,7 @@ function LoginLayout({ onPress, googleButton, error }: LoginLayoutProps) {
             className="absolute top-[24px] left-[71px] h-[13px] w-[15px] max-w-none"
           />
         </div>
-        <div className="relative w-full">
+        <div className="relative flex w-full flex-col items-center">
           {googleButton ?? (
             <button
               type="button"
@@ -248,7 +242,8 @@ function LoginLayout({ onPress, googleButton, error }: LoginLayoutProps) {
               </span>
             </button>
           )}
-          {/* Not in Figma: shown below the button without moving the layout. */}
+          {guestButton}
+          {/* Not in Figma: shown below the buttons without moving the layout. */}
           {error && (
             <p
               role="alert"

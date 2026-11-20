@@ -16,7 +16,11 @@ export type AuthContextValue = {
    * below remount and nothing typed under another session stays in memory.
    */
   sessionId: number
+  /** A sign-in (Google or 체험하기) is out; another one is refused until it ends. */
+  isSigningIn: boolean
   signIn: (idToken: string) => Promise<SignInResult>
+  /** 체험하기: POST /api/auth/guest-login with a name. Each call is a new test account. */
+  signInAsGuest: (nickname: string) => Promise<SignInResult>
   /** Resolves false when another account signed in before the logout finished. */
   signOut: () => Promise<boolean>
 }
