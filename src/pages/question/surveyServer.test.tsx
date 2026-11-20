@@ -82,6 +82,12 @@ function LocationProbe() {
       <button type="button" onClick={() => navigate(QUESTION_ROUTES.profile)}>
         probe: open result
       </button>
+      <button type="button" onClick={() => navigate(MY_ROUTES.my)}>
+        probe: open my
+      </button>
+      <button type="button" onClick={() => navigate(QUESTION_ROUTES.survey)}>
+        probe: open survey
+      </button>
     </>
   )
 }
@@ -595,10 +601,21 @@ describe('server survey: retake from the my page', () => {
     )
     click('설문조사 다시 하기')
     click('다시 하기')
+    // The priority step opens once the saved survey has been read again.
+    await until(() => expect(path()).toBe(ONBOARDING_ROUTES.priority))
   }
+
+  /** The saved priorities (SMOKING, CLEANING, SLEEP_HABITS) arrive and are chosen. */
+  const prefilledPriorities = () =>
+    until(() => {
+      const chosen = screen.getAllByRole('button', { pressed: true })
+      expect(chosen).toHaveLength(3)
+      return chosen
+    })
 
   async function chooseNewPrioritiesAndStart() {
     act(() => vi.advanceTimersByTime(MISSION_NOTICE_MS))
+    for (const card of await prefilledPriorities()) fireEvent.click(card)
     click(/개인청결/)
     click(/흡연유무/)
     click(/잠버릇/)
@@ -651,18 +668,51 @@ describe('server survey: retake from the my page', () => {
     ).not.toBeInTheDocument()
   })
 
-  it('starts over, saves the new priorities with the survey and never the onboarding', async () => {
+  it('starts from the saved priorities and answers (GET /api/me/survey) and keeps them when unchanged', async () => {
     await startRetake()
 
-    // A new session holds no onboarding answers, yet the retake opens the priority step.
+    // A new session holds no onboarding answers, yet the retake opens the priority step, with
+    // the saved priorities chosen in their saved order.
     expect(path()).toBe(ONBOARDING_ROUTES.priority)
+    act(() => vi.advanceTimersByTime(MISSION_NOTICE_MS))
+    const chosen = await prefilledPriorities()
+    expect(chosen.map((card) => card.textContent)).toEqual(
+      expect.arrayContaining([
+        expect.stringMatching(/흡연유무/),
+        expect.stringMatching(/청소,청결/),
+        expect.stringMatching(/잠버릇/),
+      ]),
+    )
+    click('완료하기')
+    await until(() => expect(path()).toBe(ONBOARDING_ROUTES.complete))
+    click('시작하기!')
+
+    // The saved answers are selected; an answered question opens without its STEP screen.
+    await until(() => screen.getByText('Q1-1'))
+    expect(
+      screen.getByRole('radio', {
+        name: getQuestionStep(0).question.options[0],
+      }),
+    ).toBeChecked()
+    for (let index = 0; index < QUESTION_COUNT; index += 1) click('다음으로')
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000)
+    })
+
+    await until(() => expect(path()).toBe(QUESTION_ROUTES.profile))
+    expect(callsTo('PUT', '/api/me/onboarding')).toHaveLength(0)
+    expect(puts()[0].body).toEqual({
+      expected_revision: 2,
+      priorities: SAVED_PRIORITIES,
+      answers: FIRST_OPTION_ANSWERS,
+    })
+  })
+
+  it('saves new priorities with the survey and never the onboarding', async () => {
+    await startRetake()
     await chooseNewPrioritiesAndStart()
 
-    // The saved answers do not come back for a retake.
-    await until(() => screen.getByLabelText('STEP 1 상황'))
-    expect(
-      screen.queryByRole('radio', { checked: true }),
-    ).not.toBeInTheDocument()
+    await until(() => screen.getByText('Q1-1'))
     await answerAllAndFinish()
 
     await until(() => expect(path()).toBe(QUESTION_ROUTES.profile))
@@ -676,5 +726,363 @@ describe('server survey: retake from the my page', () => {
       ],
       answers: FIRST_OPTION_ANSWERS,
     })
+  })
+})
+
+describe('server survey: a retake after an abandoned one', () => {
+  it('starts again from what the server holds now, with its current revision', async () => {
+    let revision = 2
+    handlers['GET /api/me/survey'] = () =>
+      ok(
+        mySurveyData({
+          revision,
+          completed: true,
+          priorities: SAVED_PRIORITIES,
+          answers: FIRST_OPTION_ANSWERS,
+        }),
+      )
+    renderAt(MY_ROUTES.my)
+    await until(() =>
+      screen.getByRole('button', { name: '설문조사 다시 하기' }),
+    )
+    click('설문조사 다시 하기')
+    click('다시 하기')
+    await until(() => expect(path()).toBe(ONBOARDING_ROUTES.priority))
+    act(() => vi.advanceTimersByTime(MISSION_NOTICE_MS))
+    await until(() =>
+      expect(screen.getAllByRole('button', { pressed: true })).toHaveLength(3),
+    )
+
+    // Change the priorities and an answer, then leave without saving.
+    click(/개인청결/)
+    click('완료하기')
+    await until(() => expect(path()).toBe(ONBOARDING_ROUTES.complete))
+    click('시작하기!')
+    await until(() => screen.getByText('Q1-1'))
+    fireEvent.click(
+      screen.getByRole('radio', {
+        name: getQuestionStep(0).question.options[1],
+      }),
+    )
+    // Meanwhile another device saved the survey again.
+    revision = 5
+
+    fireEvent.click(screen.getByRole('button', { name: 'probe: open my' }))
+    await until(() =>
+      screen.getByRole('button', { name: '설문조사 다시 하기' }),
+    )
+    click('설문조사 다시 하기')
+    click('다시 하기')
+    await until(() => expect(path()).toBe(ONBOARDING_ROUTES.priority))
+
+    // The saved priorities and answers come back, not the abandoned edit.
+    await until(() =>
+      expect(screen.getAllByRole('button', { pressed: true })).toHaveLength(3),
+    )
+    expect(
+      screen.queryByRole('button', { name: /개인청결/, pressed: true }),
+    ).not.toBeInTheDocument()
+    click('완료하기')
+    await until(() => expect(path()).toBe(ONBOARDING_ROUTES.complete))
+    click('시작하기!')
+    await until(() => screen.getByText('Q1-1'))
+    expect(
+      screen.getByRole('radio', {
+        name: getQuestionStep(0).question.options[0],
+      }),
+    ).toBeChecked()
+
+    // And the save uses the revision read for this retake.
+    for (let index = 0; index < QUESTION_COUNT; index += 1) click('다음으로')
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000)
+    })
+    await until(() => expect(puts()).toHaveLength(1))
+    expect(puts()[0].body).toMatchObject({ expected_revision: 5 })
+  })
+})
+
+describe('server survey: the read before a retake', () => {
+  const savedSurvey = (revision: number) =>
+    ok(
+      mySurveyData({
+        revision,
+        completed: true,
+        priorities: SAVED_PRIORITIES,
+        answers: FIRST_OPTION_ANSWERS,
+      }),
+    )
+
+  async function openMyPageWithSurveyRead() {
+    handlers['GET /api/me/survey'] = () => savedSurvey(2)
+    // Read the survey once in this session, as the result screen does.
+    renderAt(QUESTION_ROUTES.profile)
+    await until(() =>
+      screen.getByRole('heading', { name: '전 이런 사람이에요' }),
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'probe: open my' }))
+    await until(() =>
+      screen.getByRole('button', { name: '설문조사 다시 하기' }),
+    )
+  }
+
+  it('opens nothing to edit until the saved survey has been read again', async () => {
+    await openMyPageWithSurveyRead()
+    let answer: (response: Response) => void = () => {}
+    handlers['GET /api/me/survey'] = () =>
+      new Promise<Response>((resolve) => {
+        answer = resolve
+      })
+
+    click('설문조사 다시 하기')
+    click('다시 하기')
+    await until(() => expect(callsTo('GET', '/api/me/survey')).toHaveLength(2))
+
+    // Still on the my page, and a second press cannot start another read.
+    expect(path()).toBe(MY_ROUTES.my)
+    const confirm = screen.getByRole('button', { name: '다시 하기' })
+    expect(confirm).toBeDisabled()
+    fireEvent.click(confirm)
+    expect(callsTo('GET', '/api/me/survey')).toHaveLength(2)
+
+    await act(async () => {
+      answer(savedSurvey(4))
+    })
+    await until(() => expect(path()).toBe(ONBOARDING_ROUTES.priority))
+    act(() => vi.advanceTimersByTime(MISSION_NOTICE_MS))
+    click('완료하기')
+    await until(() => expect(path()).toBe(ONBOARDING_ROUTES.complete))
+    click('시작하기!')
+    await until(() => screen.getByText('Q1-1'))
+    for (let index = 0; index < QUESTION_COUNT; index += 1) click('다음으로')
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000)
+    })
+    // The edit and its revision come from the same read.
+    await until(() => expect(puts()).toHaveLength(1))
+    expect(puts()[0].body).toMatchObject({
+      expected_revision: 4,
+      answers: FIRST_OPTION_ANSWERS,
+    })
+  })
+
+  it('changes nothing and stays when 취소 is pressed while the read is out', async () => {
+    await openMyPageWithSurveyRead()
+    let answer: (response: Response) => void = () => {}
+    handlers['GET /api/me/survey'] = () =>
+      new Promise<Response>((resolve) => {
+        answer = resolve
+      })
+
+    click('설문조사 다시 하기')
+    click('다시 하기')
+    await until(() => expect(callsTo('GET', '/api/me/survey')).toHaveLength(2))
+    click('취소')
+    await act(async () => {
+      answer(savedSurvey(4))
+    })
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(100)
+    })
+
+    expect(path()).toBe(MY_ROUTES.my)
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
+
+    // The cancelled reading was not kept: the survey still edits the answers and the revision
+    // read before (2), not the cancelled reading's (4).
+    handlers['GET /api/me/survey'] = () => savedSurvey(4)
+    fireEvent.click(screen.getByRole('button', { name: 'probe: open survey' }))
+    await until(() => screen.getByText('Q1-1'))
+    expect(
+      screen.getByRole('radio', {
+        name: getQuestionStep(0).question.options[0],
+      }),
+    ).toBeChecked()
+    for (let index = 0; index < QUESTION_COUNT; index += 1) click('다음으로')
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000)
+    })
+    await until(() => expect(puts()).toHaveLength(1))
+    expect(puts()[0].body).toMatchObject({ expected_revision: 2 })
+  })
+
+  it('cannot start a retake while a survey save is still out', async () => {
+    handlers['GET /api/me/survey'] = () =>
+      ok(mySurveyData({ priorities: SAVED_PRIORITIES }))
+    let finishSave: () => void = () => {}
+    handlers['PUT /api/me/survey'] = () =>
+      new Promise<Response>((resolve) => {
+        finishSave = () => resolve(ok(SAVED))
+      })
+    await openSurvey()
+    await answerAllAndFinish()
+    await until(() => expect(puts()).toHaveLength(1))
+
+    fireEvent.click(screen.getByRole('button', { name: 'probe: open my' }))
+    await until(() =>
+      screen.getByRole('button', { name: '설문조사 다시 하기' }),
+    )
+    click('설문조사 다시 하기')
+    const confirm = screen.getByRole('button', { name: '다시 하기' })
+    expect(confirm).toBeDisabled()
+    fireEvent.click(confirm)
+    expect(callsTo('GET', '/api/me/survey')).toHaveLength(1)
+
+    await act(async () => {
+      finishSave()
+    })
+    await until(() => expect(confirm).toBeEnabled())
+  })
+
+  it('keeps a started retake when an older read fails afterwards', async () => {
+    let failFirstRead: () => void = () => {}
+    let reads = 0
+    handlers['GET /api/me/survey'] = (call) => {
+      // The profile stand-in reads the survey internally too (auth null); only app reads count.
+      if (call.auth === null) return savedSurvey(2)
+      reads += 1
+      if (reads === 1) {
+        return new Promise<Response>((resolve) => {
+          failFirstRead = () =>
+            resolve(fail(500, 'INTERNAL_ERROR', '서버에 문제가 생겼어요.'))
+        })
+      }
+      return savedSurvey(2)
+    }
+    // The result screen starts the first read, which stays out.
+    renderAt(QUESTION_ROUTES.profile)
+    await until(() => expect(reads).toBe(1))
+    fireEvent.click(screen.getByRole('button', { name: 'probe: open my' }))
+    await until(() =>
+      screen.getByRole('button', { name: '설문조사 다시 하기' }),
+    )
+    click('설문조사 다시 하기')
+    click('다시 하기')
+    await until(() => expect(path()).toBe(ONBOARDING_ROUTES.priority))
+
+    // Now the first read fails; the retake's reading stands.
+    await act(async () => {
+      failFirstRead()
+    })
+    act(() => vi.advanceTimersByTime(MISSION_NOTICE_MS))
+    click('완료하기')
+    await until(() => expect(path()).toBe(ONBOARDING_ROUTES.complete))
+    click('시작하기!')
+    await until(() => screen.getByText('Q1-1'))
+    expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  it('starts from the survey read before when the new read fails', async () => {
+    await openMyPageWithSurveyRead()
+    handlers['GET /api/me/survey'] = () =>
+      fail(500, 'INTERNAL_ERROR', '서버에 문제가 생겼어요.')
+
+    click('설문조사 다시 하기')
+    click('다시 하기')
+
+    await until(() => expect(path()).toBe(ONBOARDING_ROUTES.priority))
+    act(() => vi.advanceTimersByTime(MISSION_NOTICE_MS))
+    expect(screen.getAllByRole('button', { pressed: true })).toHaveLength(3)
+    click('완료하기')
+    await until(() => expect(path()).toBe(ONBOARDING_ROUTES.complete))
+    click('시작하기!')
+    await until(() => screen.getByText('Q1-1'))
+    expect(
+      screen.getByRole('radio', {
+        name: getQuestionStep(0).question.options[0],
+      }),
+    ).toBeChecked()
+  })
+})
+
+describe('server survey: new questions added (survey_update_required)', () => {
+  // A user who finished the survey before the temperature questions existed: the server kept
+  // the revision and the other 14 answers, and asks for the survey again (BE PR #73).
+  const OLD_ANSWERS = FIRST_OPTION_ANSWERS.filter(
+    ({ question_code }) => !question_code.startsWith('TEMPERATURE_'),
+  )
+
+  beforeEach(() => {
+    handlers['GET /api/me/survey'] = () =>
+      ok(
+        mySurveyData({
+          revision: 3,
+          completed: false,
+          priorities: SAVED_PRIORITIES,
+          answers: OLD_ANSWERS,
+        }),
+      )
+  })
+
+  it('explains the new questions once, then opens the first unanswered one', async () => {
+    renderAt(QUESTION_ROUTES.survey)
+
+    const notice = await until(() =>
+      screen.getByRole('dialog', { name: '새로운 질문이 추가됐어요' }),
+    )
+    expect(notice).toHaveTextContent('이전 답변은 그대로 남아 있어요.')
+    click('확인')
+
+    // The temperature topic is STEP 7 on screen (Q13), the first question without an answer.
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    expect(screen.getByLabelText('STEP 7 상황')).toBeInTheDocument()
+    finishSituation()
+    expect(screen.getByText('Q7-1')).toBeInTheDocument()
+
+    // Going back shows the old answers, already selected, and the notice does not come back.
+    click('이전으로')
+    expect(screen.getByText('Q6-2')).toBeInTheDocument()
+    expect(
+      screen.getByRole('radio', {
+        name: getQuestionStep(11).question.options[0],
+      }),
+    ).toBeChecked()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('saves all 16 answers with the revision it read, then opens the result', async () => {
+    renderAt(QUESTION_ROUTES.survey)
+    await until(() => screen.getByRole('dialog'))
+    click('확인')
+
+    for (let index = 12; index < QUESTION_COUNT; index += 1) {
+      if (screen.queryByLabelText(/^STEP \d+ 상황$/)) finishSituation()
+      // The new temperature answers; the smoking answers after them are the old ones.
+      if (index < 14) pickFirst(index)
+      click('다음으로')
+    }
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000)
+    })
+
+    await until(() => expect(path()).toBe(QUESTION_ROUTES.profile))
+    expect(puts()).toHaveLength(1)
+    expect(puts()[0].body).toEqual({
+      expected_revision: 3,
+      priorities: SAVED_PRIORITIES,
+      answers: FIRST_OPTION_ANSWERS,
+    })
+  })
+
+  it('shows no notice to a user whose survey is complete or not started', async () => {
+    handlers['GET /api/me/survey'] = () =>
+      ok(
+        mySurveyData({
+          revision: 2,
+          completed: true,
+          priorities: SAVED_PRIORITIES,
+          answers: FIRST_OPTION_ANSWERS,
+        }),
+      )
+    renderAt(QUESTION_ROUTES.survey)
+    await until(() => screen.getByText('Q1-1'))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+  })
+
+  it('shows no notice before the first submit', async () => {
+    handlers['GET /api/me/survey'] = () =>
+      ok(mySurveyData({ priorities: SAVED_PRIORITIES }))
+    await openSurvey()
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
   })
 })

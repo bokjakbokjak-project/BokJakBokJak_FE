@@ -12,7 +12,7 @@ import {
   loadGoogleIdentity,
   setCredentialHandler,
 } from '../../lib/auth/googleIdentity'
-import { routeForNextStep } from '../../lib/auth/nextStep'
+import { resolveStartRoute } from '../../lib/auth/startRoute'
 import { ONBOARDING_ROUTES } from '../../lib/onboarding/routes'
 import { useStepNavigation } from '../../lib/onboarding/useStepNavigation'
 
@@ -50,8 +50,32 @@ type Phase = 'loading' | 'ready' | 'signing-in' | 'unavailable'
  */
 function ServerLogin() {
   const navigate = useNavigate()
-  const { signIn } = useAuth()
+  const { signIn, status } = useAuth()
   const clientId = getGoogleClientId()
+  // A signed-in user does not stay here: GET /api/me/status picks the screen (startRoute.ts),
+  // both when the app starts with a stored session and right after a sign-in. Without an answer
+  // a restored session stays here, as before.
+  const [stayHere, setStayHere] = useState(false)
+  const isResolving =
+    status === 'restoring' || (status === 'authenticated' && !stayHere)
+
+  useEffect(() => {
+    if (status !== 'authenticated') return
+    let isCurrent = true
+    resolveStartRoute().then((route) => {
+      if (!isCurrent) return
+      if (route) navigate(route, { replace: true })
+      else setStayHere(true)
+    })
+    return () => {
+      isCurrent = false
+    }
+  }, [status, navigate])
+  // Read by Google's callback, which outlives renders.
+  const isResolvingRef = useRef(isResolving)
+  useEffect(() => {
+    isResolvingRef.current = isResolving
+  }, [isResolving])
   const buttonRef = useRef<HTMLDivElement>(null)
   const isSigningIn = useRef(false)
   const [phase, setPhase] = useState<Phase>(
@@ -66,13 +90,14 @@ function ServerLogin() {
     let isCurrent = true
 
     const removeHandler = setCredentialHandler(async (credential) => {
-      if (isSigningIn.current) return
+      // Signed in already and moving on: a second sign-in would start another session.
+      if (isSigningIn.current || isResolvingRef.current) return
       isSigningIn.current = true
       setPhase('signing-in')
       setError(null)
       try {
-        const result = await signIn(credential)
-        navigate(routeForNextStep(result.nextStep), { replace: true })
+        // The sign-in remounts this screen with the new session; the effect above moves on.
+        await signIn(credential)
       } catch (signInError) {
         if (!isCurrent) return
         // The server's messages are written for users (Notion spec, POST /api/auth/login).
@@ -120,7 +145,7 @@ function ServerLogin() {
       isCurrent = false
       removeHandler()
     }
-  }, [clientId, navigate, signIn])
+  }, [clientId, signIn])
 
   return (
     <LoginLayout
@@ -131,9 +156,16 @@ function ServerLogin() {
         <div
           ref={buttonRef}
           data-testid="google-signin-button"
-          aria-busy={phase === 'loading' || phase === 'signing-in' || undefined}
+          // Keyboard too, not only the pointer: nothing to press until the button can be used.
+          inert={!(phase === 'ready' && !isResolving)}
+          aria-busy={
+            phase === 'loading' ||
+            phase === 'signing-in' ||
+            isResolving ||
+            undefined
+          }
           className={`flex h-[61px] w-full items-start justify-center ${
-            phase === 'ready' ? '' : 'pointer-events-none'
+            phase === 'ready' && !isResolving ? '' : 'pointer-events-none'
           }`}
         />
       }

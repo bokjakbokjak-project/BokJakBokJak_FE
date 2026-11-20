@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import AppRoutes from '../../app/AppRoutes'
 import { apiRequest } from '../api/apiClient'
 import { resetGoogleIdentityForTests } from './googleIdentity'
+import { resetStartRouteForTests } from './startRoute'
 import { clearTokens, getAccessToken, getRefreshToken } from './tokenStore'
 
 const BASE = 'https://api.example.test'
@@ -76,8 +77,14 @@ const google = {
 function installGoogle() {
   window.google = { accounts: { id: google } }
 }
+/** Like a user: waits until Google's button can be pressed, then picks the account. */
 async function chooseGoogleAccount() {
   await waitFor(() => expect(google.renderButton).toHaveBeenCalled())
+  await waitFor(() =>
+    expect(screen.getByTestId('google-signin-button')).not.toHaveAttribute(
+      'inert',
+    ),
+  )
   await act(async () => {
     googleConfig?.callback({ credential: 'google-id-token' })
   })
@@ -124,6 +131,7 @@ beforeEach(() => {
   vi.clearAllMocks()
   clearTokens()
   resetGoogleIdentityForTests()
+  resetStartRouteForTests()
 })
 
 afterEach(() => {
@@ -426,6 +434,8 @@ describe('server mode: switching accounts', () => {
           refresh_token: 'refresh-b',
         })
       }
+      // A server without the status API yet: the login answer's next_step decides.
+      if (requestPath === '/api/me/status') return fail(404, 'NOT_FOUND')
       return new Promise<Response>((resolve) => {
         finishLogout = () => resolve(ok(null))
       })
@@ -516,6 +526,7 @@ describe('server mode: session end', () => {
   it('forgets what the previous user typed once the session ends', async () => {
     serve((requestPath) => {
       if (requestPath === '/api/auth/login') return ok(loginData('ONBOARDING'))
+      if (requestPath === '/api/me/status') return fail(404, 'NOT_FOUND')
       if (requestPath === '/api/auth/refresh') {
         return fail(401, 'INVALID_REFRESH_TOKEN')
       }
@@ -536,5 +547,223 @@ describe('server mode: session end', () => {
     await chooseGoogleAccount()
     await waitFor(() => expect(path()).toBe('/onboarding/school'))
     expect(screen.getByLabelText('학과')).toHaveValue('')
+  })
+})
+
+describe('server mode: start screen from GET /api/me/status', () => {
+  beforeEach(() => {
+    useServerMode()
+    installGoogle()
+  })
+
+  const status = (nextStep: string, extra: Record<string, unknown> = {}) => ({
+    onboarding_completed: nextStep !== 'ONBOARDING',
+    survey_completed: nextStep === 'HOME',
+    survey_update_required: false,
+    next_step: nextStep,
+    matched: false,
+    matching_id: null,
+    ...extra,
+  })
+
+  it.each([
+    ['ONBOARDING', '/onboarding/school'],
+    ['SURVEY', '/question'],
+    ['HOME', '/home'],
+  ])(
+    'opens %s from the first screen when the app starts with a session',
+    async (nextStep, target) => {
+      sessionStorage.setItem(STORAGE_KEY, 'refresh-0')
+      serve((requestPath) =>
+        requestPath === '/api/auth/refresh'
+          ? ok(tokens(1))
+          : requestPath === '/api/me/status'
+            ? ok(status(nextStep))
+            : fail(404, 'NOT_FOUND'),
+      )
+      renderAt('/')
+
+      await waitFor(() => expect(path()).toBe(target))
+      const [call] = callsTo('/api/me/status')
+      expect(authOf(call)).toBe('Bearer access-1')
+      expect(callsTo('/api/me/status')).toHaveLength(1)
+    },
+  )
+
+  it('sends a user who must answer the new questions to the survey', async () => {
+    sessionStorage.setItem(STORAGE_KEY, 'refresh-0')
+    serve((requestPath) =>
+      requestPath === '/api/auth/refresh'
+        ? ok(tokens(1))
+        : requestPath === '/api/me/status'
+          ? ok(
+              status('SURVEY', {
+                onboarding_completed: true,
+                survey_update_required: true,
+              }),
+            )
+          : fail(404, 'NOT_FOUND'),
+    )
+    renderAt('/')
+
+    await waitFor(() => expect(path()).toBe('/question'))
+  })
+
+  it('stays on the first screen when the server has no status API yet', async () => {
+    sessionStorage.setItem(STORAGE_KEY, 'refresh-0')
+    serve((requestPath) =>
+      requestPath === '/api/auth/refresh'
+        ? ok(tokens(1))
+        : fail(404, 'NOT_FOUND'),
+    )
+    renderAt('/')
+
+    await waitFor(() => expect(callsTo('/api/me/status')).toHaveLength(1))
+    await waitFor(() =>
+      expect(screen.getByTestId('google-signin-button')).not.toHaveAttribute(
+        'aria-busy',
+      ),
+    )
+    expect(path()).toBe('/')
+    expect(getRefreshToken()).toBe('refresh-1')
+  })
+
+  it('waits on the first screen while the status is read, so the button cannot be pressed', async () => {
+    sessionStorage.setItem(STORAGE_KEY, 'refresh-0')
+    let answer: (response: Response) => void = () => {}
+    serve((requestPath) =>
+      requestPath === '/api/auth/refresh'
+        ? ok(tokens(1))
+        : new Promise<Response>((resolve) => {
+            answer = resolve
+          }),
+    )
+    renderAt('/')
+
+    await waitFor(() => expect(callsTo('/api/me/status')).toHaveLength(1))
+    const slot = screen.getByTestId('google-signin-button')
+    expect(slot).toHaveAttribute('aria-busy', 'true')
+    expect(slot).toHaveClass('pointer-events-none')
+
+    await act(async () => {
+      answer(ok(status('HOME')))
+    })
+    await waitFor(() => expect(path()).toBe('/home'))
+  })
+
+  it('follows the status, not the login answer, right after a sign-in', async () => {
+    serve((requestPath) =>
+      requestPath === '/api/auth/login'
+        ? ok(loginData('SURVEY'))
+        : requestPath === '/api/me/status'
+          ? ok(status('HOME'))
+          : fail(404, 'NOT_FOUND'),
+    )
+    renderAt('/')
+
+    await chooseGoogleAccount()
+
+    await waitFor(() => expect(path()).toBe('/home'))
+    expect(authOf(callsTo('/api/me/status')[0])).toBe('Bearer access-1')
+  })
+
+  it('falls back to the login answer when the status cannot be read', async () => {
+    serve((requestPath) =>
+      requestPath === '/api/auth/login'
+        ? ok(loginData('SURVEY'))
+        : fail(500, 'INTERNAL_ERROR'),
+    )
+    renderAt('/')
+
+    await chooseGoogleAccount()
+
+    await waitFor(() => expect(path()).toBe('/question'))
+    expect(callsTo('/api/me/status')).toHaveLength(1)
+  })
+
+  it('keeps the new session when a server without the status API answers 401', async () => {
+    let refreshes = 0
+    serve((requestPath) => {
+      if (requestPath === '/api/auth/login') return ok(loginData('SURVEY'))
+      if (requestPath === '/api/auth/refresh') {
+        refreshes += 1
+        return ok(tokens(refreshes + 1))
+      }
+      if (requestPath === '/api/me/status') return fail(401, 'UNAUTHORIZED')
+      return fail(404, 'NOT_FOUND')
+    })
+    renderAt('/')
+
+    await chooseGoogleAccount()
+
+    // 401, a successful refresh, 401 again: only the status request fails.
+    await waitFor(() => expect(path()).toBe('/question'))
+    expect(callsTo('/api/me/status')).toHaveLength(2)
+    expect(callsTo('/api/auth/refresh')).toHaveLength(1)
+    expect(getRefreshToken()).toBe('refresh-2')
+    expect(getAccessToken()).toBe('access-2')
+  })
+
+  it('still signs out when the refresh itself is refused during the status read', async () => {
+    serve((requestPath) => {
+      if (requestPath === '/api/auth/login') return ok(loginData('SURVEY'))
+      if (requestPath === '/api/auth/refresh') {
+        return fail(401, 'INVALID_REFRESH_TOKEN')
+      }
+      return fail(401, 'UNAUTHORIZED')
+    })
+    renderAt('/')
+
+    await chooseGoogleAccount()
+
+    await waitFor(() => expect(getRefreshToken()).toBeNull())
+    expect(path()).toBe('/')
+  })
+
+  it('ignores a second Google credential while the status is read', async () => {
+    let answer: (response: Response) => void = () => {}
+    serve((requestPath) =>
+      requestPath === '/api/auth/login'
+        ? ok(loginData('HOME'))
+        : new Promise<Response>((resolve) => {
+            answer = resolve
+          }),
+    )
+    renderAt('/')
+    await chooseGoogleAccount()
+    await waitFor(() => expect(callsTo('/api/me/status')).toHaveLength(1))
+    expect(screen.getByTestId('google-signin-button')).toHaveAttribute('inert')
+
+    await act(async () => {
+      googleConfig?.callback({ credential: 'google-id-token' })
+    })
+    expect(callsTo('/api/auth/login')).toHaveLength(1)
+
+    await act(async () => {
+      answer(ok(status('HOME')))
+    })
+    await waitFor(() => expect(path()).toBe('/home'))
+  })
+
+  it('reads the status once under StrictMode', async () => {
+    sessionStorage.setItem(STORAGE_KEY, 'refresh-0')
+    serve((requestPath) =>
+      requestPath === '/api/auth/refresh'
+        ? ok(tokens(1))
+        : requestPath === '/api/me/status'
+          ? ok(status('HOME'))
+          : fail(404, 'NOT_FOUND'),
+    )
+    render(
+      <StrictMode>
+        <MemoryRouter initialEntries={['/']}>
+          <AppRoutes />
+          <LocationProbe />
+        </MemoryRouter>
+      </StrictMode>,
+    )
+
+    await waitFor(() => expect(path()).toBe('/home'))
+    expect(callsTo('/api/me/status')).toHaveLength(1)
   })
 })

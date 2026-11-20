@@ -169,7 +169,7 @@ describe('my page', () => {
 
     fireEvent.click(button('설문조사 다시 하기'))
     expect(
-      screen.getByRole('alertdialog', { name: /처음부터 다시 설정/ }),
+      screen.getByRole('alertdialog', { name: /다시 설정하시겠어요/ }),
     ).toBeInTheDocument()
   })
 
@@ -353,9 +353,9 @@ describe('retaking the survey', () => {
     vi.useRealTimers()
   })
 
-  const answerAll = () => {
+  const answerAll = ({ withSituations = true } = {}) => {
     for (let index = 0; index < QUESTION_COUNT; index += 1) {
-      if (index % 2 === 0) {
+      if (index % 2 === 0 && withSituations) {
         finishSituation()
       }
       const topic = QUESTION_TOPICS[Math.floor(index / 2)]
@@ -375,7 +375,11 @@ describe('retaking the survey', () => {
 
     fireEvent.click(button('설문조사 다시 하기'))
     const dialog = screen.getByRole('alertdialog')
-    expect(dialog).toHaveTextContent('처음부터 다시 설정하시겠어요?')
+    expect(dialog).toHaveTextContent('다시 설정하시겠어요?')
+    // The answers come prefilled, and a changed save restarts the agenda talks of a chat.
+    expect(dialog).toHaveAccessibleDescription(/이전 답변이 미리 채워져 있어요/)
+    expect(dialog).toHaveTextContent('안건 조율이 처음부터')
+    expect(dialog).toHaveTextContent('대화 내용은 그대로 남아요')
 
     fireEvent.click(within(dialog).getByRole('button', { name: '취소' }))
 
@@ -384,7 +388,7 @@ describe('retaking the survey', () => {
     expect(layer('head')).toBe('sleep-habit')
   })
 
-  it('starts again from the priority step and shows the new answers afterwards', () => {
+  it('starts from the priority step with the saved priorities and answers, and shows the changes afterwards', async () => {
     vi.useFakeTimers()
     openSeededMyPage()
 
@@ -394,10 +398,17 @@ describe('retaking the survey', () => {
         name: '다시 하기',
       }),
     )
+    await act(async () => {})
 
-    // The priority step opens with no selection, and the mission notice is not forced again.
-    expect(screen.queryByRole('button', { pressed: true })).toBeNull()
+    // The priority step opens with the saved priorities chosen, ready to be finished as they are.
+    const prefilled = screen.getAllByRole('button', { pressed: true })
+    expect(prefilled.length).toBeGreaterThanOrEqual(3)
+    expect(layer('head')).toBe('sleep-habit')
     const finish = button('완료하기')
+    expect(finish).toBeEnabled()
+
+    // Choosing again: clear them first.
+    for (const card of prefilled) fireEvent.click(card)
     expect(finish).toBeDisabled()
 
     fireEvent.click(button(/흡연유무/))
@@ -419,11 +430,11 @@ describe('retaking the survey', () => {
     ).toBeInTheDocument()
     fireEvent.click(button('시작하기!'))
 
-    // The survey starts again at the first question, with nothing selected.
-    expect(
-      screen.getByRole('heading', { name: /밤에 함께 자고 있는데/ }),
-    ).toBeInTheDocument()
-    answerAll()
+    // The survey starts again at the first question with the saved answer selected. An answered
+    // question opens without its STEP screen, as when going back to it (상황 보기 still shows it).
+    expect(screen.getByText('Q1-1')).toBeInTheDocument()
+    expect(screen.getByRole('radio', { name: selfOption(0, 0) })).toBeChecked()
+    answerAll({ withSituations: false })
 
     expect(
       screen.getByRole('heading', { name: '미리보기님' }),
