@@ -143,8 +143,8 @@ export const QUESTION_TOPICS: readonly QuestionTopic[] = [
     roommate: {
       text: '룸메이트는 최소 어느 정도로\n바닥 청소를 해주면 괜찮을까요?',
       options: [
-        '거의 매일 한다',
-        '주 2~3회 한다',
+        '거의 매일 해야 한다',
+        '주 2~3회는 해야 한다',
         '주 1회면 괜찮다',
         '2주 1회면 괜찮다',
         '필요할 때만 해도 괜찮다',
@@ -202,35 +202,6 @@ export const QUESTION_TOPICS: readonly QuestionTopic[] = [
     },
   },
   {
-    // Replaces the dishes topic in the same place (2026-11-19). Copy from Figma 1377:49785:
-    // STEP 2441:20834, questions 2441:21272 and 2441:21608. One answer per question, like the
-    // other topics.
-    id: 'temperature',
-    situation:
-      '초여름이나 초겨울, 냉난방을 사용해요.\n계속 켜두는 사람도 있고, 필요할 때만\n잠깐 사용하는 사람도 있어요.',
-    scene: sceneTemperature,
-    situationScene: { src: situationTemperature, tone: 'light' },
-    layout: 'low',
-    self: {
-      text: '평소 냉난방과 관련해 내\n경험과 가까운 것을 모두 골라주세요',
-      options: [
-        '방에 있는 동안 계속 켜두는 편이다',
-        '덥거나 추울 때 일정시간 이상 켜둔다',
-        '덥거나 추울 때 잠깐 켰다가 끈다',
-        '거의 사용하지 않는다',
-      ],
-    },
-    roommate: {
-      text: '룸메이트의 냉난방 습관 중, 함께 지내기\n힘들 것 같은 것을 모두 골라 주세요.',
-      options: [
-        '방에 있는 동안 계속 켜두어도 괜찮다',
-        '덥거나 추울 때 일정시간 이상 켜두어도 괜찮다',
-        '덥거나 추울 때 잠깐 켰다가 꺼줬으면 한다',
-        '거의 사용하지 않았으면 좋겠다',
-      ],
-    },
-  },
-  {
     id: 'smoking',
     situation:
       '룸메이트가 밖에서 담배를 피우고 방으로\n돌아왔어요. 냄새가 날 수 있어요.',
@@ -251,6 +222,35 @@ export const QUESTION_TOPICS: readonly QuestionTopic[] = [
         '실외에서만 하고 냄새가 거의 없으면 괜찮다',
         '가능한 비흡연자였으면 좋겠다',
         '흡연자와는 같은 방이 어렵다',
+      ],
+    },
+  },
+  {
+    // Replaced the dishes topic (2026-11-19) and comes last, after smoking, in the backend's order
+    // (Q15·16, 2026-11-20). Copy from Figma 1377:49785: STEP 2441:20834, questions 2441:21272 and
+    // 2441:21608. One answer per question, like the other topics.
+    id: 'temperature',
+    situation:
+      '초여름이나 초겨울, 냉난방을 사용해요.\n계속 켜두는 사람도 있고, 필요할 때만\n잠깐 사용하는 사람도 있어요.',
+    scene: sceneTemperature,
+    situationScene: { src: situationTemperature, tone: 'light' },
+    layout: 'low',
+    self: {
+      text: '평소 냉난방과 관련해 내\n경험과 가까운 것을 골라주세요',
+      options: [
+        '방에 있는 동안 계속 켜두는 편이다',
+        '덥거나 추울 때 일정시간 이상 켜둔다',
+        '덥거나 추울 때 잠깐 켰다가 끈다',
+        '거의 사용하지 않는다',
+      ],
+    },
+    roommate: {
+      text: '룸메이트의 냉난방 습관 중, 함께 지내기\n힘들 것 같은 것을 골라 주세요.',
+      options: [
+        '방에 있는 동안 계속 켜두어도 괜찮다',
+        '덥거나 추울 때 일정시간 이상 켜두어도 괜찮다',
+        '덥거나 추울 때 잠깐 켰다가 꺼줬으면 한다',
+        '거의 사용하지 않았으면 좋겠다',
       ],
     },
   },

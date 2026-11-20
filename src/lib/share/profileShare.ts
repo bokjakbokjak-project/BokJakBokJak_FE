@@ -20,13 +20,26 @@ export const SHARE_ROUTE = '/share'
 
 // There is no server to keep a shared profile, so the link carries it in the hash. The hash is
 // not sent to the server, and answers travel as option numbers (question OPEN_QUESTIONS PL-7).
-// Version 2 (2026-11-19): the dishes topic became 온도 in the same place, so a version 1 link's
-// answers there are dishes answers and are left out instead of read as 온도 answers.
-type Payload = { v: 1 | 2; n: string; d: string; p: CategoryId[]; a: number[] }
+// Older links keep working, with their answers moved to where those questions are now:
+// - Version 1: questions 13·14 were dishes (removed, so left out) and 15·16 smoking.
+// - Version 2 (2026-11-19): 13·14 were 온도 and 15·16 smoking.
+// - Version 3 (2026-11-20): the backend's order, 13·14 smoking and 15·16 온도.
+type Payload = {
+  v: 1 | 2 | 3
+  n: string
+  d: string
+  p: CategoryId[]
+  a: number[]
+}
 
-const SHARE_VERSION = 2
-/** Screen indexes of the dishes questions in version 1 links, now the 온도 questions. */
-const V1_DISHES_INDEXES: ReadonlySet<number> = new Set([12, 13])
+const SHARE_VERSION = 3
+
+/** Screen index today of an answer at `index` in a link of `version`, or null if dropped. */
+function currentIndex(version: 1 | 2 | 3, index: number): number | null {
+  if (version === 3 || index < 12) return index
+  if (version === 1) return index < 14 ? null : index - 2
+  return index < 14 ? index + 2 : index - 2
+}
 
 function toBase64Url(text: string) {
   const bytes = new TextEncoder().encode(text)
@@ -66,7 +79,7 @@ export function readSharedProfile(hash: string): SharedProfile | null {
   try {
     const payload = JSON.parse(fromBase64Url(hash.replace(/^#/, ''))) as Payload
     if (
-      (payload?.v !== 1 && payload?.v !== SHARE_VERSION) ||
+      (payload?.v !== 1 && payload?.v !== 2 && payload?.v !== SHARE_VERSION) ||
       typeof payload.n !== 'string' ||
       typeof payload.d !== 'string' ||
       !Array.isArray(payload.p) ||
@@ -76,8 +89,9 @@ export function readSharedProfile(hash: string): SharedProfile | null {
       return null
     }
     const answers: Record<number, string> = {}
-    payload.a.forEach((option, index) => {
-      if (payload.v === 1 && V1_DISHES_INDEXES.has(index)) return
+    payload.a.forEach((option, linkIndex) => {
+      const index = currentIndex(payload.v, linkIndex)
+      if (index === null) return
       const text = getQuestionStep(index).question.options[option]
       if (typeof option === 'number' && text !== undefined)
         answers[index] = text

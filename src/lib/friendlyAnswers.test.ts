@@ -20,10 +20,10 @@ describe('friendly answers on the detail profile', () => {
       friendlyAnswer('sleep-habit', 'self', '자주 있다는 말을 들었다'),
     ).toBe('자주 있다는 말을 들었어요')
     expect(friendlyAnswer('smoking', 'self', '비흡연자다')).toBe('비흡연자예요')
-    // The same label means the roommate's minimum on the roommate side.
-    expect(friendlyAnswer('floor-cleaning', 'roommate', '거의 매일 한다')).toBe(
-      '거의 매일 청소했으면 좋겠어요',
-    )
+    // The roommate's minimum, with the server's label (FLOOR_CLEAN_T).
+    expect(
+      friendlyAnswer('floor-cleaning', 'roommate', '거의 매일 해야 한다'),
+    ).toBe('거의 매일 청소했으면 좋겠어요')
   })
 
   it('shows an answer named like an object member as it is', () => {

@@ -572,7 +572,12 @@ describe('recommendations after a survey save', () => {
     )
     fireEvent.click(screen.getByRole('button', { name: '설문조사 다시 하기' }))
     fireEvent.click(screen.getByRole('button', { name: '다시 하기' }))
+    await until(() => screen.getByRole('button', { name: '완료하기' }))
     act(() => vi.advanceTimersByTime(MISSION_NOTICE_MS))
+    // The retake starts from the current priorities; clear them to choose again.
+    for (const card of screen.queryAllByRole('button', { pressed: true })) {
+      fireEvent.click(card)
+    }
     for (const category of [/개인청결/, /흡연유무/, /잠버릇/]) {
       fireEvent.click(screen.getByRole('button', { name: category }))
     }

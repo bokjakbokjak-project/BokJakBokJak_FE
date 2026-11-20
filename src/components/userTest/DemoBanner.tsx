@@ -37,7 +37,7 @@ export default function DemoBanner() {
           <button
             type="button"
             className="shrink-0 rounded-full bg-roommate-pink px-2.5 py-[3px] text-[11px] leading-[1.4] font-bold whitespace-nowrap text-brand-brown1 transition-transform active:scale-95"
-            onClick={() => startLiveSurvey()}
+            onClick={() => void startLiveSurvey()}
           >
             직접 설문하고 매칭하기
           </button>

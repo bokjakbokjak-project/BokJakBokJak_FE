@@ -71,10 +71,10 @@ const FRIENDLY_ANSWERS: Readonly<
       '더 드물게 한다': '더 드물게 청소해요',
       '거의 매일 해야한다': '거의 매일 청소해요',
     },
-    // The first two are the roommate's minimum (`해야 한다` on the server, LABEL_DIFFERENCES).
+    // The roommate's minimum, with the server's `해야 한다` labels (FLOOR_CLEAN_T).
     roommate: {
-      '거의 매일 한다': '거의 매일 청소했으면 좋겠어요',
-      '주 2~3회 한다': '주 2~3회는 청소했으면 좋겠어요',
+      '거의 매일 해야 한다': '거의 매일 청소했으면 좋겠어요',
+      '주 2~3회는 해야 한다': '주 2~3회는 청소했으면 좋겠어요',
       '주 1회면 괜찮다': '주 1회면 괜찮아요',
       '2주 1회면 괜찮다': '2주 1회면 괜찮아요',
       '필요할 때만 해도 괜찮다': '필요할 때만 해도 괜찮아요',

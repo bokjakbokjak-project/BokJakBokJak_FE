@@ -2,6 +2,7 @@ import type { SignInResult } from '../auth/authDto'
 import { isUserTestEnabled } from './config'
 import { startParticipant } from './userTestStore'
 import { USER_TEST_ROUTES } from './routes'
+import { HOME_ROUTES } from '../home/routes'
 
 /**
  * After a sign-in in the user test build: records the tester and opens the test start screen
@@ -18,4 +19,16 @@ export function userTestRouteAfterSignIn(result: SignInResult): string | null {
     surveyCompleted: result.surveyCompleted,
   })
   return result.nextStep === 'HOME' ? null : USER_TEST_ROUTES.start
+}
+
+/**
+ * The login now picks the screen from GET /api/me/status (startRoute.ts). In the user test a
+ * tester who still has to take the survey goes to the test start screen instead; the home and
+ * staying on the login are kept.
+ */
+export function userTestStartRoute(route: string | null): string | null {
+  if (!isUserTestEnabled() || route === null || route === HOME_ROUTES.home) {
+    return route
+  }
+  return USER_TEST_ROUTES.start
 }

@@ -1,5 +1,6 @@
 import { apiRequest } from '../api/apiClient'
 import { parseLoginResponse, type SignInResult } from './authDto'
+import { rememberSignInStep } from './startRoute'
 import {
   clearTokens,
   getRefreshToken,
@@ -17,6 +18,8 @@ export async function loginWithGoogle(idToken: string): Promise<SignInResult> {
   })
   const { tokens, result } = parseLoginResponse(data)
   startSession(tokens)
+  // Kept for the new session before any screen reacts to it (startRoute.ts).
+  rememberSignInStep(result.nextStep)
   return result
 }
 

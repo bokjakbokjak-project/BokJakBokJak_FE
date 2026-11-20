@@ -55,7 +55,7 @@ function ChatItemView({
   switch (item.kind) {
     case 'intro':
       return (
-        <AiCard title="안건 조율을 시작할께요!">
+        <AiCard title="안건 조율을 시작할게요!">
           <p>
             안녕하세요 이번 조율을 함께할 {BOT_NAME}입니다! AI 리포트를 기반으로
             함께 조율할 내용을 선정하여 추천해드려요!

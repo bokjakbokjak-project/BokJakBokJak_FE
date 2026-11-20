@@ -10,20 +10,25 @@ import { getUserTestState, setExperienceMode } from './userTestStore'
  *
  * - Before the first survey it is the onboarding's priority step, with the shared basic
  *   information already filled in; the answers given so far stay.
- * - After a saved survey it starts over like 마이페이지 「설문조사 다시 하기」: the server refuses
- *   another onboarding save then, so the new priorities go with the survey.
+ * - After a saved survey it is 마이페이지 「설문조사 다시 하기」: the saved priorities and answers
+ *   come prefilled, and the new priorities go with the survey (the server refuses another
+ *   onboarding save then).
  */
 export function useStartLiveSurvey() {
   const navigate = useNavigate()
   const { update } = useOnboarding()
-  const { startRetake } = useQuestion()
+  const { readForRetake, startRetake } = useQuestion()
 
-  return (patch?: Parameters<typeof update>[0]) => {
+  return async (patch?: Parameters<typeof update>[0]) => {
     if (patch) update(patch)
     setExperienceMode('live')
     if (getUserTestState().surveyCompleted) {
-      update({ priorities: [] })
-      startRetake()
+      try {
+        startRetake(await readForRetake())
+      } catch {
+        // Another account signed in meanwhile: that session's screens take over.
+        return
+      }
     }
     navigate(ONBOARDING_ROUTES.priority)
   }

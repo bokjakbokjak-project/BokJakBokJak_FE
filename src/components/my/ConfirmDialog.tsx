@@ -4,10 +4,14 @@ import { useModalLayer } from '../../lib/onboarding/useModalLayer'
 
 type ConfirmDialogProps = {
   message: string
+  /** Smaller gray lines under the message, such as what the action changes. Line breaks are kept. */
+  detail?: string
   confirmLabel: string
   triggerRef: RefObject<HTMLElement | null>
   onConfirm: () => void
   onCancel: () => void
+  /** Disables the confirm button while its work runs. Off by default. */
+  confirmDisabled?: boolean
 }
 
 const BUTTON_CLASS =
@@ -19,14 +23,17 @@ const BUTTON_CLASS =
  */
 export default function ConfirmDialog({
   message,
+  detail,
   confirmLabel,
   triggerRef,
   onConfirm,
   onCancel,
+  confirmDisabled = false,
 }: ConfirmDialogProps) {
   const overlayRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
   const messageId = useId()
+  const detailId = useId()
 
   useModalLayer({ overlayRef, contentRef, triggerRef })
 
@@ -42,6 +49,7 @@ export default function ConfirmDialog({
           role="alertdialog"
           aria-modal="true"
           aria-labelledby={messageId}
+          aria-describedby={detail ? detailId : undefined}
           tabIndex={-1}
           className="w-[322px] max-w-[calc(100%-32px)] rounded-[15px] bg-white px-5 pt-7 pb-5 text-center outline-none"
           onClick={(event) => event.stopPropagation()}
@@ -55,6 +63,14 @@ export default function ConfirmDialog({
           >
             {message}
           </p>
+          {detail && (
+            <p
+              id={detailId}
+              className="mt-2 text-[14px] leading-[1.5] tracking-[-0.28px] break-keep whitespace-pre-line text-gray-400"
+            >
+              {detail}
+            </p>
+          )}
           <div className="mt-6 flex gap-1.5">
             <button
               type="button"
@@ -65,7 +81,9 @@ export default function ConfirmDialog({
             </button>
             <button
               type="button"
-              className={`${BUTTON_CLASS} bg-brand-brown1 text-white`}
+              className={`${BUTTON_CLASS} bg-brand-brown1 text-white disabled:opacity-60`}
+              disabled={confirmDisabled}
+              aria-busy={confirmDisabled || undefined}
               onClick={onConfirm}
             >
               {confirmLabel}

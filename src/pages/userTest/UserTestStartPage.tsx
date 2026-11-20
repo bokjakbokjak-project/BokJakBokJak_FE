@@ -42,7 +42,7 @@ export default function UserTestStartPage() {
 
   const startSurvey = () => {
     const patch = testOnboardingPatch()
-    if (patch) startLiveSurvey(patch)
+    if (patch) void startLiveSurvey(patch)
   }
 
   const browse = () => {

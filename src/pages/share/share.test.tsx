@@ -64,9 +64,32 @@ describe('share link', () => {
     const shared = readSharedProfile(hash)!
 
     expect(shared.answers[11]).toBe(getQuestionStep(11).question.options[0])
-    expect(shared.answers[12]).toBeUndefined()
-    expect(shared.answers[13]).toBeUndefined()
-    expect(shared.answers[14]).toBe(getQuestionStep(14).question.options[0])
+    // Its smoking answers (then 15·16) are now questions 13·14; 온도 (now 15·16) has none.
+    expect(getQuestionStep(12).topic.id).toBe('smoking')
+    expect(shared.answers[12]).toBe(getQuestionStep(12).question.options[0])
+    expect(shared.answers[13]).toBe(getQuestionStep(13).question.options[0])
+    expect(shared.answers[14]).toBeUndefined()
+    expect(shared.answers[15]).toBeUndefined()
+  })
+
+  it('moves the answers of a version 2 link, made when 온도 came before smoking', () => {
+    // Version 2 (2026-11-19 to 11-20): indexes 12·13 were 온도 and 14·15 smoking.
+    const a = Array.from({ length: 16 }, () => 0)
+    a[12] = 3 // 온도: 거의 사용하지 않는다
+    a[13] = 3 // 온도: 거의 사용하지 않았으면 좋겠다
+    a[14] = 2 // 흡연: 흡연하며 지정된 실외 장소를 이용할 예정이다
+    a[15] = 3 // 흡연: 흡연자와는 같은 방이 어렵다
+    const v2 = { v: 2, n: '복작이', d: '소프트웨어학부', p: ['smoking'], a }
+    const bytes = new TextEncoder().encode(JSON.stringify(v2))
+    const hash = `#${btoa(String.fromCharCode(...bytes)).replace(/=+$/, '')}`
+    const shared = readSharedProfile(hash)!
+
+    expect(shared.answers[12]).toBe(
+      '흡연하며 지정된 실외 장소를 이용할 예정이다',
+    )
+    expect(shared.answers[13]).toBe('흡연자와는 같은 방이 어렵다')
+    expect(shared.answers[14]).toBe('거의 사용하지 않는다')
+    expect(shared.answers[15]).toBe('거의 사용하지 않았으면 좋겠다')
   })
 
   it('rejects a broken or foreign hash', () => {

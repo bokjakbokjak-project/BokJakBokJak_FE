@@ -10,6 +10,7 @@ import { useNavigate } from 'react-router'
 import backArrow from '../../assets/question/back-arrow-brown.svg'
 import radioOff from '../../assets/question/radio-off.svg'
 import radioOn from '../../assets/question/radio-on.svg'
+import ChoiceDialog from '../../components/dialog/ChoiceDialog'
 import { ErrorState } from '../../components/LoadState/LoadState'
 import { useOnboarding } from '../../lib/onboarding/onboardingState'
 import { isPriorityComplete } from '../../lib/onboarding/priority'
@@ -450,9 +451,27 @@ function QuestionStep({ focusHeading, onMove }: QuestionStepProps) {
   )
 }
 
+/** The first question without an answer, or null when all are answered. */
+function firstUnanswered(answers: Readonly<Record<number, string>>) {
+  for (let index = 0; index < QUESTION_COUNT; index += 1) {
+    if (answers[index] === undefined) return index
+  }
+  return null
+}
+
 export default function QuestionPage() {
-  const { index, setIndex, sync, isRetake, choosePriorities } = useQuestion()
+  const {
+    index,
+    setIndex,
+    sync,
+    isRetake,
+    choosePriorities,
+    answers,
+    hasSeenUpdateNotice,
+    markUpdateNoticeSeen,
+  } = useQuestion()
   const [hasMoved, setHasMoved] = useState(false)
+  const noticeTriggerRef = useRef<HTMLElement>(null)
   // Server mode: the questions open once the saved survey is read, so a saved answer is already
   // selected when its screen first shows.
   const saved = useSavedSurvey()
@@ -478,6 +497,20 @@ export default function QuestionPage() {
     setIndex(next)
   }
 
+  // Answered before, but questions were added since (GET /api/me/status `survey_update_required`,
+  // the same condition as here: submitted once, not completed now). The old answers are filled
+  // in, so the notice explains why the survey is back and then opens the first new question.
+  const needsUpdate =
+    sync.status === 'ready' &&
+    sync.revision > 0 &&
+    !sync.surveyCompleted &&
+    !isRetake
+  const closeUpdateNotice = () => {
+    markUpdateNoticeSeen()
+    const next = firstUnanswered(answers)
+    if (next !== null) move(next)
+  }
+
   if (saved.status === 'failed') {
     return (
       <div className="relative isolate flex flex-1 flex-col items-center justify-center bg-question-surface md:rounded-[24px]">
@@ -495,5 +528,22 @@ export default function QuestionPage() {
     )
   }
 
-  return <QuestionStep key={index} focusHeading={hasMoved} onMove={move} />
+  return (
+    <>
+      <QuestionStep key={index} focusHeading={hasMoved} onMove={move} />
+      {/* Not in Figma: the one-button dialog of 「링크 복사 완료!」 (1377:36531). */}
+      {needsUpdate && !hasSeenUpdateNotice && (
+        <ChoiceDialog
+          title="새로운 질문이 추가됐어요"
+          message={
+            '이전 답변은 그대로 남아 있어요.\n새 질문에 답하고 설문을 다시 저장해주세요.'
+          }
+          confirmLabel="확인"
+          triggerRef={noticeTriggerRef}
+          onCancel={closeUpdateNotice}
+          onConfirm={closeUpdateNotice}
+        />
+      )}
+    </>
+  )
 }

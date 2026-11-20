@@ -155,27 +155,13 @@ export const SURVEY_CODES: Readonly<Record<string, TopicCodes>> = {
 }
 
 /**
- * Options whose Figma label (shown) differs from the live server label (2026-11-14). Both are the
- * roommate's minimum for floor cleaning: the server adds `해야`, the meaning is the same, and each
- * is tied to the code at the same place. BEDTIME_T `QUIET_ANY` and SMOKING_H `QUIT_IN_DORM`
- * differed in the Notion spec but now carry the Figma labels on the server.
+ * Options whose label on screen differs from the server label. None since 2026-11-20: the screens
+ * took the server's `해야 한다` labels for the roommate's minimum floor cleaning (FLOOR_CLEAN_T),
+ * as listed by the backend. Kept so a future difference stays visible and tested.
  */
 export const LABEL_DIFFERENCES: readonly {
   optionCode: string
   questionCode: string
   figma: string
   server: string
-}[] = [
-  {
-    questionCode: 'FLOOR_CLEAN_T',
-    optionCode: 'DAILY_MIN',
-    figma: '거의 매일 한다',
-    server: '거의 매일 해야 한다',
-  },
-  {
-    questionCode: 'FLOOR_CLEAN_T',
-    optionCode: 'TWO_THREE_WEEKLY_MIN',
-    figma: '주 2~3회 한다',
-    server: '주 2~3회는 해야 한다',
-  },
-]
+}[] = []
