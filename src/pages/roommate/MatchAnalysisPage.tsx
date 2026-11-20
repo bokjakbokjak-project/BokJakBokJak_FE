@@ -3,7 +3,8 @@ import { Link, Navigate, useLocation, useParams } from 'react-router'
 import iconAdjust from '../../assets/roommate/analysis-adjust.png'
 import iconCheck from '../../assets/roommate/analysis-check.png'
 import iconGood from '../../assets/roommate/analysis-good.png'
-import { ErrorState, LoadingState } from '../../components/LoadState/LoadState'
+import { ErrorState } from '../../components/LoadState/LoadState'
+import LoadingIllustration from '../../components/LoadState/LoadingIllustration'
 import ChatRequestFooter from '../../components/roommate/ChatRequestFooter'
 import { candidateCard } from '../../components/roommate/candidateCard'
 import ProfileHero from '../../components/roommate/ProfileHero'
@@ -152,23 +153,45 @@ function ServerMatchAnalysis({ userId }: { userId: number }) {
     />
   )
 
-  if (current.status !== 'ready') {
+  if (current.status === 'loading') {
+    return (
+      <div className="relative isolate flex flex-1 flex-col overflow-hidden bg-question-surface md:rounded-[24px]">
+        <LoadingIllustration />
+        {header}
+        <main
+          role="status"
+          aria-label="AI가 두 분의 매칭 결과를 분석하고 있어요"
+          className="pt-[max(0px,calc(111px-env(safe-area-inset-top)))]"
+        >
+          <div className="px-[31px] font-bold text-brand-brown1">
+            <h1 className="text-[32px] leading-[1.6] tracking-[0.8px]">
+              잠시만 기다려 주세요,
+            </h1>
+            <p className="text-[24px] leading-[1.6] tracking-[0.6px]">
+              매칭을 분석하고 있어요
+            </p>
+          </div>
+          <p className="mx-[11px] mt-1 text-center text-[12px] leading-[1.6] font-medium tracking-[0.3px] text-question-caption">
+            AI가 두 분의 생활습관을 살펴보고 있어요!
+          </p>
+        </main>
+      </div>
+    )
+  }
+
+  if (current.status === 'error') {
     return (
       <RoommatePage>
         {header}
         <div className="mx-auto w-full max-w-[390px] px-6">
-          {current.status === 'loading' ? (
-            <LoadingState label="AI가 두 분의 매칭 결과를 분석하고 있어요" />
-          ) : (
-            <ErrorState
-              error={current.error}
-              onRetry={
-                errorCode(current.error) === 'TARGET_WITHDRAWN'
-                  ? undefined
-                  : () => setAttempt((count) => count + 1)
-              }
-            />
-          )}
+          <ErrorState
+            error={current.error}
+            onRetry={
+              errorCode(current.error) === 'TARGET_WITHDRAWN'
+                ? undefined
+                : () => setAttempt((count) => count + 1)
+            }
+          />
         </div>
       </RoommatePage>
     )
