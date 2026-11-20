@@ -203,35 +203,28 @@ describe('state across screens', () => {
     clickLink('상세 프로필 보기')
   }
 
-  it('starts the survey retake from 내 설문 다시보기, with the priorities kept', async () => {
-    openSeededHome()
-
-    // The my page's 설문조사 다시 하기 (requested 2026-11-20), with its confirmation.
-    fireEvent.click(screen.getByRole('button', { name: '내 설문 다시보기 →' }))
-    const confirm = screen.getByRole('alertdialog')
-    expect(confirm).toHaveTextContent(
-      /우선순위와 설문 답변을\s*다시 설정하시겠어요?/,
+  it('opens the detail profile from 내 설문 다시보기, and back returns to the home', () => {
+    // A user who finished the survey (sample answers), on the home.
+    renderAt('/dev/onboarding')
+    fireEvent.click(
+      screen.getByRole('button', { name: '/my (샘플 설문 답변)' }),
     )
-    await act(async () => {
-      fireEvent.click(
-        within(confirm).getByRole('button', { name: '다시 하기' }),
-      )
-    })
+    fireEvent.click(screen.getByRole('link', { name: '홈' }))
 
+    // The screen of the my page's 상세 프로필 보기 (requested 2026-11-20), with no retake.
+    fireEvent.click(screen.getByRole('link', { name: '내 설문 다시보기 →' }))
     expect(
-      await screen.findByRole('button', { name: '다음으로' }),
+      screen.getByRole('heading', { name: '전 이런 사람이에요' }),
     ).toBeInTheDocument()
+    expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
     expect(
-      screen.queryByRole('button', { name: '설문조사 다시 하기' }),
+      screen.queryByRole('button', { name: '다음으로' }),
     ).not.toBeInTheDocument()
-    expect(
-      screen.getAllByRole('button', { pressed: true }).length,
-    ).toBeGreaterThan(0)
 
-    // Back returns to the home it started from, not to the onboarding's dormitory step.
-    fireEvent.click(screen.getByRole('button', { name: '이전' }))
+    // Back returns to the home (FROM_HOME_STATE), not to the my page.
+    fireEvent.click(screen.getByRole('link', { name: '이전' }))
     expect(
-      screen.getByRole('button', { name: '내 설문 다시보기 →' }),
+      screen.getByRole('link', { name: '내 설문 다시보기 →' }),
     ).toBeInTheDocument()
   })
 
