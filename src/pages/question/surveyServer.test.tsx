@@ -1,3 +1,7 @@
+import {
+  rememberShareReturn,
+  takeShareReturn,
+} from '../../lib/share/shareReturn'
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter, useLocation, useNavigate } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -269,6 +273,15 @@ describe('server survey: first submit', () => {
     })
   })
 
+  it('returns to the saved share link after the survey is saved', async () => {
+    rememberShareReturn('#example')
+    await openSurvey()
+    await answerAllAndFinish()
+    await until(() => expect(path()).toBe('/share'))
+    expect(puts()).toHaveLength(1)
+    expect(takeShareReturn()).toBeNull()
+  })
+
   it('opens the result only after the save, and keeps the answers when it fails', async () => {
     handlers['PUT /api/me/survey'] = () =>
       fail(500, 'INTERNAL_ERROR', '서버에 문제가 생겼어요.')
@@ -416,6 +429,9 @@ describe('server survey: home', () => {
     )
 
     fireEvent.click(screen.getByRole('button', { name: '내 설문 다시보기 →' }))
+    // Nothing is read before the confirmation.
+    expect(path()).toBe('/home')
+    fireEvent.click(screen.getByRole('button', { name: '다시 하기' }))
 
     // The priority step of the retake, with the saved priorities chosen.
     await until(() => expect(path()).toBe(ONBOARDING_ROUTES.priority))
@@ -632,7 +648,7 @@ describe('server survey: retake from the my page', () => {
     click(/개인청결/)
     click(/흡연유무/)
     click(/잠버릇/)
-    click('완료하기')
+    click('수정하기')
     await until(() => expect(path()).toBe(ONBOARDING_ROUTES.complete))
     click('시작하기!')
   }
@@ -696,7 +712,7 @@ describe('server survey: retake from the my page', () => {
         expect.stringMatching(/잠버릇/),
       ]),
     )
-    click('완료하기')
+    click('다음으로')
     await until(() => expect(path()).toBe(ONBOARDING_ROUTES.complete))
     click('시작하기!')
 
@@ -768,7 +784,7 @@ describe('server survey: a retake after an abandoned one', () => {
 
     // Change the priorities and an answer, then leave without saving.
     click(/개인청결/)
-    click('완료하기')
+    click('수정하기')
     await until(() => expect(path()).toBe(ONBOARDING_ROUTES.complete))
     click('시작하기!')
     await until(() => screen.getByText('Q1-1'))
@@ -795,7 +811,7 @@ describe('server survey: a retake after an abandoned one', () => {
     expect(
       screen.queryByRole('button', { name: /개인청결/, pressed: true }),
     ).not.toBeInTheDocument()
-    click('완료하기')
+    click('다음으로')
     await until(() => expect(path()).toBe(ONBOARDING_ROUTES.complete))
     click('시작하기!')
     await until(() => screen.getByText('Q1-1'))
@@ -863,7 +879,7 @@ describe('server survey: the read before a retake', () => {
     })
     await until(() => expect(path()).toBe(ONBOARDING_ROUTES.priority))
     act(() => vi.advanceTimersByTime(MISSION_NOTICE_MS))
-    click('완료하기')
+    click('다음으로')
     await until(() => expect(path()).toBe(ONBOARDING_ROUTES.complete))
     click('시작하기!')
     await until(() => screen.getByText('Q1-1'))
@@ -978,7 +994,7 @@ describe('server survey: the read before a retake', () => {
       failFirstRead()
     })
     act(() => vi.advanceTimersByTime(MISSION_NOTICE_MS))
-    click('완료하기')
+    click('다음으로')
     await until(() => expect(path()).toBe(ONBOARDING_ROUTES.complete))
     click('시작하기!')
     await until(() => screen.getByText('Q1-1'))
@@ -996,7 +1012,7 @@ describe('server survey: the read before a retake', () => {
     await until(() => expect(path()).toBe(ONBOARDING_ROUTES.priority))
     act(() => vi.advanceTimersByTime(MISSION_NOTICE_MS))
     expect(screen.getAllByRole('button', { pressed: true })).toHaveLength(3)
-    click('완료하기')
+    click('다음으로')
     await until(() => expect(path()).toBe(ONBOARDING_ROUTES.complete))
     click('시작하기!')
     await until(() => screen.getByText('Q1-1'))

@@ -7,9 +7,10 @@ import type { QuestionAnswers } from '../../pages/question/questionState'
 
 /**
  * What the shared survey result shows (QA 15, Figma section 1952:39743). Figma leaves the age
- * out, and the receiver has no match rate, so neither is in the link.
+ * out. The user ID, when available, lets the server calculate a match rate.
  */
 export type SharedProfile = {
+  userId?: number
   name: string
   department: string
   priorities: CategoryId[]
@@ -26,6 +27,7 @@ export const SHARE_ROUTE = '/share'
 // - Version 3 (2026-11-20): the backend's order, 13·14 smoking and 15·16 온도.
 type Payload = {
   v: 1 | 2 | 3
+  u?: number
   n: string
   d: string
   p: CategoryId[]
@@ -61,6 +63,7 @@ function fromBase64Url(text: string) {
 export function createShareUrl(profile: SharedProfile, origin: string) {
   const payload: Payload = {
     v: SHARE_VERSION,
+    u: profile.userId,
     n: profile.name,
     d: profile.department,
     p: profile.priorities,
@@ -97,6 +100,11 @@ export function readSharedProfile(hash: string): SharedProfile | null {
         answers[index] = text
     })
     return {
+      ...(payload.v === 3 &&
+      Number.isSafeInteger(payload.u) &&
+      (payload.u ?? 0) > 0
+        ? { userId: payload.u }
+        : {}),
       name: payload.n.slice(0, 20),
       department: payload.d.slice(0, 40),
       priorities: payload.p.filter((id): id is CategoryId =>

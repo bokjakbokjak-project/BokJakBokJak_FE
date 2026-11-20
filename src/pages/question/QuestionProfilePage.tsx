@@ -158,6 +158,7 @@ export default function QuestionProfilePage() {
     const url = createShareUrl(
       {
         name,
+        userId: profile?.userId,
         department: card.department,
         priorities,
         answers,

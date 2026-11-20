@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router'
 import ProfileAnswerSections from '../../components/AnswerCard/ProfileAnswerSections'
 import ChoiceDialog from '../../components/dialog/ChoiceDialog'
@@ -6,79 +6,105 @@ import ProfileAvatar from '../../components/my/ProfileAvatar'
 import ProfileHero from '../../components/roommate/ProfileHero'
 import RoommatePage from '../../components/roommate/RoommatePage'
 import RoommateSheet from '../../components/roommate/RoommateSheet'
-import { getAnswerSummary } from '../../lib/answerSummary'
+import { apiRequest } from '../../lib/api/apiClient'
+import { isApiError } from '../../lib/api/apiError'
 import { useAuth } from '../../lib/auth/authState'
-import { ONBOARDING_ROUTES } from '../../lib/onboarding/routes'
-import { useMyProfile } from '../../lib/profile/myProfile'
-import { readSharedProfile } from '../../lib/share/profileShare'
+import { fetchMyStatus } from '../../lib/auth/statusApi'
+import { resolveStartRoute } from '../../lib/auth/startRoute'
+import { userTestStartRoute } from '../../lib/userTest/signIn'
 import {
-  isSharedReturnState,
   rememberShareReturn,
+  takeShareReturn,
 } from '../../lib/share/shareReturn'
-import { isUserTestEnabled } from '../../lib/userTest/config'
-import { USER_TEST_ROUTES } from '../../lib/userTest/routes'
-import { QUESTION_ROUTES } from '../question/questionData'
+import { getAnswerSummary } from '../../lib/answerSummary'
+import { HOME_ROUTES } from '../../lib/home/routes'
+import { ONBOARDING_ROUTES } from '../../lib/onboarding/routes'
+import { readSharedProfile } from '../../lib/share/profileShare'
 
 /**
  * The survey result opened from a share link (QA 15, Figma 1952:39744). It has no header, no age
- * and no match rate. A popup points to 복작복작 on arrival. The answers use the detail profile
+ * and may show a match rate. A popup points to 복작복작 on arrival. The answers use the detail profile
  * sections (Figma 2339:26489): the person's own answers in full, and of the wanted roommate only
  * the first row, the rest blurred under a link to 복작복작.
  */
 export default function SharedProfilePage() {
   const navigate = useNavigate()
-  const location = useLocation()
-  const { hash, pathname } = location
+  const { hash } = useLocation()
   const profile = readSharedProfile(hash)
-  // Back from the login that 복작복작으로 이동 asked for: go on with it, without the arrival popup.
-  const returned = isSharedReturnState(location.state) ? location.state : null
-  const [isPromptOpen, setIsPromptOpen] = useState(returned === null)
-  const pageRef = useRef<HTMLDivElement>(null)
-  const continueRef = useRef<HTMLButtonElement>(null)
-  const goToApp = () => navigate(ONBOARDING_ROUTES.login)
-
-  // 복작복작으로 이동 over the blurred rows (requested 2026-11-20): a signed-in visitor with a
-  // saved survey sees the rest, and anyone else is asked to take the survey. A signed-out visitor
-  // signs in first and comes back here.
-  const { status: authStatus } = useAuth()
-  const isSignedIn = authStatus === 'authenticated'
-  const [wantsMore, setWantsMore] = useState(returned !== null)
-  const { state: myProfile, retry: retryMyProfile } = useMyProfile({
-    enabled: wantsMore && isSignedIn,
-  })
-  const isUnlocked = wantsMore && isSignedIn && myProfile.status === 'ready'
-  const isChecking =
-    wantsMore &&
-    (authStatus === 'restoring' ||
-      (isSignedIn &&
-        (myProfile.status === 'idle' || myProfile.status === 'loading')))
-  const needsSurvey =
-    wantsMore &&
-    (authStatus === 'disabled' ||
-      (isSignedIn && myProfile.status === 'survey-required'))
-  const checkFailed = wantsMore && isSignedIn && myProfile.status === 'failed'
-
-  const continueReading = () => {
-    if (authStatus === 'unauthenticated') {
-      rememberShareReturn(pathname + hash)
-      navigate(ONBOARDING_ROUTES.login)
-      return
+  const { status } = useAuth()
+  const [isPromptOpen, setIsPromptOpen] = useState(true)
+  const [surveyRequired, setSurveyRequired] = useState(false)
+  const [matchRate, setMatchRate] = useState<number | null>(null)
+  const [matchError, setMatchError] = useState<string | null>(null)
+  const userId = profile?.userId
+  useEffect(() => {
+    let active = true
+    if (status === 'restoring')
+      return () => {
+        active = false
+      }
+    if (status !== 'authenticated' || !userId)
+      return () => {
+        active = false
+      }
+    fetchMyStatus()
+      .then((current) => {
+        if (!active) return null
+        if (current.nextStep !== 'HOME') {
+          setSurveyRequired(true)
+          return null
+        }
+        return apiRequest(`/api/share/${userId}/match-score`, {
+          retried401: 'fail',
+        })
+      })
+      .then((value) => {
+        if (value === null) return
+        if (!active) return
+        const data = value as {
+          target_user_id?: unknown
+          match_score?: unknown
+        } | null
+        if (
+          !data ||
+          data.target_user_id !== userId ||
+          typeof data.match_score !== 'number' ||
+          !Number.isFinite(data.match_score) ||
+          data.match_score < 0 ||
+          data.match_score > 100
+        )
+          throw new Error('Invalid match score')
+        setMatchRate(data.match_score)
+      })
+      .catch((error: unknown) => {
+        if (!active) return
+        if (
+          isApiError(error) &&
+          error.status === 409 &&
+          error.code === 'SURVEY_REQUIRED'
+        )
+          setSurveyRequired(true)
+        else
+          setMatchError('매칭률을 불러올 수 없어요. 잠시 후 다시 시도해주세요.')
+      })
+    return () => {
+      active = false
     }
-    setWantsMore(true)
+  }, [status, userId])
+  const pageRef = useRef<HTMLDivElement>(null)
+  const goToApp = async () => {
+    if (profile) rememberShareReturn(hash)
+    if (status === 'authenticated') {
+      const route = userTestStartRoute(await resolveStartRoute())
+      if (route) {
+        if (route === HOME_ROUTES.home) takeShareReturn()
+        navigate(route)
+      } else
+        setMatchError(
+          '사용자 상태를 불러올 수 없어요. 잠시 후 다시 시도해주세요.',
+        )
+    } else navigate(ONBOARDING_ROUTES.login)
   }
-  // From the beginning: a new account starts with the onboarding, sample mode with the login,
-  // and an account that finished the onboarding with the survey. The user test build starts at
-  // its own start screen, which fills the test basic information.
-  const startSurvey = () =>
-    navigate(
-      authStatus === 'disabled'
-        ? ONBOARDING_ROUTES.login
-        : isUserTestEnabled()
-          ? USER_TEST_ROUTES.start
-          : returned?.startRoute === ONBOARDING_ROUTES.school
-            ? ONBOARDING_ROUTES.school
-            : QUESTION_ROUTES.survey,
-    )
 
   if (!profile) {
     return (
@@ -130,7 +156,7 @@ export default function SharedProfilePage() {
             name: profile.name,
             age: null,
             department: profile.department,
-            matchRate: null,
+            matchRate,
             avatar: (
               <span className="absolute inset-0 origin-top-left scale-[0.84] min-[390px]:scale-100">
                 <ProfileAvatar
@@ -141,66 +167,47 @@ export default function SharedProfilePage() {
             ),
           }}
         />
+        {matchError && (
+          <p role="alert" className="px-6 text-center text-gray-500">
+            {matchError}
+          </p>
+        )}
         <RoommateSheet scrolls={false}>
           <div className="mx-auto w-full max-w-[390px] px-6 pt-6 pb-[35px]">
             <ProfileAnswerSections
               cards={cards}
               locked={
-                isUnlocked ? undefined : (
-                  // Figma 2339:26682, 37px under the top of the blurred rows.
-                  <div className="sticky top-[47px] mx-auto mt-[37px] flex w-[174px] flex-col items-center gap-2.5">
-                    <p className="text-center text-[20px] leading-[1.4] font-bold tracking-[-0.4px] whitespace-pre-line text-brand-brown3">
-                      {'복작복작에서\n설문조사하고 이어보기'}
-                    </p>
-                    <button
-                      ref={continueRef}
-                      type="button"
-                      disabled={isChecking}
-                      aria-busy={isChecking || undefined}
-                      className="h-[42px] w-[152px] rounded-full bg-brand-brown1 text-[16px] leading-[1.4] font-bold tracking-[-0.32px] text-white disabled:opacity-70"
-                      onClick={continueReading}
-                    >
-                      {isChecking ? '확인하는 중…' : '복작복작으로 이동'}
-                    </button>
-                  </div>
-                )
+                // Figma 2339:26682, 37px under the top of the blurred rows.
+                <div className="sticky top-[47px] mx-auto mt-[37px] flex w-[174px] flex-col items-center gap-2.5">
+                  <p className="text-center text-[20px] leading-[1.4] font-bold tracking-[-0.4px] whitespace-pre-line text-brand-brown3">
+                    {'복작복작에서\n설문조사하고 이어보기'}
+                  </p>
+                  <button
+                    type="button"
+                    className="h-[42px] w-[152px] rounded-full bg-brand-brown1 text-[16px] leading-[1.4] font-bold tracking-[-0.32px] text-white"
+                    onClick={goToApp}
+                  >
+                    복작복작으로 이동
+                  </button>
+                </div>
               }
             />
           </div>
         </RoommateSheet>
       </div>
-      {isPromptOpen && (
-        // Figma 1952:40072, shown when the link opens.
-        <ChoiceDialog
-          title={prompt}
-          closeLabel="닫기"
-          confirmLabel="복작복작으로 이동하기"
-          triggerRef={pageRef}
-          onCancel={() => setIsPromptOpen(false)}
-          onConfirm={goToApp}
-        />
-      )}
-      {needsSurvey && (
-        <ChoiceDialog
-          title={`설문조사를 해서\n${profile.name}님과의 매칭률을 확인해보세요`}
-          closeLabel="닫기"
-          confirmLabel="설문조사 하러 가기"
-          triggerRef={continueRef}
-          onCancel={() => setWantsMore(false)}
-          onConfirm={startSurvey}
-        />
-      )}
-      {checkFailed && (
-        <ChoiceDialog
-          title="내 설문 결과를 확인하지 못했어요"
-          message="잠시 후 다시 시도해주세요."
-          closeLabel="닫기"
-          confirmLabel="다시 시도"
-          triggerRef={continueRef}
-          onCancel={() => setWantsMore(false)}
-          onConfirm={retryMyProfile}
-        />
-      )}
+      {isPromptOpen &&
+        status !== 'restoring' &&
+        (status !== 'authenticated' || !userId || surveyRequired) && (
+          // Figma 1952:40072, shown when the link opens.
+          <ChoiceDialog
+            title={prompt}
+            closeLabel="닫기"
+            confirmLabel="복작복작으로 이동하기"
+            triggerRef={pageRef}
+            onCancel={() => setIsPromptOpen(false)}
+            onConfirm={goToApp}
+          />
+        )}
     </RoommatePage>
   )
 }

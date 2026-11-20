@@ -25,6 +25,8 @@ import {
 import { ONBOARDING_ROUTES } from '../../lib/onboarding/routes'
 import { useOnboardingSubmit } from '../../lib/onboarding/useOnboardingSubmit'
 import { useStepNavigation } from '../../lib/onboarding/useStepNavigation'
+import { useLocation, useNavigate } from 'react-router'
+import { MY_ROUTES } from '../../lib/my/routes'
 import { useQuestion } from '../question/questionState'
 import BrowseInsteadButton from '../../components/userTest/BrowseInsteadButton'
 
@@ -37,7 +39,27 @@ export default function PriorityPage() {
   const [isMissionOpen, setIsMissionOpen] = useState(!hasSeenMission)
   const closeMission = useCallback(() => setIsMissionOpen(false), [])
   // A survey retake saves these priorities with the survey, not with the onboarding.
-  const { isRetake } = useQuestion()
+  const { isRetake, finishRetake } = useQuestion()
+  const navigate = useNavigate()
+  const location = useLocation()
+  // A retake opens with the saved priorities (requested 2026-11-20): the button reads 수정하기
+  // once they change and 다음으로 while they are the same, so the saved answers can still be
+  // edited without changing the priorities. Back returns to the screen the retake started from
+  // (the home or the my page) instead of the onboarding's dormitory step.
+  const [startPriorities] = useState(() => priorities.join())
+  const editsSaved = isRetake && startPriorities !== ''
+  const buttonLabel = !editsSaved
+    ? '완료하기'
+    : priorities.join() === startPriorities
+      ? '다음으로'
+      : '수정하기'
+  const leaveRetake = () => {
+    finishRetake()
+    // The first entry of the history has the key default: with nothing before it (an address
+    // typed by hand), the my page, where the retake also starts.
+    if (location.key !== 'default') navigate(-1)
+    else navigate(MY_ROUTES.my, { replace: true })
+  }
   const { state, submit, clearError } = useOnboardingSubmit(
     () => go(ONBOARDING_ROUTES.complete),
     !isRetake,
@@ -73,6 +95,7 @@ export default function PriorityPage() {
     <OnboardingScreen
       step={4}
       backTo={ONBOARDING_ROUTES.dormitory}
+      onBack={isRetake ? leaveRetake : undefined}
       fullBleed
       footer={
         <PrimaryButton
@@ -80,7 +103,7 @@ export default function PriorityPage() {
           aria-busy={isSaving}
           onClick={() => void submit()}
         >
-          {isSaving ? '저장 중...' : '완료하기'}
+          {isSaving ? '저장 중...' : buttonLabel}
         </PrimaryButton>
       }
       headerAction={
