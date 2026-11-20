@@ -29,7 +29,7 @@ describe('togglePriority', () => {
     ).toEqual(['smoking', 'sleep-habit'])
   })
 
-  it('allows ranks 4 and 5, and every count from three to five completes', () => {
+  it('allows ranks 4 to 6, and every count from three to six completes', () => {
     let priorities = ['cleaning', 'smoking', 'sleep-habit'] as CategoryId[]
     priorities = togglePriority(priorities, 'wake-alarm')
     expect(getRank(priorities, 'wake-alarm')).toBe(4)
@@ -38,7 +38,12 @@ describe('togglePriority', () => {
     priorities = togglePriority(priorities, 'personal-hygiene')
     expect(getRank(priorities, 'personal-hygiene')).toBe(5)
     expect(isPriorityComplete(priorities)).toBe(true)
+
+    priorities = togglePriority(priorities, 'temperature')
+    expect(getRank(priorities, 'temperature')).toBe(6)
+    expect(isPriorityComplete(priorities)).toBe(true)
     expect(priorities).toHaveLength(MAX_PRIORITY_COUNT)
+    expect(MAX_PRIORITY_COUNT).toBe(6)
   })
 
   it('needs at least three priorities', () => {
@@ -49,7 +54,8 @@ describe('togglePriority', () => {
 
   it('ignores a selection beyond the maximum', () => {
     const all = [...CATEGORY_IDS]
-    expect(togglePriority(all.slice(0, 4), all[4])).toEqual(all)
+    expect(togglePriority(all.slice(0, 5), all[5])).toEqual(all)
+    expect(togglePriority(all, all[0])).toEqual(all.slice(1))
     expect(isPriorityComplete([...all, 'cleaning'])).toBe(false)
   })
 })
@@ -73,7 +79,7 @@ describe('character parts', () => {
     })
   })
 
-  it('ignores ranks 4 and 5', () => {
+  it('ignores ranks 4 to 6', () => {
     expect(
       getPartVariants([
         'cleaning',
@@ -81,8 +87,31 @@ describe('character parts', () => {
         'wake-alarm',
         'sleep-habit',
         'personal-hygiene',
+        'temperature',
       ]),
     ).toEqual(getPartVariants(['cleaning', 'smoking', 'wake-alarm']))
+  })
+
+  it('has a 온도 part for each of ranks 1 to 3', () => {
+    const layers = getCharacterLayers([
+      'temperature',
+      'temperature',
+      'temperature',
+    ])
+    for (const part of ['head', 'hand', 'body'] as const) {
+      const layer = layers.find((item) => item.key === part)!
+      expect(layer.variant).toBe('temperature')
+      expect(layer.src).not.toBe(
+        getCharacterLayers([]).find((item) => item.key === part)!.src,
+      )
+    }
+    // The scarf reaches 3px left of the body frame, so the body moves left by the same amount.
+    const body = layers.find((item) => item.key === 'body')!
+    const defaultBody = getCharacterLayers([]).find(
+      (item) => item.key === 'body',
+    )!
+    expect(body.x).toBeCloseTo(defaultBody.x - 3)
+    expect(body.width).toBe(121)
   })
 
   it('draws the shadow behind the character and has no separate face layer', () => {

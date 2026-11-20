@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router'
 import share from '../../assets/question/share-small.svg'
-import AnswerCard from '../../components/AnswerCard/AnswerCard'
+import ProfileAnswerSections from '../../components/AnswerCard/ProfileAnswerSections'
 import ChoiceDialog from '../../components/dialog/ChoiceDialog'
 import { ErrorState } from '../../components/LoadState/LoadState'
 import ProfileAvatar from '../../components/my/ProfileAvatar'
@@ -244,19 +244,9 @@ export default function QuestionProfilePage() {
             avatar: <MyCardAvatar priorities={card.character} />,
           }}
         />
-        <RoommateSheet labelledBy="result-summary-title" scrolls={false}>
-          <div className="mx-auto w-full max-w-[390px] px-6 pt-[15px] pb-[35px]">
-            <h2
-              id="result-summary-title"
-              className="text-center text-[20px] leading-[1.5] font-bold tracking-[-0.4px] text-gray-500"
-            >
-              상세 답변 요약
-            </h2>
-            <div className="mt-[15px] flex flex-col gap-3">
-              {answerCards.map((answerCard) => (
-                <AnswerCard key={answerCard.category} card={answerCard} />
-              ))}
-            </div>
+        <RoommateSheet scrolls={false}>
+          <div className="mx-auto w-full max-w-[390px] px-6 pt-6 pb-[35px]">
+            <ProfileAnswerSections cards={answerCards} />
           </div>
         </RoommateSheet>
       </div>

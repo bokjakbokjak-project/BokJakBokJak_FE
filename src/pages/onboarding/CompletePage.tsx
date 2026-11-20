@@ -46,7 +46,7 @@ export default function CompletePage() {
           {'등록완료! 복작복작과 함께 \n룸메이트를 찾아봐요!'}
         </h1>
         <p className="relative top-px text-[13px] leading-[1.5] whitespace-nowrap text-gray-500">
-          선택해주신 우선순위에 따라 설문조사를 진행할께요
+          선택해주신 우선순위에 따라 설문조사를 진행할게요
         </p>
       </div>
       <div className="min-h-[53px] flex-1" />

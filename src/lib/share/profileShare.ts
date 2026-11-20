@@ -20,7 +20,13 @@ export const SHARE_ROUTE = '/share'
 
 // There is no server to keep a shared profile, so the link carries it in the hash. The hash is
 // not sent to the server, and answers travel as option numbers (question OPEN_QUESTIONS PL-7).
-type Payload = { v: 1; n: string; d: string; p: CategoryId[]; a: number[] }
+// Version 2 (2026-11-19): the dishes topic became 온도 in the same place, so a version 1 link's
+// answers there are dishes answers and are left out instead of read as 온도 answers.
+type Payload = { v: 1 | 2; n: string; d: string; p: CategoryId[]; a: number[] }
+
+const SHARE_VERSION = 2
+/** Screen indexes of the dishes questions in version 1 links, now the 온도 questions. */
+const V1_DISHES_INDEXES: ReadonlySet<number> = new Set([12, 13])
 
 function toBase64Url(text: string) {
   const bytes = new TextEncoder().encode(text)
@@ -41,7 +47,7 @@ function fromBase64Url(text: string) {
 /** The link to the shared result. Unanswered questions are left out of the link. */
 export function createShareUrl(profile: SharedProfile, origin: string) {
   const payload: Payload = {
-    v: 1,
+    v: SHARE_VERSION,
     n: profile.name,
     d: profile.department,
     p: profile.priorities,
@@ -60,7 +66,7 @@ export function readSharedProfile(hash: string): SharedProfile | null {
   try {
     const payload = JSON.parse(fromBase64Url(hash.replace(/^#/, ''))) as Payload
     if (
-      payload?.v !== 1 ||
+      (payload?.v !== 1 && payload?.v !== SHARE_VERSION) ||
       typeof payload.n !== 'string' ||
       typeof payload.d !== 'string' ||
       !Array.isArray(payload.p) ||
@@ -71,6 +77,7 @@ export function readSharedProfile(hash: string): SharedProfile | null {
     }
     const answers: Record<number, string> = {}
     payload.a.forEach((option, index) => {
+      if (payload.v === 1 && V1_DISHES_INDEXES.has(index)) return
       const text = getQuestionStep(index).question.options[option]
       if (typeof option === 'number' && text !== undefined)
         answers[index] = text

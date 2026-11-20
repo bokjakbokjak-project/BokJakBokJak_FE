@@ -243,6 +243,29 @@ describe('situational survey', () => {
     expect(within(step).getByRole('heading')).toHaveClass('text-brand-brown1')
   })
 
+  it('asks the 온도 topic as STEP 7, where the dishes topic was, with one answer each', () => {
+    renderAt('/question')
+    for (let index = 0; index < 12; index += 1) {
+      if (index % 2 === 0) finishSituation()
+      pick(index)
+      next()
+    }
+
+    const step = screen.getByRole('region', { name: 'STEP 7 상황' })
+    expect(within(step).getByRole('heading')).toHaveTextContent(
+      '초여름이나 초겨울, 냉난방을 사용해요.',
+    )
+    finishSituation()
+    expect(
+      screen.getByRole('radio', { name: '덥거나 추울 때 잠깐 켰다가 끈다' }),
+    ).toBeInTheDocument()
+    expect(screen.queryByText(/식기/)).not.toBeInTheDocument()
+
+    pick(12)
+    fireEvent.click(screen.getByRole('radio', { name: '거의 사용하지 않는다' }))
+    expect(screen.getAllByRole('radio', { checked: true })).toHaveLength(1)
+  })
+
   it('needs an answer after the situation ends', () => {
     renderAt('/question')
 
@@ -289,8 +312,8 @@ describe('situational survey', () => {
     expect(
       screen.getByRole('heading', { name: '사용자님' }),
     ).toBeInTheDocument()
-    expect(screen.getByText('자주 있어도 괜찮다')).toBeInTheDocument()
-    expect(screen.getByText('흡연 여부는 상관없다')).toBeInTheDocument()
+    expect(screen.getByText('자주 있어도 괜찮아요')).toBeInTheDocument()
+    expect(screen.getByText('흡연 여부는 상관없어요')).toBeInTheDocument()
   })
 
   it('shows the loading screen for 2 seconds before the result', () => {
@@ -339,7 +362,7 @@ describe('situational survey', () => {
       screen.getByRole('heading', { name: '사용자님' }),
     )
     expect(scroll).toContainElement(
-      screen.getByRole('heading', { name: '상세 답변 요약' }),
+      screen.getByRole('heading', { name: '전 이런 사람이에요' }),
     )
     expect(scroll).not.toContainElement(
       screen.getByRole('heading', { name: '상세 프로필' }),
