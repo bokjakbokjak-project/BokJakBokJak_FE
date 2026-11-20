@@ -193,18 +193,17 @@ function SituationScreen({
   onLoaded,
 }: SituationScreenProps) {
   const tone = topic.situationScene?.tone ?? 'light'
-  // The picture shows only once it has fully loaded, then wipes down from the top and the copy
-  // fades in after it (requested 2026-11-20), instead of painting in line by line on a slow
-  // network. The survey loads every picture ahead (SURVEY_IMAGES), so this is usually at once.
+  // The picture shows only once it has fully loaded, and the copy fades in after it (requested
+  // 2026-11-20), instead of painting in line by line on a slow network. The survey loads every picture ahead (SURVEY_IMAGES), so this is usually at once.
   const onLoad = onLoaded
   // A picture the browser already holds (preloaded or cached) counts as loaded at once.
   const imageRef = useRef<HTMLImageElement>(null)
   useEffect(() => {
     if (imageRef.current?.complete) onLoaded()
   }, [onLoaded])
-  const artClass = isLoaded
-    ? 'motion-safe:animate-wipe-down'
-    : '[clip-path:inset(0_0_100%_0)]'
+  // Without the top-down wipe (dropped on request, 2026-11-20): the picture just appears once
+  // loaded, so it never paints in line by line.
+  const artClass = isLoaded ? '' : 'invisible'
   return (
     <section
       aria-label={`STEP ${topicIndex + 1} 상황`}

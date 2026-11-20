@@ -30,6 +30,8 @@ type ChoiceDialogProps = {
   offsetClass?: string
   /** Lets the box grow past 196px for a longer message (not in Figma). */
   autoHeight?: boolean
+  /** Centers the title and the message, for a short notice (not in Figma). */
+  centered?: boolean
 }
 
 const BUTTON_CLASS =
@@ -53,6 +55,7 @@ export default function ChoiceDialog({
   confirmDisabled = false,
   offsetClass = '',
   autoHeight = false,
+  centered = false,
 }: ChoiceDialogProps) {
   const overlayRef = useRef<HTMLDivElement>(null)
   const contentRef = useRef<HTMLDivElement>(null)
@@ -92,7 +95,9 @@ export default function ChoiceDialog({
               <img src={closeIcon} alt="" className="size-6" />
             </button>
           )}
-          <div className="flex flex-col gap-0.5 leading-[1.5]">
+          <div
+            className={`flex flex-col gap-0.5 leading-[1.5] ${centered ? 'text-center' : ''}`}
+          >
             <h2
               id={titleId}
               className={`text-[18px] font-semibold tracking-[-0.36px] break-keep whitespace-pre-line text-brand-brown1 ${closeLabel ? 'pr-8' : ''}`}

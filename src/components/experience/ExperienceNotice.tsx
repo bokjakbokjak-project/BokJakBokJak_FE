@@ -24,7 +24,7 @@ export default function ExperienceNotice({
   ) : (
     <p
       role="note"
-      className={`rounded-[10px] bg-roommate-pink/35 px-3 py-2 text-center text-[12px] leading-[1.5] font-semibold text-balance break-keep text-brand-brown1 ${className}`}
+      className={`rounded-[10px] bg-roommate-pink/85 px-3 py-2 text-center text-[12px] leading-[1.5] font-semibold text-balance break-keep text-brand-brown1 ${className}`}
     >
       예시 후보와 매칭률이에요. 내 답변으로 계산한 추천이 아니에요.
     </p>
@@ -62,10 +62,11 @@ function ResultDialog() {
       title="체험 모드예요"
       message={
         session?.surveySkipped
-          ? '설문을 건너뛰어 예시 답변으로\n채웠어요.'
+          ? '설문을 건너뛰어\n예시 답변으로 채웠어요.'
           : '답변은 이 기기에만 있고\n서버에 저장되지 않아요.'
       }
       confirmLabel="확인"
+      centered
       triggerRef={pageRef}
       onCancel={close}
       onConfirm={close}

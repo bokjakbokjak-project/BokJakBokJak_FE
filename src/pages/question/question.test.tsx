@@ -118,7 +118,7 @@ describe('situational survey', () => {
     const step = screen.getByLabelText('STEP 1 상황')
     const art = within(step).getByTestId('situation-art')
     expect(art).not.toHaveAttribute('data-loaded')
-    expect(art.className).toContain('[clip-path:inset(0_0_100%_0)]')
+    expect(art).toHaveClass('invisible')
 
     // The wait has not started: the STEP screen stays without its picture.
     advance(5000)
@@ -126,7 +126,7 @@ describe('situational survey', () => {
 
     fireEvent.load(art.querySelector('img')!)
     expect(art).toHaveAttribute('data-loaded')
-    expect(art.className).toContain('animate-wipe-down')
+    expect(art).not.toHaveClass('invisible')
     advance(1200)
     expectHidden(step)
     complete.mockRestore()
