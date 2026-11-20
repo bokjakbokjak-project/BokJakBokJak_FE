@@ -10,7 +10,7 @@ import { useNavigate } from 'react-router'
 import backArrow from '../../assets/question/back-arrow-brown.svg'
 import radioOff from '../../assets/question/radio-off.svg'
 import radioOn from '../../assets/question/radio-on.svg'
-import { ErrorState, LoadingState } from '../../components/LoadState/LoadState'
+import { ErrorState } from '../../components/LoadState/LoadState'
 import { useOnboarding } from '../../lib/onboarding/onboardingState'
 import { isPriorityComplete } from '../../lib/onboarding/priority'
 import { ONBOARDING_ROUTES } from '../../lib/onboarding/routes'
@@ -25,6 +25,7 @@ import {
 } from './questionData'
 import { useQuestion } from './questionState'
 import SurveySkipButton from './SurveySkipButton'
+import FullPageLoading from '../../components/LoadState/FullPageLoading'
 
 // Prototype in Figma 1377:49785: the STEP screen waits 2 seconds, then dissolves into the
 // question over 0.8 seconds with Figma's ease in and out. `상황 보기` and `질문 다시보기` use the same dissolve
@@ -475,15 +476,20 @@ export default function QuestionPage() {
     setIndex(next)
   }
 
-  if (saved.status !== 'ready' || needsPriorities) {
+  if (saved.status === 'failed') {
     return (
       <div className="relative isolate flex flex-1 flex-col items-center justify-center bg-question-surface md:rounded-[24px]">
-        {saved.status === 'failed' ? (
-          <ErrorState error={saved.error} onRetry={saved.retry} />
-        ) : (
-          <LoadingState label="설문을 불러오고 있어요" />
-        )}
+        <ErrorState error={saved.error} onRetry={saved.retry} />
       </div>
+    )
+  }
+  if (saved.status !== 'ready' || needsPriorities) {
+    return (
+      <FullPageLoading
+        label="설문을 불러오고 있어요"
+        hint="저장해 둔 답변이 있으면 이어서 할 수 있어요"
+        priorities={onboarding.priorities}
+      />
     )
   }
 
