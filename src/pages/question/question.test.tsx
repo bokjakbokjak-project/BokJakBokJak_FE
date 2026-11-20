@@ -243,15 +243,23 @@ describe('situational survey', () => {
     expect(within(step).getByRole('heading')).toHaveClass('text-brand-brown1')
   })
 
-  it('asks the 온도 topic as STEP 7, where the dishes topic was, with one answer each', () => {
+  it('asks 흡연 as STEP 7 and 온도 last as STEP 8, in the backend order, with one answer each', () => {
     renderAt('/question')
     for (let index = 0; index < 12; index += 1) {
       if (index % 2 === 0) finishSituation()
       pick(index)
       next()
     }
+    expect(
+      screen.getByRole('region', { name: 'STEP 7 상황' }),
+    ).toHaveTextContent('담배')
+    for (let index = 12; index < 14; index += 1) {
+      if (index % 2 === 0) finishSituation()
+      pick(index)
+      next()
+    }
 
-    const step = screen.getByRole('region', { name: 'STEP 7 상황' })
+    const step = screen.getByRole('region', { name: 'STEP 8 상황' })
     expect(within(step).getByRole('heading')).toHaveTextContent(
       '초여름이나 초겨울, 냉난방을 사용해요.',
     )
@@ -261,7 +269,7 @@ describe('situational survey', () => {
     ).toBeInTheDocument()
     expect(screen.queryByText(/식기/)).not.toBeInTheDocument()
 
-    pick(12)
+    pick(14)
     fireEvent.click(screen.getByRole('radio', { name: '거의 사용하지 않는다' }))
     expect(screen.getAllByRole('radio', { checked: true })).toHaveLength(1)
   })

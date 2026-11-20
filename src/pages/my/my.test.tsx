@@ -45,6 +45,8 @@ const layer = (part: string) =>
     ?.getAttribute('data-variant')
 
 /** Opens the my page with the preview's sample profile and sample survey answers. */
+const SMOKING_TOPIC = QUESTION_TOPICS.findIndex(({ id }) => id === 'smoking')
+
 function openSeededMyPage() {
   renderAt('/dev/onboarding')
   fireEvent.click(button('/my (샘플 설문 답변)'))
@@ -68,7 +70,8 @@ describe('answer summary data', () => {
   it('groups all eight survey topics into six rows, in survey order', () => {
     const topicIds = ANSWER_GROUPS.flatMap((group) => group.topicIds)
 
-    // Figma 2339:27404: 온도 sits where the dishes question was, before 흡연.
+    // Figma 2339:27404: 온도 before 흡연 on the profile, even though the survey asks 흡연 first
+    // (the backend's order since 2026-11-20). The rows cover every survey topic once.
     expect(ANSWER_GROUPS.map((group) => group.category)).toEqual([
       'sleep-habit',
       'wake-alarm',
@@ -78,7 +81,19 @@ describe('answer summary data', () => {
       'smoking',
     ])
     expect(ANSWER_GROUPS.map((group) => group.label)).toEqual(ANSWER_ROW_LABELS)
-    expect(topicIds).toEqual(QUESTION_TOPICS.map((topic) => topic.id))
+    expect([...topicIds].sort()).toEqual(
+      QUESTION_TOPICS.map((topic) => topic.id).sort(),
+    )
+    expect(topicIds).toEqual([
+      'sleep-habit',
+      'bedtime',
+      'morning-alarm',
+      'floor-cleaning',
+      'food-waste',
+      'belongings',
+      'temperature',
+      'smoking',
+    ])
     expect(ANSWER_GROUPS.map((group) => group.topicIds.length)).toEqual([
       1, 2, 2, 1, 1, 1,
     ])
@@ -263,7 +278,7 @@ describe('my page', () => {
     expect(
       screen.getByRole('heading', { name: '미리보기' }),
     ).toBeInTheDocument()
-    expect(mineRow('흡연')).toHaveTextContent(selfShown(7, 0))
+    expect(mineRow('흡연')).toHaveTextContent(selfShown(SMOKING_TOPIC, 0))
     expect(layer('head')).toBe('sleep-habit')
   })
 
@@ -276,7 +291,7 @@ describe('my page', () => {
     expect(
       screen.getByRole('heading', { name: '미리보기' }),
     ).toBeInTheDocument()
-    expect(mineRow('흡연')).toHaveTextContent(selfShown(7, 0))
+    expect(mineRow('흡연')).toHaveTextContent(selfShown(SMOKING_TOPIC, 0))
   })
 })
 

@@ -333,14 +333,18 @@ describe('detail profile data', () => {
     renderAt('/roommate/seoyun/profile')
 
     const answers = getCandidateAnswers(getCandidate('seoyun')!)
+    const smoking = QUESTION_TOPICS.findIndex(({ id }) => id === 'smoking')
+    const temperature = QUESTION_TOPICS.findIndex(
+      ({ id }) => id === 'temperature',
+    )
     expect(answerRow(mineSection(), '흡연')).toHaveTextContent(
-      friendlyAnswer('smoking', 'self', answers[14]),
+      friendlyAnswer('smoking', 'self', answers[smoking * 2]),
     )
     expect(answerRow(wantedSection(), '흡연')).toHaveTextContent(
-      friendlyAnswer('smoking', 'roommate', answers[15]),
+      friendlyAnswer('smoking', 'roommate', answers[smoking * 2 + 1]),
     )
     expect(answerRow(mineSection(), '온도')).toHaveTextContent(
-      friendlyAnswer('temperature', 'self', answers[12]),
+      friendlyAnswer('temperature', 'self', answers[temperature * 2]),
     )
     expect(screen.queryByText('아직 답하지 않았어요')).not.toBeInTheDocument()
   })

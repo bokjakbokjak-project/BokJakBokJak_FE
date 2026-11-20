@@ -270,13 +270,13 @@ describe('answers', () => {
     )
   })
 
-  it('maps the Figma labels to their codes, including one worded differently on the server', () => {
+  it('maps the labels on screen to their codes', () => {
     const mapping = buildSurveyMapping(fiveOptionSchema())
     const answers = toServerAnswers(
       {
         ...firstOptions(),
-        7: '주 2~3회 한다',
-        14: '흡연자이지만 기숙사에서는 자제할 예정이다',
+        7: '주 2~3회는 해야 한다',
+        12: '흡연자이지만 기숙사에서는 자제할 예정이다',
       },
       mapping,
     )
@@ -284,7 +284,7 @@ describe('answers', () => {
       question_code: 'FLOOR_CLEAN_T',
       option_code: 'TWO_THREE_WEEKLY_MIN',
     })
-    expect(answers[14]).toEqual({
+    expect(answers[12]).toEqual({
       question_code: 'SMOKING_H',
       option_code: 'QUIT_IN_DORM',
     })
@@ -347,7 +347,7 @@ describe('answers', () => {
       ],
       mapping,
     )
-    expect(answers).toEqual({ 15: '흡연 여부는 상관없다' })
+    expect(answers).toEqual({ 13: '흡연 여부는 상관없다' })
     expect(unreadable).toBe(1)
   })
 })

@@ -77,28 +77,47 @@ const FIGMA_SAMPLE_ANSWERS: readonly AnswerRow[] = [
     partnerAnswer: '바로 정리했으면 좋겠다',
   },
   {
+    topicId: 'smoking',
+    selfAnswer: '비흡연자다',
+    partnerAnswer: '가능한 비흡연자였으면 좋겠다',
+  },
+  {
     // The dishes question became 온도 (2026-11-19); the card component has no 온도 row yet, so
     // this pair is taken from the survey options.
     topicId: 'temperature',
     selfAnswer: '덥거나 추울 때 잠깐 켰다가 끈다',
     partnerAnswer: '덥거나 추울 때 일정시간 이상 켜두어도 괜찮다',
   },
-  {
-    topicId: 'smoking',
-    selfAnswer: '비흡연자다',
-    partnerAnswer: '가능한 비흡연자였으면 좋겠다',
-  },
 ]
+
+/**
+ * The topic order the hand-written `picks` below follow. They are read by topic, not by survey
+ * position, so a change in the survey order (smoking before 온도 since 2026-11-20) cannot give a
+ * topic another topic's option.
+ */
+const PICKS_TOPIC_ORDER = [
+  'sleep-habit',
+  'bedtime',
+  'morning-alarm',
+  'floor-cleaning',
+  'food-waste',
+  'belongings',
+  'temperature',
+  'smoking',
+] as const
 
 /** Builds rows from the real survey, using option positions: [self, roommate] per topic. */
 function surveyAnswers(
   picks: readonly (readonly [number, number])[],
 ): readonly AnswerRow[] {
-  return QUESTION_TOPICS.map((topic, index) => ({
-    topicId: topic.id,
-    selfAnswer: topic.self.options[picks[index][0]],
-    partnerAnswer: topic.roommate.options[picks[index][1]],
-  }))
+  return QUESTION_TOPICS.map((topic) => {
+    const pick = picks[PICKS_TOPIC_ORDER.indexOf(topic.id as never)]
+    return {
+      topicId: topic.id,
+      selfAnswer: topic.self.options[pick[0]],
+      partnerAnswer: topic.roommate.options[pick[1]],
+    }
+  })
 }
 
 const CANDIDATES: readonly RoommateCandidate[] = [
