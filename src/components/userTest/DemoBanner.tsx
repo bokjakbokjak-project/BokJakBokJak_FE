@@ -8,6 +8,7 @@ import {
   setExperienceMode,
   useUserTestState,
 } from '../../lib/userTest/userTestStore'
+import TestPill from './TestPill'
 
 /**
  * The mode switch at the top of every service screen, in the 47px status area of the frame
@@ -31,27 +32,26 @@ export default function DemoBanner() {
       className="pointer-events-none fixed inset-x-0 top-[max(3px,env(safe-area-inset-top))] z-30 flex justify-center px-3"
     >
       {mode === 'demo' ? (
-        <div className="pointer-events-auto flex flex-col items-center rounded-[10px] bg-brand-brown1/90 px-3 py-[3px] text-center text-[11px] leading-[1.4] font-medium text-white">
-          <p>{DEMO_NOTICE}</p>
+        <div className="pointer-events-auto flex items-center gap-2 rounded-full bg-brand-brown1 py-[5px] pr-[5px] pl-3 text-[11px] leading-[1.4] font-medium text-white shadow-[0_3px_10px_rgba(97,71,53,0.35)] ring-2 ring-white">
+          <p className="break-keep">{DEMO_NOTICE}</p>
           <button
             type="button"
-            className="font-bold underline underline-offset-2"
+            className="shrink-0 rounded-full bg-roommate-pink px-2.5 py-[3px] text-[11px] leading-[1.4] font-bold whitespace-nowrap text-brand-brown1 transition-transform active:scale-95"
             onClick={() => startLiveSurvey()}
           >
             직접 설문하고 매칭하기
           </button>
         </div>
       ) : (
-        <button
-          type="button"
-          className="pointer-events-auto mt-1.5 rounded-full border-[1.5px] border-white bg-roommate-pink px-3 py-1 text-[11px] leading-[1.4] font-bold text-brand-brown1 shadow-[0_2px_6px_rgba(97,71,53,0.18)]"
+        <TestPill
+          className="mt-1"
           onClick={() => {
             setExperienceMode('demo')
             navigate(DEMO_ENTRY_ROUTE)
           }}
         >
           예시로 둘러보기
-        </button>
+        </TestPill>
       )}
     </div>
   )
