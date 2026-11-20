@@ -18,6 +18,7 @@ import { CHAT_ROUTES } from '../../lib/chat/routes'
 import { HOME_ROUTES } from '../../lib/home/routes'
 import { ROOMMATE_ROUTES } from '../../lib/roommate/routes'
 import AiCard from '../chat/AiCard'
+import ChatInput from '../chat/ChatInput'
 import { AI_TILE, PARTNER_TILE } from '../chat/chatAvatars'
 import {
   BOT_NAME,
@@ -146,16 +147,12 @@ function Room({ chat }: { chat: ExperienceChatState }) {
   return (
     <>
       <div className="mx-6 mt-2 flex shrink-0 flex-col gap-1.5">
-        <p role="note" className={NOTE}>
-          자동으로 응답하는 체험 상대라 답장을 골라 보내요. 실제 서비스에서는
-          입력창에 직접 메시지를 써서 대화할 수 있어요.
+        {/* One note, broken where the two sentences meet (requested 2026-11-20). */}
+        <p role="note" className={`${NOTE} text-balance whitespace-pre-line`}>
+          {
+            '자동으로 응답하는 체험 상대라 답장을 골라 보내요.\n실제 서비스에서는 입력창에 직접 메시지를 써서 대화할 수 있어요.'
+          }
         </p>
-        {chat.switchedToExample && (
-          <p role="note" className={NOTE}>
-            선택한 후보의 분석에는 준비된 조율 안건이 없어서, 예시 두 사람의
-            대화로 체험해요.
-          </p>
-        )}
       </div>
       <ol
         ref={listRef}
@@ -330,9 +327,20 @@ function SenderTile({
 
 function Footer({ chat }: { chat: ExperienceChatState }) {
   const navigate = useNavigate()
+  // The chat room's input sits under the replies, locked: in the service the message is typed
+  // here (requested 2026-11-20), while the experience picks a reply above it.
   const wrap = (children: ReactNode) => (
     <footer className="flex shrink-0 flex-col gap-2 px-6 pb-[max(7px,calc(41px-env(safe-area-inset-bottom)))]">
       {children}
+      <div className="mt-2">
+        <ChatInput
+          value=""
+          disabled
+          canSend={false}
+          onChange={() => {}}
+          onSubmit={(event) => event.preventDefault()}
+        />
+      </div>
     </footer>
   )
 
@@ -368,8 +376,8 @@ function Footer({ chat }: { chat: ExperienceChatState }) {
         </button>,
       )
     case 'matched':
-      return wrap(
-        <>
+      return (
+        <footer className="flex shrink-0 flex-col gap-2 px-6 pb-[max(7px,calc(41px-env(safe-area-inset-bottom)))]">
           <p
             role="status"
             className="flex h-10 items-center self-center rounded-[62px] bg-brand-beige1 p-2.5 text-[14px] leading-[1.5] font-semibold text-chat-badge-text"
@@ -383,10 +391,10 @@ function Footer({ chat }: { chat: ExperienceChatState }) {
           >
             홈으로 가기
           </button>
-        </>,
+        </footer>
       )
     default:
       // Waiting for the partner, or for the choice on the agreement card.
-      return null
+      return wrap(null)
   }
 }

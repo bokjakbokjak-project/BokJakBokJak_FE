@@ -179,6 +179,7 @@ function ServerDetailProfile({ userId }: { userId: number }) {
         data-testid="roommate-scroll"
         // The back card of ProfileHero is tilted 9px above the block, so the scroll area starts
         // 9px higher and pads it back, instead of cutting the card off at its top edge.
+        data-scroll-hint-target
         className="scrollbar-none -mt-[9px] flex min-h-0 flex-1 flex-col overflow-y-auto pt-[9px]"
       >
         {profile.status === 'ready' ? (
@@ -249,6 +250,7 @@ function SampleDetailProfile({ candidateId }: { candidateId?: string }) {
         data-testid="roommate-scroll"
         // The back card of ProfileHero is tilted 9px above the block, so the scroll area starts
         // 9px higher and pads it back, instead of cutting the card off at its top edge.
+        data-scroll-hint-target
         className="scrollbar-none -mt-[9px] flex min-h-0 flex-1 flex-col overflow-y-auto pt-[9px]"
       >
         <ProfileHero profile={candidateCard(candidate)} />
