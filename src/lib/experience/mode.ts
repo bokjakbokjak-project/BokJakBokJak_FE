@@ -13,6 +13,8 @@
  * in flight, the chat polling and any scheduled reply, and drops every memory state and cache,
  * so nothing of one mode reaches the other.
  */
+import { clearTokens } from '../auth/tokenStore'
+
 export type AppMode = 'experience' | 'service'
 
 const MODE_KEY = 'bokjak-app-mode'
@@ -61,8 +63,18 @@ export function startRouteOf(mode: AppMode) {
   return mode === 'experience' ? EXPERIENCE_ROUTES.start : '/'
 }
 
+/**
+ * Opening the service mode starts it from the login (requested 2026-11-20): a sign-in kept in
+ * this browser from before would otherwise be restored and the login would move straight on to
+ * where that account stopped. Only this browser's tokens are dropped.
+ */
+export function startServiceFresh() {
+  clearTokens()
+}
+
 /** Switches the mode and reloads on its start screen (see above). */
 export function switchAppMode(mode: AppMode) {
+  if (mode === 'service') startServiceFresh()
   setAppMode(mode)
   window.location.replace(startRouteOf(mode))
 }

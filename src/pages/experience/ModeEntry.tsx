@@ -5,6 +5,7 @@ import {
   isExperienceEnabled,
   setAppMode,
   startRouteOf,
+  startServiceFresh,
   type AppMode,
 } from '../../lib/experience/mode'
 
@@ -23,6 +24,13 @@ export default function ModeEntry({
   children?: ReactNode
 }) {
   if (!isExperienceEnabled()) return <Navigate to="/" replace />
+  // The service link always starts at the login, as a fresh run (requested 2026-11-20).
+  if (mode === 'service') {
+    startServiceFresh()
+    setAppMode(mode)
+    window.location.replace(startRouteOf(mode))
+    return null
+  }
   if (getAppMode() !== mode) {
     setAppMode(mode)
     // The experience link keeps its query (`?purpose=film`).

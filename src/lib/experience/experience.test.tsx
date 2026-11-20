@@ -3,7 +3,7 @@ import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import AppRoutes from '../../app/AppRoutes'
 import { getApiMode } from '../api/config'
-import { clearTokens, startSession } from '../auth/tokenStore'
+import { clearTokens, getRefreshToken, startSession } from '../auth/tokenStore'
 import { startParticipant } from '../userTest/userTestStore'
 import {
   AUTO_REPLY_MS,
@@ -16,7 +16,12 @@ import {
   dispatchExperienceChat,
   startExperienceChat,
 } from './experienceChat'
-import { getAppMode, isExperienceMode, setAppMode } from './mode'
+import {
+  getAppMode,
+  isExperienceMode,
+  setAppMode,
+  startServiceFresh,
+} from './mode'
 import { scenarioForAdjust } from './scenarios'
 import {
   getExperienceSession,
@@ -62,6 +67,13 @@ afterEach(() => {
 })
 
 describe('mode', () => {
+  it('starts the service mode at the login by dropping a kept sign-in', () => {
+    startSession({ accessToken: 'a', refreshToken: 'r' })
+    expect(getRefreshToken()).toBe('r')
+    startServiceFresh()
+    expect(getRefreshToken()).toBeNull()
+  })
+
   it('stays on the service mode in builds without the experience', () => {
     vi.stubEnv('VITE_API_MODE', 'server')
     setAppMode('experience')
