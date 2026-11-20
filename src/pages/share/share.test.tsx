@@ -50,6 +50,12 @@ describe('share link', () => {
     expect(readSharedProfile(new URL(url).hash)).toEqual(PROFILE)
   })
 
+  it('preserves the sharer ID in a new link', () => {
+    expect(
+      readSharedProfile(hashOf({ ...PROFILE, userId: 1002 }))?.userId,
+    ).toBe(1002)
+  })
+
   it('leaves out the dishes answers of a link made before 온도 replaced them', () => {
     // A version 1 link, made when questions 13 and 14 (indexes 12 and 13) were about dishes.
     const v1 = {

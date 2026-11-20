@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router'
+import { HOME_ROUTES } from '../home/routes'
+import { takeShareReturn } from '../share/shareReturn'
 import { useAuth } from './authState'
 import { resolveStartRoute } from './startRoute'
 
@@ -23,7 +25,11 @@ export function useStartRouteRedirect() {
     let isCurrent = true
     resolveStartRoute().then((route) => {
       if (!isCurrent) return
-      if (route) navigate(route, { replace: true })
+      if (route)
+        navigate(
+          route === HOME_ROUTES.home ? (takeShareReturn() ?? route) : route,
+          { replace: true },
+        )
       else setStayHere(true)
     })
     return () => {
