@@ -89,7 +89,7 @@ function chipRows() {
 function expectFixedChipRows() {
   expect(chipRows()).toEqual([
     ['잠버릇', '기상알람', '청소,청결'],
-    ['개인청결', '흡연유무'],
+    ['개인청결', '흡연유무', '온도'],
   ])
 }
 
@@ -218,7 +218,7 @@ describe('priority chip positions', () => {
     expect(layerVariant('hand')).toBe('wake-alarm')
   })
 
-  it('keeps three chips on top and two below after three selections', () => {
+  it('keeps three chips in each row after three selections', () => {
     renderPriorityStep()
 
     click(/개인청결/)
@@ -248,6 +248,31 @@ describe('priority chip positions', () => {
     expect(layerVariant('hand')).toBe('sleep-habit')
     expect(layerVariant('body')).toBe('default')
     expect(screen.getByRole('button', { name: '완료하기' })).toBeDisabled()
+  })
+})
+
+describe('temperature category', () => {
+  it('ranks all six habits, with a text badge for rank 6 and 온도 on the character', () => {
+    renderPriorityStep()
+
+    click(/온도/)
+    expectFixedChipRows()
+    expect(within(chip(/온도/)).getByAltText('1순위')).toBeInTheDocument()
+    expect(layerVariant('head')).toBe('temperature')
+
+    for (const name of [
+      /잠버릇/,
+      /기상알람/,
+      /청소,청결/,
+      /개인청결/,
+      /흡연유무/,
+    ]) {
+      click(name)
+    }
+    expect(
+      within(chip(/흡연유무/)).getByRole('img', { name: '6순위' }),
+    ).toHaveTextContent('6')
+    expect(screen.getByRole('button', { name: '완료하기' })).toBeEnabled()
   })
 })
 
@@ -847,17 +872,17 @@ describe('mission notice', () => {
     expect(mission()).not.toBeInTheDocument()
   })
 
-  it('asks to rank all five habits (Figma 1041:30715)', () => {
+  it('asks to rank three to six habits (Figma 1041:30715, count raised to 6)', () => {
     renderPriorityStep()
 
     expect(mission()).toHaveTextContent(
-      '내가 가장 중요하게 생각하는생활습관 5개의 순위를 매겨주세요!선택한 우선순위에 따라 내 캐릭터 외형이 바뀌어요!',
+      '내가 가장 중요하게 생각하는생활습관 3~6개의 순위를 매겨주세요!선택한 우선순위에 따라 내 캐릭터 외형이 바뀌어요!',
     )
     expect(mission()).not.toHaveTextContent('생활습관을 선택해주세요')
     expect(
       screen.getByRole('heading', {
         level: 1,
-        name: '내가 가장 중요하게 생각하는 생활습관 5개의 순위를 매겨주세요',
+        name: '내가 가장 중요하게 생각하는 생활습관 3~6개의 순위를 매겨주세요',
       }),
     ).toBeInTheDocument()
   })

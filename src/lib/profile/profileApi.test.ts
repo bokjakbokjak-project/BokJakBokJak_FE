@@ -43,7 +43,7 @@ describe('my profile response', () => {
     ).toThrow(ApiError)
   })
 
-  it('builds five cards and eight topics from the owner’s habit and tolerance answers', () => {
+  it('builds six cards and eight topics from the owner’s habit and tolerance answers', () => {
     const cards = parseMyProfile(profileData()).cards!
 
     expect(cards.map((card) => card.category)).toEqual([
@@ -52,6 +52,7 @@ describe('my profile response', () => {
       'cleaning',
       'personal-hygiene',
       'smoking',
+      'temperature',
     ])
     expect(cards.flatMap((card) => card.items)).toHaveLength(8)
     // 나의 성향 is the habit answer, 원하는 성향 the tolerance answer.
@@ -96,6 +97,17 @@ describe('my profile response', () => {
     expect(
       parseMyProfile({ ...profileData(), categories: swaggerShaped }),
     ).toMatchObject({ nickname: '서버닉네임', cards: null })
+  })
+
+  it('reads the 온도 category code the survey sends as a top category', () => {
+    const profile = parseMyProfile(
+      profileData({ topCategories: ['TEMPERATURE', 'SMOKING', 'CLEANING'] }),
+    )
+    expect(profile.topCategories).toEqual([
+      'temperature',
+      'smoking',
+      'cleaning',
+    ])
   })
 
   it('keeps an empty rank for an unknown top category code', () => {

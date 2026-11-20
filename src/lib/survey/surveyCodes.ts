@@ -123,25 +123,18 @@ export const SURVEY_CODES: Readonly<Record<string, TopicCodes>> = {
       ],
     },
   },
-  dishes: {
+  // Codes from the backend migration V11__replace_dishes_with_temperature.sql (BE dev, PR #73,
+  // merged 2026-11-20), in the Figma option order (1377:49785), which is also the server's
+  // display order; the labels match. On the server the topic comes last (Q15·16, after smoking);
+  // the screens keep it before smoking, which is fine because answers are tied by code.
+  temperature: {
     self: {
-      questionCode: 'DISHES_H',
-      optionCodes: [
-        'IMMEDIATELY',
-        'SAME_DAY',
-        'NEXT_DAY',
-        'TWO_DAYS_PLUS',
-        'NOT_IN_ROOM',
-      ],
+      questionCode: 'TEMPERATURE_H',
+      optionCodes: ['ALWAYS_ON', 'LONG', 'SHORT', 'RARELY'],
     },
     roommate: {
-      questionCode: 'DISHES_T',
-      optionCodes: [
-        'IMMEDIATELY_ONLY',
-        'SAME_DAY_OK',
-        'NEXT_DAY_OK',
-        'NO_ISSUE_OK',
-      ],
+      questionCode: 'TEMPERATURE_T',
+      optionCodes: ['ALWAYS_ON_OK', 'LONG_OK', 'SHORT_ONLY', 'RARELY_ONLY'],
     },
   },
   smoking: {

@@ -11,6 +11,14 @@ import {
   getCandidates,
 } from '../../lib/roommate/roommateData'
 import { QUESTION_TOPICS } from '../question/questionData'
+import {
+  ANSWER_ROW_LABELS,
+  answerRow,
+  answerRowLabels,
+  mineSection,
+  wantedSection,
+} from '../../test/answerSections'
+import { friendlyAnswer } from '../../lib/friendlyAnswers'
 
 function renderAt(path: string, state?: unknown) {
   render(
@@ -288,44 +296,36 @@ describe('candidate screens', () => {
 })
 
 describe('detail profile data', () => {
-  const card = (title: string) => screen.getByRole('region', { name: title })
-
-  it('shows the five summary cards with the candidate answers', () => {
+  it('shows both sections with a row per answer group, 온도 before 흡연', () => {
     renderAt('/roommate/sujeong/profile')
 
-    for (const title of [
-      '잠버릇',
-      '기상알람',
-      '청소 청결',
-      '개인 청결',
-      '흡연유무',
-    ]) {
-      expect(card(title)).toBeInTheDocument()
-    }
-    const sleep = card('잠버릇')
-    expect(sleep).toHaveTextContent(QUESTION_TOPICS[0].self.text.split('\n')[0])
-    expect(sleep).toHaveTextContent('자주 있다는 말을 들었다')
-    expect(sleep).toHaveTextContent('가끔 있는 정도는 괜찮다')
+    expect(answerRowLabels(mineSection())).toEqual(ANSWER_ROW_LABELS)
+    expect(answerRowLabels(wantedSection())).toEqual(ANSWER_ROW_LABELS)
+    expect(answerRow(mineSection(), '잠버릇')).toHaveTextContent(
+      '자주 있다는 말을 들었어요',
+    )
+    expect(answerRow(wantedSection(), '잠버릇')).toHaveTextContent(
+      '가끔 있는 정도는 괜찮아요',
+    )
+    expect(screen.queryByTestId('shared-blurred')).not.toBeInTheDocument()
   })
 
-  it('pages each card on its own, with both answers following the question', () => {
+  it('puts both answers of a two-question group in its row', () => {
     renderAt('/roommate/seoyun/profile')
     const seoyun = getCandidate('seoyun')!
-    const alarm = card('기상알람')
-    const cleaning = card('청소 청결')
-    const next = within(alarm).getByRole('button', { name: /다음 질문/ })
+    const mine = answerRow(mineSection(), '기상알람')
+    const wanted = answerRow(wantedSection(), '기상알람')
 
-    expect(alarm).toHaveTextContent('1/2')
-    expect(alarm).toHaveTextContent(seoyun.answers[1].selfAnswer)
-    fireEvent.click(next)
-    expect(alarm).toHaveTextContent('2/2')
-    expect(alarm).toHaveTextContent(QUESTION_TOPICS[2].self.text.split('\n')[0])
-    expect(alarm).toHaveTextContent(seoyun.answers[2].selfAnswer)
-    expect(alarm).toHaveTextContent(seoyun.answers[2].partnerAnswer)
-    expect(next).toBeDisabled()
-    expect(cleaning).toHaveTextContent('1/2')
+    for (const row of seoyun.answers.slice(1, 3)) {
+      expect(mine).toHaveTextContent(
+        friendlyAnswer(row.topicId, 'self', row.selfAnswer),
+      )
+      expect(wanted).toHaveTextContent(
+        friendlyAnswer(row.topicId, 'roommate', row.partnerAnswer),
+      )
+    }
     expect(
-      within(card('흡연유무')).queryByRole('button', { name: /질문/ }),
+      screen.queryByRole('button', { name: /질문/ }),
     ).not.toBeInTheDocument()
   })
 
@@ -333,8 +333,15 @@ describe('detail profile data', () => {
     renderAt('/roommate/seoyun/profile')
 
     const answers = getCandidateAnswers(getCandidate('seoyun')!)
-    expect(card('흡연유무')).toHaveTextContent(answers[14])
-    expect(card('흡연유무')).toHaveTextContent(answers[15])
+    expect(answerRow(mineSection(), '흡연')).toHaveTextContent(
+      friendlyAnswer('smoking', 'self', answers[14]),
+    )
+    expect(answerRow(wantedSection(), '흡연')).toHaveTextContent(
+      friendlyAnswer('smoking', 'roommate', answers[15]),
+    )
+    expect(answerRow(mineSection(), '온도')).toHaveTextContent(
+      friendlyAnswer('temperature', 'self', answers[12]),
+    )
     expect(screen.queryByText('아직 답하지 않았어요')).not.toBeInTheDocument()
   })
 
@@ -485,7 +492,7 @@ describe('detail profile layout', () => {
       screen.getByRole('heading', { name: /민수정/ }),
     )
     expect(scroll).toContainElement(
-      screen.getByRole('heading', { name: '상세 답변 요약' }),
+      screen.getByRole('heading', { name: '전 이런 사람이에요' }),
     )
     expect(scroll).not.toContainElement(
       screen.getByRole('heading', { name: '상세 프로필' }),
@@ -502,15 +509,7 @@ describe('roommate screens opened from a chat room', () => {
     expect(
       screen.getByRole('heading', { name: '상세 프로필' }),
     ).toBeInTheDocument()
-    for (const title of [
-      '잠버릇',
-      '기상알람',
-      '청소 청결',
-      '개인 청결',
-      '흡연유무',
-    ]) {
-      expect(screen.getByRole('region', { name: title })).toBeInTheDocument()
-    }
+    expect(answerRowLabels(mineSection())).toEqual(ANSWER_ROW_LABELS)
     const bar = screen.getByTestId('chat-request-bar')
     expect(screen.getByTestId('roommate-scroll')).not.toContainElement(bar)
     expect(chatButton()).toBeEnabled()

@@ -7,18 +7,21 @@ import bodyDefault from '../../assets/characters/body/default.svg'
 import bodyHygiene from '../../assets/characters/body/personal-hygiene.svg'
 import bodySleep from '../../assets/characters/body/sleep-habit.svg'
 import bodySmoking from '../../assets/characters/body/smoking.svg'
+import bodyTemperature from '../../assets/characters/body/temperature.svg'
 import bodyAlarm from '../../assets/characters/body/wake-alarm.svg'
 import handCleaning from '../../assets/characters/hand/cleaning.svg'
 import handDefault from '../../assets/characters/hand/default.svg'
 import handHygiene from '../../assets/characters/hand/personal-hygiene.svg'
 import handSleep from '../../assets/characters/hand/sleep-habit.svg'
 import handSmoking from '../../assets/characters/hand/smoking.svg'
+import handTemperature from '../../assets/characters/hand/temperature.svg'
 import handAlarm from '../../assets/characters/hand/wake-alarm.svg'
 import headCleaning from '../../assets/characters/head/cleaning.svg'
 import headDefault from '../../assets/characters/head/default.svg'
 import headHygiene from '../../assets/characters/head/personal-hygiene.svg'
 import headSleep from '../../assets/characters/head/sleep-habit.svg'
 import headSmoking from '../../assets/characters/head/smoking.svg'
+import headTemperature from '../../assets/characters/head/temperature.svg'
 import headAlarm from '../../assets/characters/head/wake-alarm.svg'
 import type { CategoryId } from './categories'
 
@@ -51,6 +54,9 @@ const PART_ASSETS: Record<PartName, Record<PartVariant, Asset>> = {
     cleaning: { src: headCleaning, width: 250, height: 214 },
     'personal-hygiene': { src: headHygiene, width: 250, height: 214 },
     smoking: { src: headSmoking, width: 250, height: 214 },
+    // 온도 parts: the unnamed variants of the component sets in Figma 687:1909 (head 2455:23088,
+    // hand 2441:22376, body 2441:22381), shown together in 2455:23197.
+    temperature: { src: headTemperature, width: 250, height: 214 },
   },
   hand: {
     default: { src: handDefault, width: 149, height: 86 },
@@ -69,6 +75,7 @@ const PART_ASSETS: Record<PartName, Record<PartVariant, Asset>> = {
       height: 116,
     },
     smoking: { src: handSmoking, width: 149, height: 86 },
+    temperature: { src: handTemperature, width: 149, height: 86 },
   },
   body: {
     default: { src: bodyDefault, width: 117, height: 89 },
@@ -77,6 +84,8 @@ const PART_ASSETS: Record<PartName, Record<PartVariant, Asset>> = {
     cleaning: { src: bodyCleaning, width: 117, height: 92 },
     'personal-hygiene': { src: bodyHygiene, width: 118, height: 92 },
     smoking: { src: bodySmoking, width: 117, height: 89 },
+    // The scarf reaches 3px left of the 117px body frame.
+    temperature: { src: bodyTemperature, offsetX: -3, width: 121, height: 89 },
   },
 }
 
@@ -91,7 +100,7 @@ export type CharacterLayer = {
   height: number
 }
 
-/** Rank 1 sets the head, rank 2 the hand, and rank 3 the body. Ranks 4 and 5 change nothing. */
+/** Rank 1 sets the head, rank 2 the hand, and rank 3 the body. Ranks 4 to 6 change nothing. */
 export function getPartVariants(
   priorities: readonly (CategoryId | undefined)[],
 ): Record<PartName, PartVariant> {

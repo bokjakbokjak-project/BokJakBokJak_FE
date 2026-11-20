@@ -3,9 +3,16 @@ import { MemoryRouter } from 'react-router'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import AppRoutes from '../../app/AppRoutes'
 import { ANSWER_GROUPS, getAnswerSummary } from '../../lib/answerSummary'
-import { CATEGORY_IDS } from '../../lib/onboarding/categories'
+import {
+  ANSWER_ROW_LABELS,
+  answerRow,
+  answerRowLabels,
+  mineSection,
+  wantedSection,
+} from '../../test/answerSections'
 import { finishSituation } from '../../test/questionFade'
 import { QUESTION_COUNT, QUESTION_TOPICS } from '../question/questionData'
+import { friendlyAnswer } from '../../lib/friendlyAnswers'
 
 function renderAt(path: string) {
   render(
@@ -23,9 +30,13 @@ function openSummary() {
   const row = screen.queryByRole('link', { name: '상세 프로필 보기' })
   if (row) fireEvent.click(row)
 }
-const card = (title: string) => {
+const mineRow = (label: string) => {
   openSummary()
-  return screen.getByRole('region', { name: title })
+  return answerRow(mineSection(), label)
+}
+const wantedRow = (label: string) => {
+  openSummary()
+  return answerRow(wantedSection(), label)
 }
 const layer = (part: string) =>
   screen
@@ -43,17 +54,33 @@ const selfOption = (topic: number, option: number) =>
   QUESTION_TOPICS[topic].self.options[option]
 const roommateOption = (topic: number, option: number) =>
   QUESTION_TOPICS[topic].roommate.options[option]
+/** How the detail profile says an answer (friendly wording). */
+const selfShown = (topic: number, option: number) =>
+  friendlyAnswer(QUESTION_TOPICS[topic].id, 'self', selfOption(topic, option))
+const roommateShown = (topic: number, option: number) =>
+  friendlyAnswer(
+    QUESTION_TOPICS[topic].id,
+    'roommate',
+    roommateOption(topic, option),
+  )
 
 describe('answer summary data', () => {
-  it('groups all eight survey topics into the five categories, in survey order', () => {
+  it('groups all eight survey topics into six rows, in survey order', () => {
     const topicIds = ANSWER_GROUPS.flatMap((group) => group.topicIds)
 
+    // Figma 2339:27404: 온도 sits where the dishes question was, before 흡연.
     expect(ANSWER_GROUPS.map((group) => group.category)).toEqual([
-      ...CATEGORY_IDS,
+      'sleep-habit',
+      'wake-alarm',
+      'cleaning',
+      'personal-hygiene',
+      'temperature',
+      'smoking',
     ])
+    expect(ANSWER_GROUPS.map((group) => group.label)).toEqual(ANSWER_ROW_LABELS)
     expect(topicIds).toEqual(QUESTION_TOPICS.map((topic) => topic.id))
     expect(ANSWER_GROUPS.map((group) => group.topicIds.length)).toEqual([
-      1, 2, 2, 2, 1,
+      1, 2, 2, 1, 1, 1,
     ])
   })
 
@@ -67,7 +94,8 @@ describe('answer summary data', () => {
     const items = getAnswerSummary(answers).flatMap((group) => group.items)
 
     expect(items).toHaveLength(QUESTION_TOPICS.length)
-    items.forEach((item, topic) => {
+    items.forEach((item) => {
+      const topic = QUESTION_TOPICS.findIndex(({ id }) => id === item.topicId)
       expect(item.question).toBe(QUESTION_TOPICS[topic].self.text)
       expect(item.mine).toBe(`answer-${topic * 2}`)
       expect(item.wanted).toBe(`answer-${topic * 2 + 1}`)
@@ -110,19 +138,16 @@ describe('my page', () => {
     expect(
       screen.getByRole('heading', { name: '상세 프로필' }),
     ).toBeInTheDocument()
-    for (const title of [
-      '잠버릇',
-      '기상알람',
-      '청소 청결',
-      '개인 청결',
-      '흡연유무',
-    ]) {
-      expect(screen.getByRole('region', { name: title })).toBeInTheDocument()
-    }
+    expect(answerRowLabels(mineSection())).toEqual(ANSWER_ROW_LABELS)
+    expect(answerRowLabels(wantedSection())).toEqual(ANSWER_ROW_LABELS)
+    // My own detail profile shows every row, with no blur.
+    expect(screen.queryByTestId('shared-blurred')).not.toBeInTheDocument()
 
     fireEvent.click(link('이전'))
     expect(screen.getByRole('heading', { name: '프로필' })).toBeInTheDocument()
-    expect(screen.queryByRole('region', { name: '잠버릇' })).toBeNull()
+    expect(
+      screen.queryByRole('region', { name: '전 이런 사람이에요' }),
+    ).toBeNull()
   })
 
   it('keeps the menu order and the other rows working', () => {
@@ -174,39 +199,22 @@ describe('my page', () => {
     expect(layer('hand')).toBe('wake-alarm')
     expect(layer('body')).toBe('cleaning')
 
-    const titles = ['잠버릇', '기상알람', '청소 청결', '개인 청결', '흡연유무']
-    titles.forEach((title) => expect(card(title)).toBeInTheDocument())
-
-    const sleep = card('잠버릇')
-    expect(sleep).toHaveTextContent(selfOption(0, 0))
-    expect(sleep).toHaveTextContent(roommateOption(0, 1))
-    expect(
-      within(sleep).queryByRole('button', { name: /다음 질문/ }),
-    ).not.toBeInTheDocument()
+    expect(mineRow('잠버릇')).toHaveTextContent(selfShown(0, 0))
+    expect(wantedRow('잠버릇')).toHaveTextContent(roommateShown(0, 1))
+    expect(answerRowLabels(mineSection())).toEqual(ANSWER_ROW_LABELS)
   })
 
-  it('pages through the questions of one card without moving the others', () => {
+  it('shows both answers of a two-question group in one row', () => {
     openSeededMyPage()
-    const alarm = card('기상알람')
-    const cleaning = card('청소 청결')
-    const previous = within(alarm).getByRole('button', { name: /이전 질문/ })
-    const next = within(alarm).getByRole('button', { name: /다음 질문/ })
+    const mine = mineRow('기상알람')
+    const wanted = wantedRow('기상알람')
 
-    expect(alarm).toHaveTextContent('1/2')
-    expect(alarm).toHaveTextContent(QUESTION_TOPICS[1].self.options[0])
-    expect(previous).toBeDisabled()
-
-    fireEvent.click(next)
-    expect(alarm).toHaveTextContent('2/2')
-    expect(alarm).toHaveTextContent(QUESTION_TOPICS[2].self.text.split('\n')[0])
-    expect(alarm).toHaveTextContent(selfOption(2, 0))
-    expect(alarm).toHaveTextContent(roommateOption(2, 1))
-    expect(next).toBeDisabled()
-    expect(cleaning).toHaveTextContent('1/2')
-
-    fireEvent.click(previous)
-    expect(alarm).toHaveTextContent('1/2')
-    expect(alarm).toHaveTextContent(selfOption(1, 0))
+    expect(mine).toHaveTextContent(selfShown(1, 0))
+    expect(mine).toHaveTextContent(selfShown(2, 0))
+    expect(wanted).toHaveTextContent(roommateShown(2, 1))
+    expect(
+      screen.queryByRole('button', { name: /질문/ }),
+    ).not.toBeInTheDocument()
   })
 
   it('sends the detail profile to the survey without survey answers', () => {
@@ -255,7 +263,7 @@ describe('my page', () => {
     expect(
       screen.getByRole('heading', { name: '미리보기' }),
     ).toBeInTheDocument()
-    expect(card('흡연유무')).toHaveTextContent(selfOption(7, 0))
+    expect(mineRow('흡연')).toHaveTextContent(selfShown(7, 0))
     expect(layer('head')).toBe('sleep-habit')
   })
 
@@ -268,7 +276,7 @@ describe('my page', () => {
     expect(
       screen.getByRole('heading', { name: '미리보기' }),
     ).toBeInTheDocument()
-    expect(card('흡연유무')).toHaveTextContent(selfOption(7, 0))
+    expect(mineRow('흡연')).toHaveTextContent(selfShown(7, 0))
   })
 })
 
@@ -372,7 +380,7 @@ describe('retaking the survey', () => {
     fireEvent.click(within(dialog).getByRole('button', { name: '취소' }))
 
     expect(screen.queryByRole('alertdialog')).not.toBeInTheDocument()
-    expect(card('잠버릇')).toHaveTextContent(selfOption(0, 0))
+    expect(mineRow('잠버릇')).toHaveTextContent(selfShown(0, 0))
     expect(layer('head')).toBe('sleep-habit')
   })
 
@@ -428,8 +436,8 @@ describe('retaking the survey', () => {
       screen.getByRole('heading', { name: '미리보기' }),
     ).toBeInTheDocument()
     expect(layer('head')).toBe('smoking')
-    const lastSelf = QUESTION_TOPICS[0].self.options.at(-1) as string
-    expect(card('잠버릇')).toHaveTextContent(lastSelf)
-    expect(card('잠버릇')).not.toHaveTextContent(selfOption(0, 0))
+    const last = QUESTION_TOPICS[0].self.options.length - 1
+    expect(mineRow('잠버릇')).toHaveTextContent(selfShown(0, last))
+    expect(mineRow('잠버릇')).not.toHaveTextContent(selfShown(0, 0))
   })
 })

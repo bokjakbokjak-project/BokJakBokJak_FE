@@ -100,6 +100,16 @@ export function buildSurveyMapping(schema: SurveySchema): SurveyMapping {
     }
   })
 
+  // A priority is sent as its category code, so every card must exist on the server too
+  // (such as TEMPERATURE on a server from before migration V11).
+  const serverCategories = new Set(schema.categoryCodes)
+  for (const id of CATEGORY_IDS) {
+    const code = CATEGORY_SERVER_CODES[id]
+    if (!serverCategories.has(code)) {
+      problems.push(`${code}: 서버 설문에 없는 생활습관 카테고리예요.`)
+    }
+  }
+
   // Every server question is required, so one the FE does not show cannot be answered.
   for (const { questionCode } of schema.questions) {
     if (!known.has(questionCode)) {
