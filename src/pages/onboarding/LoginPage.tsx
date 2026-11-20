@@ -51,7 +51,7 @@ type Phase = 'loading' | 'ready' | 'signing-in' | 'unavailable'
 function ServerLogin() {
   const { signIn, isSigningIn: signInPending } = useAuth()
   const clientId = getGoogleClientId()
-  // A signed-in user does not stay here (GET /api/me/status, useStartRouteRedirect).
+  // Both Google and guest sign-in use the shared redirect hook.
   const isResolving = useStartRouteRedirect()
   // Read by Google's callback, which outlives renders.
   const isResolvingRef = useRef(isResolving)

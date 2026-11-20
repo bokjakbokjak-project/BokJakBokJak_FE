@@ -1,3 +1,7 @@
+import {
+  rememberShareReturn,
+  takeShareReturn,
+} from '../../lib/share/shareReturn'
 import { act, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter, useLocation, useNavigate } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -267,6 +271,15 @@ describe('server survey: first submit', () => {
       priorities: SAVED_PRIORITIES,
       answers: FIRST_OPTION_ANSWERS,
     })
+  })
+
+  it('returns to the saved share link after the survey is saved', async () => {
+    rememberShareReturn('#example')
+    await openSurvey()
+    await answerAllAndFinish()
+    await until(() => expect(path()).toBe('/share'))
+    expect(puts()).toHaveLength(1)
+    expect(takeShareReturn()).toBeNull()
   })
 
   it('opens the result only after the save, and keeps the answers when it fails', async () => {
