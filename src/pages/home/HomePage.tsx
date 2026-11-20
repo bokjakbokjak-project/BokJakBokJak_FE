@@ -17,8 +17,8 @@ import {
 } from '../../lib/home/notificationData'
 import { getUnreadNotificationCount } from '../../lib/home/notificationApi'
 import { HOME_ROUTES } from '../../lib/home/routes'
-import { MY_ROUTES } from '../../lib/my/routes'
 import { useDisplayProfile } from '../../lib/profile/myProfile'
+import { useStartRetake } from '../question/useStartRetake'
 
 // The two Figma frames also differ in the bell and a 1px shift (OPEN_QUESTIONS DE-H1). The logo is
 // the same on both and on the roommate list (AppLogo).
@@ -99,6 +99,7 @@ export default function HomePage({
   // Server mode: the saved nickname and the top three categories, so a new session greets the
   // user by name and draws their character (GET /api/me/profile).
   const { name, priorities } = useDisplayProfile()
+  const retake = useStartRetake()
   const hasNew = useHasNewNotification()
 
   return (
@@ -181,14 +182,18 @@ export default function HomePage({
               ))}
             </h1>
           </div>
-          {/* Opens the my page, where the survey result is viewed and retaken. The home edits
-              no answers (decided by the project owner on 2026-11-14). */}
-          <Link
-            to={MY_ROUTES.my}
-            className="absolute inset-x-6 bottom-9 flex h-[65px] items-center justify-center rounded-[10px] bg-brand-brown1 text-[20px] leading-[1.5] font-semibold whitespace-nowrap text-white"
+          {/* Opens the survey retake of the my page right away (requested 2026-11-20, replacing
+              the 2026-11-14 decision to open the my page): the priority step with the saved
+              priorities and answers prefilled. Nothing is saved until the survey is finished. */}
+          <button
+            type="button"
+            onClick={retake.start}
+            disabled={retake.isBusy}
+            aria-busy={retake.isBusy || undefined}
+            className="absolute inset-x-6 bottom-9 flex h-[65px] items-center justify-center rounded-[10px] bg-brand-brown1 text-[20px] leading-[1.5] font-semibold whitespace-nowrap text-white disabled:opacity-80"
           >
             내 설문 다시보기 →
-          </Link>
+          </button>
         </main>
       </div>
       <BottomNav active="home" />
