@@ -85,7 +85,8 @@ export default function ChoiceDialog({
             <button
               type="button"
               aria-label={closeLabel}
-              className="absolute top-[14px] right-[14px] size-7 rounded-full border-[1.5px] border-brand-brown3 bg-brand-beige1 p-[0.36px]"
+              // The circle shows on hover and keyboard focus only (requested 2026-11-20).
+              className="absolute top-[14px] right-[14px] size-7 rounded-full border-[1.5px] border-transparent p-[0.36px] transition-colors hover:border-brand-brown3 hover:bg-brand-beige1 focus-visible:border-brand-brown3 focus-visible:bg-brand-beige1"
               onClick={onCancel}
             >
               <img src={closeIcon} alt="" className="size-6" />

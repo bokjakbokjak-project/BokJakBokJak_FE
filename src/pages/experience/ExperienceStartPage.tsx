@@ -1,5 +1,6 @@
 import { useEffect } from 'react'
 import { Navigate, useSearchParams } from 'react-router'
+import logo from '../../assets/onboarding/logo.svg'
 import { isExperienceMode } from '../../lib/experience/mode'
 import {
   restartAttempt,
@@ -47,19 +48,28 @@ export default function ExperienceStartPage() {
 
   // Only the heading and the start button, both centered (requested 2026-11-20).
   return (
-    <main className="flex flex-1 flex-col items-center justify-center gap-10 bg-brand-cream1 px-6 pt-[max(47px,env(safe-area-inset-top))] pb-[max(28px,env(safe-area-inset-bottom))] text-center md:rounded-[24px]">
-      <h1 className="text-[22px] leading-[1.5] font-bold tracking-[0.44px] break-keep text-brand-brown1">
-        로그인 없이 복작복작을
-        <br />
-        처음부터 끝까지 체험해 보세요
-      </h1>
-      <button
-        type="button"
-        onClick={start}
-        className="flex h-[62px] w-full max-w-[342px] items-center justify-center rounded-[10px] bg-brand-brown1 text-[20px] leading-[1.5] font-semibold text-white"
-      >
-        체험 시작하기
-      </button>
+    // The login screen's logo shows first, then the heading and the button (requested
+    // 2026-11-20). Reduced motion shows everything at once.
+    <main className="flex flex-1 flex-col items-center justify-center bg-brand-cream1 px-6 pt-[max(47px,env(safe-area-inset-top))] pb-[max(28px,env(safe-area-inset-bottom))] text-center md:rounded-[24px]">
+      <img
+        src={logo}
+        alt="복작복작"
+        className="block h-[145px] w-[220px] max-w-none motion-safe:animate-fade-up"
+      />
+      <div className="mt-10 flex w-full flex-col items-center gap-10 motion-safe:animate-fade-up motion-safe:[animation-delay:900ms]">
+        <h1 className="text-[22px] leading-[1.5] font-bold tracking-[0.44px] break-keep text-brand-brown1">
+          로그인 없이 복작복작을
+          <br />
+          처음부터 끝까지 체험해 보세요
+        </h1>
+        <button
+          type="button"
+          onClick={start}
+          className="flex h-[62px] w-full max-w-[342px] items-center justify-center rounded-[10px] bg-brand-brown1 text-[20px] leading-[1.5] font-semibold text-white"
+        >
+          체험 시작하기
+        </button>
+      </div>
     </main>
   )
 }
