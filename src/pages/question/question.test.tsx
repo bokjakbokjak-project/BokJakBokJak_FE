@@ -109,6 +109,29 @@ describe('situational survey', () => {
     expect(screen.queryByLabelText('STEP 1 상황')).not.toBeInTheDocument()
   })
 
+  it('keeps the STEP picture and copy hidden until the picture has loaded, then reveals them', () => {
+    // A picture still on its way (the setup counts every picture as loaded).
+    const complete = vi
+      .spyOn(HTMLImageElement.prototype, 'complete', 'get')
+      .mockReturnValue(false)
+    renderAt('/question')
+    const step = screen.getByLabelText('STEP 1 상황')
+    const art = within(step).getByTestId('situation-art')
+    expect(art).not.toHaveAttribute('data-loaded')
+    expect(art.className).toContain('[clip-path:inset(0_0_100%_0)]')
+
+    // The wait has not started: the STEP screen stays without its picture.
+    advance(5000)
+    expect(step).toHaveClass('visible')
+
+    fireEvent.load(art.querySelector('img')!)
+    expect(art).toHaveAttribute('data-loaded')
+    expect(art.className).toContain('animate-wipe-down')
+    advance(1200)
+    expectHidden(step)
+    complete.mockRestore()
+  })
+
   it('shows the situation again from the question and returns with 질문 다시보기', () => {
     renderAt('/question')
     finishSituation()

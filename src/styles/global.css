@@ -38,6 +38,9 @@
   --animate-loading-dot: loading-dot 1.2s ease-in-out infinite;
   /* The experience start: the logo first, then the heading and button (requested 2026-11-20). */
   --animate-fade-up: fade-up 0.6s ease-out both;
+  /* The STEP screen: the picture wipes down from the top, then the copy fades in (2026-11-20). */
+  --animate-wipe-down: wipe-down 0.7s cubic-bezier(0.22, 1, 0.36, 1) both;
+  --animate-situation-copy: fade-up 0.5s ease-out 0.35s both;
 
   @keyframes greet-eyes {
     0%,
@@ -90,6 +93,15 @@
     30% {
       opacity: 1;
       transform: translateY(-5px);
+    }
+  }
+
+  @keyframes wipe-down {
+    from {
+      clip-path: inset(0 0 100% 0);
+    }
+    to {
+      clip-path: inset(0 0 0 0);
     }
   }
 

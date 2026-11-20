@@ -40,6 +40,9 @@ export default function SurveySkipButton() {
   )
 }
 
+/** Q2-2, the second topic's roommate question (two questions per topic). */
+const SKIP_FROM_INDEX = 3
+
 /**
  * `예시 답변으로 건너뛰기` (experience mode, 요청서 4.3): fills every question with an example
  * answer and marks the session, so the result and the recommendations read as examples. It sits
@@ -49,7 +52,9 @@ export default function SurveySkipButton() {
 export function ExperienceSkipButton() {
   const navigate = useNavigate()
   const { fillExampleAnswers } = useExperienceSetup()
-  if (!isExperienceMode()) return null
+  const { index } = useQuestion()
+  // From Q2-2 on (requested 2026-11-20): the participant answers a few questions themselves first.
+  if (!isExperienceMode() || index < SKIP_FROM_INDEX) return null
   return (
     <button
       type="button"

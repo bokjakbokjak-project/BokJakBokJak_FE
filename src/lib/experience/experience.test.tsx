@@ -2,6 +2,8 @@ import { act, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import AppRoutes from '../../app/AppRoutes'
+import { getQuestionStep } from '../../pages/question/questionData'
+import { finishSituation } from '../../test/questionFade'
 import { getApiMode } from '../api/config'
 import { clearTokens, getRefreshToken, startSession } from '../auth/tokenStore'
 import { startParticipant } from '../userTest/userTestStore'
@@ -151,6 +153,40 @@ describe('experience chat state', () => {
       kind: 'agenda',
       title: '2. 잠드는 시간',
     })
+  })
+})
+
+describe('예시 답변으로 건너뛰기', () => {
+  it('shows from Q2-2 on, not on the first questions', () => {
+    vi.useFakeTimers()
+    useExperienceBuild()
+    setAppMode('experience')
+    startNewParticipant('booth')
+    updateExperienceSession((session) => ({
+      ...session,
+      priorities: ['cleaning', 'smoking', 'sleep-habit'],
+    }))
+    render(
+      <MemoryRouter initialEntries={['/question']}>
+        <AppRoutes />
+      </MemoryRouter>,
+    )
+    const skip = () =>
+      screen.queryByRole('button', { name: /예시 답변으로 건너뛰기/ })
+    expect(skip()).not.toBeInTheDocument()
+
+    // Q1-1, Q1-2 and Q2-1 answered: Q2-2 offers the skip.
+    for (let index = 0; index < 3; index += 1) {
+      if (index % 2 === 0) finishSituation()
+      fireEvent.click(
+        screen.getByRole('radio', {
+          name: getQuestionStep(index).question.options[0],
+        }),
+      )
+      expect(skip()).not.toBeInTheDocument()
+      fireEvent.click(screen.getByRole('button', { name: '다음으로' }))
+    }
+    expect(skip()).toBeInTheDocument()
   })
 })
 
