@@ -111,8 +111,16 @@ describe('shared profile page (QA 15, Figma 1952:39744)', () => {
       within(wanted).getByText(/복작복작에서\s*설문조사하고 이어보기/),
     ).toBeInTheDocument()
 
+    // Sample mode has no account and so no saved survey: it asks for the survey first
+    // (requested 2026-11-20), which starts at the login.
     fireEvent.click(
       within(wanted).getByRole('button', { name: '복작복작으로 이동' }),
+    )
+    const ask = screen.getByRole('dialog', {
+      name: /설문조사를 해서\s*복작이님과의 매칭률을 확인해보세요/,
+    })
+    fireEvent.click(
+      within(ask).getByRole('button', { name: '설문조사 하러 가기' }),
     )
     expect(
       screen.getByRole('button', { name: 'Sign up with Google' }),
