@@ -197,24 +197,31 @@ describe('state across screens', () => {
     act(() => vi.advanceTimersByTime(2000))
   }
 
-  /** 홈 「내 설문 다시보기」 opens the my page (decided 2026-11-14), which opens the result. */
+  /** The result opens from the my page's 상세 프로필 보기. */
   const openResultFromHome = () => {
-    clickLink('내 설문 다시보기 →')
+    clickLink('마이')
     clickLink('상세 프로필 보기')
   }
 
-  it('opens the my page from 내 설문 다시보기, where the survey is viewed and retaken', () => {
+  it('starts the survey retake from 내 설문 다시보기, with the priorities kept', async () => {
     openSeededHome()
 
-    clickLink('내 설문 다시보기 →')
+    // Straight to the my page's 설문조사 다시 하기 (requested 2026-11-20), without the my page.
+    await act(async () => {
+      fireEvent.click(
+        screen.getByRole('button', { name: '내 설문 다시보기 →' }),
+      )
+    })
 
     expect(
-      screen.getByRole('heading', { name: '미리보기' }),
+      await screen.findByRole('button', { name: '완료하기' }),
     ).toBeInTheDocument()
     expect(
-      screen.getByRole('button', { name: '설문조사 다시 하기' }),
-    ).toBeInTheDocument()
-    expect(screen.getByRole('link', { name: '상세 프로필 보기' })).toBeVisible()
+      screen.queryByRole('button', { name: '설문조사 다시 하기' }),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getAllByRole('button', { pressed: true }).length,
+    ).toBeGreaterThan(0)
   })
 
   it('keeps the name, the character, and the answers through home and roommate', () => {
