@@ -19,6 +19,7 @@ import {
   profileData,
   schemaData,
 } from '../../test/surveyFixture'
+import { shownQuestion, shownQuestionIndex } from '../../test/shownQuestion'
 import {
   QUESTION_COUNT,
   QUESTION_ROUTES,
@@ -75,7 +76,7 @@ let savedOnServer: {
   priorities: { category_code: string; rank: number }[]
 } | null
 
-/** Screen index of a topic's first (self) question; the roommate question follows it. */
+/** Question index of a topic's first (self) question; the roommate question follows it. */
 const topicStart = (id: string) =>
   QUESTION_TOPICS.findIndex((topic) => topic.id === id) * 2
 const SMOKING_ROOMMATE = topicStart('smoking') + 1
@@ -98,6 +99,12 @@ function LocationProbe() {
       </button>
       <button type="button" onClick={() => navigate(QUESTION_ROUTES.survey)}>
         probe: open survey
+      </button>
+      <button
+        type="button"
+        onClick={() => navigate(ONBOARDING_ROUTES.priority)}
+      >
+        probe: open priorities
       </button>
     </>
   )
@@ -236,7 +243,7 @@ async function answerAllAndFinish(choose: (index: number) => void = pickFirst) {
     if (index % 2 === 0 && screen.queryByLabelText(/^STEP \d+ 상황$/)) {
       finishSituation()
     }
-    choose(index)
+    choose(shownQuestionIndex())
     click('다음으로')
   }
   await act(async () => {
@@ -266,6 +273,34 @@ describe('server survey: first submit', () => {
     await until(() => expect(path()).toBe(QUESTION_ROUTES.profile))
     expect(puts()).toHaveLength(1)
     expect(puts()[0].auth).toBe('Bearer access-1')
+    expect(puts()[0].body).toEqual({
+      expected_revision: 0,
+      priorities: SAVED_PRIORITIES,
+      answers: FIRST_OPTION_ANSWERS,
+    })
+  })
+
+  it('asks the topics in the order of the saved priorities, and still sends the answers in the backend order', async () => {
+    await openSurvey()
+    const asked: string[] = []
+    await answerAllAndFinish((index) => {
+      const { topic, isSelf } = shownQuestion()
+      if (isSelf) asked.push(topic.id)
+      pickFirst(index)
+    })
+
+    // 흡연, 청소 청결 (two topics) and 잠버릇 were chosen; the others follow in the usual order.
+    expect(asked).toEqual([
+      'smoking',
+      'floor-cleaning',
+      'food-waste',
+      'sleep-habit',
+      'bedtime',
+      'morning-alarm',
+      'belongings',
+      'temperature',
+    ])
+    await until(() => expect(path()).toBe(QUESTION_ROUTES.profile))
     expect(puts()[0].body).toEqual({
       expected_revision: 0,
       priorities: SAVED_PRIORITIES,
@@ -483,13 +518,14 @@ describe('server survey: saved answers', () => {
     handlers['GET /api/me/survey'] = () => savedSurvey(3)
     renderAt(QUESTION_ROUTES.survey)
 
-    // An answered topic skips its STEP screen, and the saved option is selected.
+    // An answered topic skips its STEP screen, and the saved option is selected. The survey opens
+    // on 흡연, the 1st saved priority.
     const first = await until(() =>
-      screen.getByRole('radio', {
-        name: '자주 있다는 말을 들었다',
-      }),
+      screen.getByRole('radio', { name: '비흡연자다' }),
     )
     expect(first).toBeChecked()
+    expect(screen.getByText('Q1-1')).toBeInTheDocument()
+    expect(shownQuestion().topic.id).toBe('smoking')
 
     await answerAllAndFinish((index) => {
       if (index === SMOKING_ROOMMATE) {
@@ -646,6 +682,64 @@ describe('server survey: retake from the my page', () => {
       return chosen
     })
 
+  it('moves to the same question when the priorities change mid-survey, so none is skipped or asked twice', async () => {
+    await startRetake()
+    act(() => vi.advanceTimersByTime(MISSION_NOTICE_MS))
+    await prefilledPriorities()
+    click(/^(수정하기|다음으로)$/)
+    await until(() => expect(path()).toBe(ONBOARDING_ROUTES.complete))
+    click('시작하기!')
+    // 흡연 (1st priority) first; two steps on, STEP 2 is 바닥 청소.
+    await until(() => screen.getByText('Q1-1'))
+    expect(shownQuestion().topic.id).toBe('smoking')
+    click('다음으로')
+    click('다음으로')
+    expect(screen.getByText('Q2-1')).toBeInTheDocument()
+    expect(shownQuestion().topic.id).toBe('floor-cleaning')
+
+    // Back on the priority step (browser back), 흡연 moves from 1st to 3rd.
+    click('probe: open priorities')
+    await until(() => expect(path()).toBe(ONBOARDING_ROUTES.priority))
+    click(/흡연유무/)
+    click(/흡연유무/)
+    click('수정하기')
+    await until(() => expect(path()).toBe(ONBOARDING_ROUTES.complete))
+    click('시작하기!')
+
+    // 바닥 청소 is now STEP 1 and still the question on screen, not 음식물 (the old STEP 2).
+    await until(() => screen.getByText('Q1-1'))
+    expect(shownQuestion().topic.id).toBe('floor-cleaning')
+    const asked: string[] = []
+    for (let step = 0; step < QUESTION_COUNT; step += 1) {
+      const { topic, isSelf } = shownQuestion()
+      if (isSelf) asked.push(topic.id)
+      click('다음으로')
+    }
+    expect(asked).toEqual([
+      'floor-cleaning',
+      'food-waste',
+      'sleep-habit',
+      'smoking',
+      'bedtime',
+      'morning-alarm',
+      'belongings',
+      'temperature',
+    ])
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(2000)
+    })
+    await until(() => expect(path()).toBe(QUESTION_ROUTES.profile))
+    expect(puts()[0].body).toMatchObject({
+      expected_revision: 2,
+      priorities: [
+        { category_code: 'CLEANING', rank: 1 },
+        { category_code: 'SLEEP_HABITS', rank: 2 },
+        { category_code: 'SMOKING', rank: 3 },
+      ],
+      answers: FIRST_OPTION_ANSWERS,
+    })
+  })
+
   async function chooseNewPrioritiesAndStart() {
     act(() => vi.advanceTimersByTime(MISSION_NOTICE_MS))
     for (const card of await prefilledPriorities()) fireEvent.click(card)
@@ -724,7 +818,7 @@ describe('server survey: retake from the my page', () => {
     await until(() => screen.getByText('Q1-1'))
     expect(
       screen.getByRole('radio', {
-        name: getQuestionStep(0).question.options[0],
+        name: shownQuestion().question.options[0],
       }),
     ).toBeChecked()
     for (let index = 0; index < QUESTION_COUNT; index += 1) click('다음으로')
@@ -794,7 +888,7 @@ describe('server survey: a retake after an abandoned one', () => {
     await until(() => screen.getByText('Q1-1'))
     fireEvent.click(
       screen.getByRole('radio', {
-        name: getQuestionStep(0).question.options[1],
+        name: shownQuestion().question.options[1],
       }),
     )
     // Meanwhile another device saved the survey again.
@@ -821,7 +915,7 @@ describe('server survey: a retake after an abandoned one', () => {
     await until(() => screen.getByText('Q1-1'))
     expect(
       screen.getByRole('radio', {
-        name: getQuestionStep(0).question.options[0],
+        name: shownQuestion().question.options[0],
       }),
     ).toBeChecked()
 
@@ -928,7 +1022,7 @@ describe('server survey: the read before a retake', () => {
     await until(() => screen.getByText('Q1-1'))
     expect(
       screen.getByRole('radio', {
-        name: getQuestionStep(0).question.options[0],
+        name: shownQuestion().question.options[0],
       }),
     ).toBeChecked()
     for (let index = 0; index < QUESTION_COUNT; index += 1) click('다음으로')
@@ -1022,7 +1116,7 @@ describe('server survey: the read before a retake', () => {
     await until(() => screen.getByText('Q1-1'))
     expect(
       screen.getByRole('radio', {
-        name: getQuestionStep(0).question.options[0],
+        name: shownQuestion().question.options[0],
       }),
     ).toBeChecked()
   })
@@ -1063,12 +1157,14 @@ describe('server survey: new questions added (survey_update_required)', () => {
     finishSituation()
     expect(screen.getByText('Q8-1')).toBeInTheDocument()
 
-    // Going back shows the old answers (흡연, STEP 7), already selected, and no notice again.
+    // Going back shows the old answers, already selected, and no notice again. STEP 7 is 개인
+    // 청결: the chosen cards (흡연, 청소 청결, 잠버릇) come first, then the others in their order.
     click('이전으로')
     expect(screen.getByText('Q7-2')).toBeInTheDocument()
+    expect(shownQuestion().topic.id).toBe('belongings')
     expect(
       screen.getByRole('radio', {
-        name: getQuestionStep(SMOKING_ROOMMATE).question.options[0],
+        name: shownQuestion().question.options[0],
       }),
     ).toBeChecked()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()

@@ -11,6 +11,7 @@ import {
   wantedSection,
 } from '../../test/answerSections'
 import { finishSituation } from '../../test/questionFade'
+import { shownQuestion } from '../../test/shownQuestion'
 import { QUESTION_COUNT, QUESTION_TOPICS } from '../question/questionData'
 import { friendlyAnswer } from '../../lib/friendlyAnswers'
 
@@ -373,9 +374,8 @@ describe('retaking the survey', () => {
       if (index % 2 === 0 && withSituations) {
         finishSituation()
       }
-      const topic = QUESTION_TOPICS[Math.floor(index / 2)]
-      const options =
-        index % 2 === 0 ? topic.self.options : topic.roommate.options
+      // The topics follow the chosen priorities, so read the question on screen.
+      const { options } = shownQuestion().question
       fireEvent.click(
         screen.getByRole('radio', { name: options[options.length - 1] }),
       )
@@ -449,8 +449,13 @@ describe('retaking the survey', () => {
 
     // The survey starts again at the first question with the saved answer selected. An answered
     // question opens without its STEP screen, as when going back to it (상황 보기 still shows it).
+    // The first question is 흡연, the new 1st priority.
     expect(screen.getByText('Q1-1')).toBeInTheDocument()
-    expect(screen.getByRole('radio', { name: selfOption(0, 0) })).toBeChecked()
+    expect(shownQuestion().topic.id).toBe('smoking')
+    const smoking = QUESTION_TOPICS.findIndex(({ id }) => id === 'smoking')
+    expect(
+      screen.getByRole('radio', { name: selfOption(smoking, 0) }),
+    ).toBeChecked()
     answerAll({ withSituations: false })
 
     expect(
