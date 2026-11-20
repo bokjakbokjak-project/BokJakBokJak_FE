@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link } from 'react-router'
 import bellBefore from '../../assets/home/bell-before.svg'
 import bellMatched from '../../assets/home/bell-matched.svg'
@@ -8,6 +8,7 @@ import roomBackground from '../../assets/home/room-bg.png'
 import AppLogo from '../../components/AppLogo/AppLogo'
 import BottomNav from '../../components/BottomNav/BottomNav'
 import CharacterPreview from '../../components/onboarding/CharacterPreview'
+import RetakeConfirmDialog from '../../components/my/RetakeConfirmDialog'
 import { isServerMode } from '../../lib/api/config'
 import { STAGE } from '../../lib/onboarding/character'
 import { useMatchStatus, type MatchStatus } from '../../lib/home/matchStatus'
@@ -100,6 +101,9 @@ export default function HomePage({
   // user by name and draws their character (GET /api/me/profile).
   const { name, priorities } = useDisplayProfile()
   const retake = useStartRetake()
+  // The same confirmation as the my page's 설문조사 다시 하기 (requested 2026-11-20).
+  const [isConfirmingRetake, setIsConfirmingRetake] = useState(false)
+  const retakeButtonRef = useRef<HTMLButtonElement>(null)
   const hasNew = useHasNewNotification()
 
   return (
@@ -186,8 +190,9 @@ export default function HomePage({
               the 2026-11-14 decision to open the my page): the priority step with the saved
               priorities and answers prefilled. Nothing is saved until the survey is finished. */}
           <button
+            ref={retakeButtonRef}
             type="button"
-            onClick={retake.start}
+            onClick={() => setIsConfirmingRetake(true)}
             disabled={retake.isBusy}
             aria-busy={retake.isBusy || undefined}
             className="absolute inset-x-6 bottom-9 flex h-[65px] items-center justify-center rounded-[10px] bg-brand-brown1 text-[20px] leading-[1.5] font-semibold whitespace-nowrap text-white disabled:opacity-80"
@@ -197,6 +202,17 @@ export default function HomePage({
         </main>
       </div>
       <BottomNav active="home" />
+      {isConfirmingRetake && (
+        <RetakeConfirmDialog
+          triggerRef={retakeButtonRef}
+          onConfirm={retake.start}
+          busy={retake.isBusy}
+          onCancel={() => {
+            retake.cancel()
+            setIsConfirmingRetake(false)
+          }}
+        />
+      )}
     </div>
   )
 }

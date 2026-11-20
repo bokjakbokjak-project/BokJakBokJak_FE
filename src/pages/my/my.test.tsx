@@ -419,7 +419,8 @@ describe('retaking the survey', () => {
     const prefilled = screen.getAllByRole('button', { pressed: true })
     expect(prefilled.length).toBeGreaterThanOrEqual(3)
     expect(layer('head')).toBe('sleep-habit')
-    const finish = button('완료하기')
+    // Unchanged, it moves on to the saved answers (다음으로); changed, it reads 수정하기.
+    const finish = button('다음으로')
     expect(finish).toBeEnabled()
 
     // Choosing again: clear them first.
@@ -431,6 +432,7 @@ describe('retaking the survey', () => {
     expect(finish).toBeDisabled()
     fireEvent.click(button(/잠버릇/))
     expect(finish).toBeEnabled()
+    expect(finish).toHaveTextContent('수정하기')
     const threeRanks = ['head', 'hand', 'body'].map(layer).join()
     expect(threeRanks).toBe('smoking,personal-hygiene,sleep-habit')
 
