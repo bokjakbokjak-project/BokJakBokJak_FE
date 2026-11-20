@@ -379,14 +379,15 @@ function QuestionStep({
     else onMove(index - 1)
   }
 
-  // Back on a topic's first question opens its STEP screen again (requested 2026-11-20). It stays,
-  // with 질문 다시보기, so back on it can still leave as before instead of racing the fade.
+  // Back on a topic's first question opens its STEP screen again (requested 2026-11-20), and it
+  // moves on to the question by itself after the same wait as when the topic first opened
+  // (requested 2026-11-21). Back on the STEP screen still leaves as before.
   const backFromQuestion = () => {
     if (!isSelf) {
       goBack()
       return
     }
-    setFromQuestion(true)
+    setFromQuestion(false)
     leave('question')
   }
 
