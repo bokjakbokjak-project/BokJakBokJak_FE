@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { Navigate, useLocation, useParams } from 'react-router'
-import AnswerCard from '../../components/AnswerCard/AnswerCard'
+import ProfileAnswerSections from '../../components/AnswerCard/ProfileAnswerSections'
 import { ErrorState, LoadingState } from '../../components/LoadState/LoadState'
 import ChatRequestFooter from '../../components/roommate/ChatRequestFooter'
 import { candidateCard } from '../../components/roommate/candidateCard'
@@ -192,25 +192,15 @@ function ServerDetailProfile({ userId }: { userId: number }) {
             className="px-6"
           />
         )}
-        <RoommateSheet labelledBy="detail-summary-title" scrolls={false}>
-          <div className="mx-auto w-full max-w-[390px] px-6 pt-[15px] pb-[35px]">
-            <h2
-              id="detail-summary-title"
-              className="text-center text-[20px] leading-[1.5] font-bold tracking-[-0.4px] text-gray-500"
-            >
-              상세 답변 요약
-            </h2>
-            <div className="mt-[15px] flex flex-col gap-3">
-              <LifestyleSummarySection
-                summary={summary}
-                onRetry={retrySummary}
-              />
-              {/* The candidate's own answers (A's profile), with the same cards as the sample. */}
-              {profile.status === 'ready' &&
-                profile.value.cards?.map((card) => (
-                  <AnswerCard key={card.category} card={card} />
-                ))}
-            </div>
+        <RoommateSheet scrolls={false}>
+          <div className="mx-auto flex w-full max-w-[390px] flex-col gap-[25px] px-6 pt-6 pb-[35px]">
+            {/* No Figma frame shows the AI summary on the new layout (2339:27404); it stays above
+                the answer sections (RM-9). */}
+            <LifestyleSummarySection summary={summary} onRetry={retrySummary} />
+            {/* The candidate's own answers (A's profile), as in the sample. */}
+            {profile.status === 'ready' && profile.value.cards && (
+              <ProfileAnswerSections cards={profile.value.cards} />
+            )}
           </div>
         </RoommateSheet>
       </div>
@@ -247,19 +237,11 @@ function SampleDetailProfile({ candidateId }: { candidateId?: string }) {
         className="scrollbar-none -mt-[9px] flex min-h-0 flex-1 flex-col overflow-y-auto pt-[9px]"
       >
         <ProfileHero profile={candidateCard(candidate)} />
-        <RoommateSheet labelledBy="detail-summary-title" scrolls={false}>
-          <div className="mx-auto w-full max-w-[390px] px-6 pt-[15px] pb-[35px]">
-            <h2
-              id="detail-summary-title"
-              className="text-center text-[20px] leading-[1.5] font-bold tracking-[-0.4px] text-gray-500"
-            >
-              상세 답변 요약
-            </h2>
-            <div className="mt-[15px] flex flex-col gap-3">
-              {getAnswerSummary(getCandidateAnswers(candidate)).map((card) => (
-                <AnswerCard key={card.category} card={card} />
-              ))}
-            </div>
+        <RoommateSheet scrolls={false}>
+          <div className="mx-auto w-full max-w-[390px] px-6 pt-6 pb-[35px]">
+            <ProfileAnswerSections
+              cards={getAnswerSummary(getCandidateAnswers(candidate))}
+            />
           </div>
         </RoommateSheet>
       </div>

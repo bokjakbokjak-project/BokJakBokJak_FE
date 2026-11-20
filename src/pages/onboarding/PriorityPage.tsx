@@ -99,7 +99,7 @@ export default function PriorityPage() {
       }
     >
       <h1 className="sr-only">
-        내가 가장 중요하게 생각하는 생활습관 5개의 순위를 매겨주세요
+        내가 가장 중요하게 생각하는 생활습관 3~6개의 순위를 매겨주세요
       </h1>
       <div className="relative flex flex-1 flex-col justify-end">
         {/* No Figma design for a failed save: it reuses the Figma snackbar style (575:1733) of

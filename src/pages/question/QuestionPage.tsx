@@ -10,7 +10,7 @@ import { useNavigate } from 'react-router'
 import backArrow from '../../assets/question/back-arrow-brown.svg'
 import radioOff from '../../assets/question/radio-off.svg'
 import radioOn from '../../assets/question/radio-on.svg'
-import { ErrorState, LoadingState } from '../../components/LoadState/LoadState'
+import { ErrorState } from '../../components/LoadState/LoadState'
 import { useOnboarding } from '../../lib/onboarding/onboardingState'
 import { isPriorityComplete } from '../../lib/onboarding/priority'
 import { ONBOARDING_ROUTES } from '../../lib/onboarding/routes'
@@ -25,6 +25,7 @@ import {
 } from './questionData'
 import { useQuestion } from './questionState'
 import SurveySkipButton from './SurveySkipButton'
+import FullPageLoading from '../../components/LoadState/FullPageLoading'
 
 // Prototype in Figma 1377:49785: the STEP screen waits 2 seconds, then dissolves into the
 // question over 0.8 seconds with Figma's ease in and out. `상황 보기` and `질문 다시보기` use the same dissolve
@@ -51,8 +52,23 @@ const layerClass = (isShown: boolean) =>
   `${DISSOLVE_CLASS} ${isShown ? 'visible opacity-100' : 'invisible opacity-0'}`
 
 const LAYOUT = {
-  default: { sceneTop: 'top-[47px]', sheetHeight: 'min-h-[380px]' },
-  compact: { sceneTop: 'top-[32px]', sheetHeight: 'min-h-[342px]' },
+  default: {
+    sceneTop: 'top-[47px]',
+    sheetHeight: 'min-h-[380px]',
+    sheetGap: 'gap-[25px]',
+  },
+  compact: {
+    sceneTop: 'top-[32px]',
+    sheetHeight: 'min-h-[342px]',
+    sheetGap: 'gap-[25px]',
+  },
+  // The 온도 frames (2441:21272, 2441:21608) put the picture at 119px and a 327px sheet whose
+  // button sits 17px below the options (2441:21478).
+  low: {
+    sceneTop: 'top-[119px]',
+    sheetHeight: 'min-h-[327px]',
+    sheetGap: 'gap-[17px]',
+  },
 }
 
 type QuestionButtonProps = ButtonHTMLAttributes<HTMLButtonElement> & {
@@ -150,8 +166,8 @@ type SituationScreenProps = {
 }
 
 /**
- * STEP screen, Figma 1352:18210 (dark) and 1528:26236 (light). Only these two topics have a
- * full-height picture, so the others put the question picture on the light layout (DE-10).
+ * STEP screen, Figma 1352:18210 (dark), 1528:26236 and 2441:20834 (light). Only these topics have
+ * a full-height picture, so the others put the question picture on the light layout (DE-10).
  */
 function SituationScreen({
   topic,
@@ -219,7 +235,9 @@ function SituationScreen({
         </div>
       </div>
 
-      <div className="absolute bottom-[110px] left-[25px] flex flex-col items-start gap-3 pr-6">
+      {/* Every STEP frame starts the badge 215px above the bottom (y 629 of 844), so a third line
+          of copy (온도, 2441:21048) grows down instead of pushing the badge up. */}
+      <div className="absolute top-[calc(100%-215px)] left-[25px] flex flex-col items-start gap-3 pr-6">
         <p className="rounded-full bg-question-outline px-3 py-1.5 text-[14px] leading-[1.5] font-semibold tracking-[-0.28px] text-white">
           STEP {topicIndex + 1}
         </p>
@@ -360,7 +378,7 @@ function QuestionStep({ focusHeading, onMove }: QuestionStepProps) {
         </div>
 
         <div
-          className={`mt-auto flex shrink-0 flex-col justify-between gap-[25px] rounded-t-[35px] border border-question-sheet-border bg-question-surface pt-[30px] pr-[23px] pb-[max(0px,calc(44px-env(safe-area-inset-bottom)))] pl-[23px] ${layout.sheetHeight}`}
+          className={`mt-auto flex shrink-0 flex-col justify-between rounded-t-[35px] border border-question-sheet-border bg-question-surface pt-[30px] pr-[23px] pb-[max(0px,calc(44px-env(safe-area-inset-bottom)))] pl-[23px] ${layout.sheetGap} ${layout.sheetHeight}`}
         >
           <fieldset className="flex flex-col gap-px">
             <legend className="sr-only">{question.text}</legend>
@@ -458,15 +476,20 @@ export default function QuestionPage() {
     setIndex(next)
   }
 
-  if (saved.status !== 'ready' || needsPriorities) {
+  if (saved.status === 'failed') {
     return (
       <div className="relative isolate flex flex-1 flex-col items-center justify-center bg-question-surface md:rounded-[24px]">
-        {saved.status === 'failed' ? (
-          <ErrorState error={saved.error} onRetry={saved.retry} />
-        ) : (
-          <LoadingState label="설문을 불러오고 있어요" />
-        )}
+        <ErrorState error={saved.error} onRetry={saved.retry} />
       </div>
+    )
+  }
+  if (saved.status !== 'ready' || needsPriorities) {
+    return (
+      <FullPageLoading
+        label="설문을 불러오고 있어요"
+        hint="저장해 둔 답변이 있으면 이어서 할 수 있어요"
+        priorities={onboarding.priorities}
+      />
     )
   }
 

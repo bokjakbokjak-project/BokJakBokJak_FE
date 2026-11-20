@@ -427,12 +427,12 @@ describe('server survey: saved answers', () => {
 
     expect(
       await until(() =>
-        screen.getByRole('heading', { name: '상세 답변 요약' }),
+        screen.getByRole('heading', { name: '전 이런 사람이에요' }),
       ),
     ).toBeInTheDocument()
     expect(path()).toBe(QUESTION_ROUTES.profile)
     expect(
-      screen.getAllByText('자주 있다는 말을 들었다').length,
+      screen.getAllByText('자주 있다는 말을 들었어요').length,
     ).toBeGreaterThan(0)
   })
 
@@ -570,7 +570,7 @@ describe('server survey: revision conflict (409)', () => {
     await until(() => expect(path()).toBe(QUESTION_ROUTES.profile))
     expect(puts()).toHaveLength(1)
     expect(
-      screen.getAllByText('흡연자와는 같은 방이 어렵다').length,
+      screen.getAllByText('흡연자와는 같은 방이 어려워요').length,
     ).toBeGreaterThan(0)
   })
 })
@@ -620,11 +620,13 @@ describe('server survey: retake from the my page', () => {
 
     click('probe: open result')
 
-    await until(() => screen.getByRole('heading', { name: '상세 답변 요약' }))
-    expect(path()).toBe(QUESTION_ROUTES.profile)
-    expect(screen.getAllByText('흡연 여부는 상관없다').length).toBeGreaterThan(
-      0,
+    await until(() =>
+      screen.getByRole('heading', { name: '전 이런 사람이에요' }),
     )
+    expect(path()).toBe(QUESTION_ROUTES.profile)
+    expect(
+      screen.getAllByText('흡연 여부는 상관없어요').length,
+    ).toBeGreaterThan(0)
   })
 
   it('shows the saved answers, not a retake whose save failed', async () => {
@@ -638,12 +640,14 @@ describe('server survey: retake from the my page', () => {
 
     click('probe: open result')
 
-    await until(() => screen.getByRole('heading', { name: '상세 답변 요약' }))
-    expect(screen.getAllByText('흡연 여부는 상관없다').length).toBeGreaterThan(
-      0,
+    await until(() =>
+      screen.getByRole('heading', { name: '전 이런 사람이에요' }),
     )
     expect(
-      screen.queryByText('흡연자와는 같은 방이 어렵다'),
+      screen.getAllByText('흡연 여부는 상관없어요').length,
+    ).toBeGreaterThan(0)
+    expect(
+      screen.queryByText('흡연자와는 같은 방이 어려워요'),
     ).not.toBeInTheDocument()
   })
 

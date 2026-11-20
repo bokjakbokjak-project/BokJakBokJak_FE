@@ -1,9 +1,9 @@
 import { useRef, useState } from 'react'
 import { Navigate, useLocation, useNavigate } from 'react-router'
 import share from '../../assets/question/share-small.svg'
-import AnswerCard from '../../components/AnswerCard/AnswerCard'
+import ProfileAnswerSections from '../../components/AnswerCard/ProfileAnswerSections'
 import ChoiceDialog from '../../components/dialog/ChoiceDialog'
-import { ErrorState, LoadingState } from '../../components/LoadState/LoadState'
+import { ErrorState } from '../../components/LoadState/LoadState'
 import ProfileAvatar from '../../components/my/ProfileAvatar'
 import ProfileHero from '../../components/roommate/ProfileHero'
 import RoommateHeader from '../../components/roommate/RoommateHeader'
@@ -27,6 +27,7 @@ import { useSavedSurvey } from '../../lib/survey/useSurvey'
 import { QUESTION_COUNT, QUESTION_ROUTES } from './questionData'
 import { useQuestion } from './questionState'
 import ScrollHint from '../../components/roommate/ScrollHint'
+import FullPageLoading from '../../components/LoadState/FullPageLoading'
 
 /**
  * Age from the birth year chosen in onboarding, counted as this year minus the birth year. The
@@ -88,17 +89,26 @@ export default function QuestionProfilePage() {
     isServer &&
     (profileState.status === 'idle' || profileState.status === 'loading')
 
-  if (saved.status !== 'ready' || profileLoading || profileFailed) {
+  if (saved.status === 'failed' || profileFailed) {
     return (
       <div className="flex flex-1 flex-col items-center justify-center bg-brand-cream1 md:rounded-[24px]">
         {saved.status === 'failed' ? (
           <ErrorState error={saved.error} onRetry={saved.retry} />
-        ) : profileState.status === 'failed' ? (
-          <ErrorState error={profileState.error} onRetry={retryProfile} />
         ) : (
-          <LoadingState label="설문 답변을 불러오고 있어요" />
+          profileState.status === 'failed' && (
+            <ErrorState error={profileState.error} onRetry={retryProfile} />
+          )
         )}
       </div>
+    )
+  }
+  if (saved.status !== 'ready' || profileLoading) {
+    return (
+      <FullPageLoading
+        label="설문 답변을 불러오고 있어요"
+        hint="나의 생활습관 프로필을 준비하고 있어요"
+        priorities={data.priorities}
+      />
     )
   }
 
@@ -232,19 +242,9 @@ export default function QuestionProfilePage() {
             avatar: <MyCardAvatar priorities={card.character} />,
           }}
         />
-        <RoommateSheet labelledBy="result-summary-title" scrolls={false}>
-          <div className="mx-auto w-full max-w-[390px] px-6 pt-[15px] pb-[35px]">
-            <h2
-              id="result-summary-title"
-              className="text-center text-[20px] leading-[1.5] font-bold tracking-[-0.4px] text-gray-500"
-            >
-              상세 답변 요약
-            </h2>
-            <div className="mt-[15px] flex flex-col gap-3">
-              {answerCards.map((answerCard) => (
-                <AnswerCard key={answerCard.category} card={answerCard} />
-              ))}
-            </div>
+        <RoommateSheet scrolls={false}>
+          <div className="mx-auto w-full max-w-[390px] px-6 pt-6 pb-[35px]">
+            <ProfileAnswerSections cards={answerCards} />
           </div>
         </RoommateSheet>
       </div>

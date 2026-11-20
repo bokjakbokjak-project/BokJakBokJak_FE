@@ -13,6 +13,12 @@ import {
   schemaData,
 } from '../test/surveyFixture'
 import { QUESTION_ROUTES } from './question/questionData'
+import {
+  ANSWER_ROW_LABELS,
+  answerRow,
+  answerRowLabels,
+  wantedSection,
+} from '../test/answerSections'
 
 /**
  * The profile APIs in server mode against a stand-in backend (세호 spec): GET and PATCH
@@ -176,10 +182,11 @@ describe('my profile', () => {
     expect(screen.getByText(/21세/)).toBeInTheDocument()
     expect(screen.getByText(/서버학과/)).toBeInTheDocument()
     expect(screen.queryByText('사용자님')).not.toBeInTheDocument()
-    const cards = screen.getAllByRole('region')
-    expect(cards.length).toBeGreaterThanOrEqual(5)
     expect(
-      screen.getAllByText('자주 있다는 말을 들었다').length,
+      screen.getByRole('region', { name: '전 이런 사람이에요' }),
+    ).toBeInTheDocument()
+    expect(
+      screen.getAllByText('자주 있다는 말을 들었어요').length,
     ).toBeGreaterThan(0)
   })
 
@@ -394,13 +401,13 @@ describe('roommate detail profile', () => {
     expect(
       await screen.findByRole('heading', { name: '후보칠칠님' }),
     ).toBeInTheDocument()
-    const sheet = screen.getByRole('region', { name: '상세 답변 요약' })
-    // 나의 성향 on this screen is the candidate's habit answer.
+    const sheet = screen.getByRole('region', { name: '전 이런 사람이에요' })
+    // 전 이런 사람이에요 on this screen is the candidate's habit answer.
     expect(
-      await within(sheet).findByText('없다는 말을 들었다'),
+      await within(sheet).findByText('없다는 말을 들었어요'),
     ).toBeInTheDocument()
     expect(
-      within(sheet).queryByText('자주 있다는 말을 들었다'),
+      within(sheet).queryByText('자주 있다는 말을 들었어요'),
     ).not.toBeInTheDocument()
     expect(callsTo('GET', '/api/me/profile')).toHaveLength(0)
   })
@@ -438,7 +445,48 @@ describe('roommate detail profile', () => {
       await screen.findByRole('heading', { name: '후보칠칠님' }),
     ).toBeInTheDocument()
     expect(await screen.findByText('깔끔한 편이에요.')).toBeInTheDocument()
-    expect(screen.queryByText('나의 성향')).not.toBeInTheDocument()
+    expect(
+      screen.queryByRole('region', { name: '전 이런 사람이에요' }),
+    ).not.toBeInTheDocument()
+  })
+
+  it('keeps the six rows for a survey saved before 온도, without the old dishes answer', async () => {
+    // A profile from the old survey: PERSONAL_HYGIENE also holds DISHES, and there is no 온도.
+    const current = profileData({ candidateId: 77, nickname: '후보칠칠' })
+    const categories = current.categories
+      .filter((category) => category.category_code !== 'TEMPERATURE')
+      .map((category) =>
+        category.category_code === 'PERSONAL_HYGIENE'
+          ? {
+              ...category,
+              topics: [
+                ...category.topics,
+                {
+                  topic_code: 'DISHES',
+                  question: '식기 질문',
+                  habit_answer: '사용 직후 바로 정리한다',
+                  tolerance_answer: '사용 직후 바로 정리했으면 좋겠다',
+                },
+              ],
+            }
+          : category,
+      )
+    handlers['GET /api/roommates/77/profile'] = () =>
+      ok({ ...current, categories })
+    renderAt(ROOMMATE_ROUTES.profile('77'))
+
+    const mine = await screen.findByRole('region', {
+      name: '전 이런 사람이에요',
+    })
+    expect(answerRowLabels(mine)).toEqual(ANSWER_ROW_LABELS)
+    expect(answerRowLabels(wantedSection())).toEqual(ANSWER_ROW_LABELS)
+    expect(answerRow(mine, '온도')).toHaveTextContent('아직 답하지 않았어요')
+    expect(
+      screen.queryByText('사용 직후 바로 정리한다'),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByText('사용 직후 바로 정리했으면 좋겠다'),
+    ).not.toBeInTheDocument()
   })
 
   it('never shows an earlier candidate’s answer after moving to another', async () => {
@@ -481,7 +529,7 @@ describe('roommate detail profile', () => {
     )
 
     expect(screen.queryByText('후보칠칠님')).not.toBeInTheDocument()
-    expect(screen.queryByText('없다는 말을 들었다')).not.toBeInTheDocument()
+    expect(screen.queryByText('없다는 말을 들었어요')).not.toBeInTheDocument()
   })
 
   it.each([
