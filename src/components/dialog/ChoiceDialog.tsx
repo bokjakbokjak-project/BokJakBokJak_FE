@@ -1,6 +1,7 @@
 import { useId, useRef, type RefObject } from 'react'
 import { createPortal } from 'react-dom'
 import closeIcon from '../../assets/share/close-x.svg'
+import kakaoSymbol from '../../assets/share/kakao-symbol.svg'
 import { useModalLayer } from '../../lib/onboarding/useModalLayer'
 
 type ChoiceDialogProps = {
@@ -14,6 +15,12 @@ type ChoiceDialogProps = {
   closeLabel?: string
   /** Right, brown button. */
   confirmLabel: string
+  /**
+   * `kakao` turns the brown button into KakaoTalk's yellow button with its speech bubble, for
+   * sending to KakaoTalk (requested 2026-11-20, not in Figma). The colors follow Kakao's design
+   * guide for its buttons: #FEE500 with 85% black.
+   */
+  confirmTone?: 'brown' | 'kakao'
   triggerRef: RefObject<HTMLElement | null>
   onCancel: () => void
   onConfirm: () => void
@@ -24,7 +31,7 @@ type ChoiceDialogProps = {
 }
 
 const BUTTON_CLASS =
-  'flex h-[42px] shrink-0 items-center justify-center rounded-full text-[16px] leading-[1.5] font-semibold'
+  'flex h-[42px] shrink-0 items-center justify-center text-[16px] leading-[1.5] font-semibold'
 
 /**
  * The 285×196 cream dialog with two round buttons on the 0.75 dimmed layer, shared by the chat
@@ -37,6 +44,7 @@ export default function ChoiceDialog({
   cancelLabel,
   closeLabel,
   confirmLabel,
+  confirmTone = 'brown',
   triggerRef,
   onCancel,
   onConfirm,
@@ -100,7 +108,7 @@ export default function ChoiceDialog({
             {cancelLabel && (
               <button
                 type="button"
-                className={`${BUTTON_CLASS} w-[116px] border border-brand-cream3 bg-brand-cream2 text-brand-brown1`}
+                className={`${BUTTON_CLASS} w-[116px] rounded-full border border-brand-cream3 bg-brand-cream2 text-brand-brown1`}
                 onClick={onCancel}
               >
                 {cancelLabel}
@@ -109,9 +117,16 @@ export default function ChoiceDialog({
             <button
               type="button"
               disabled={confirmDisabled}
-              className={`${BUTTON_CLASS} ${cancelLabel ? 'w-[116px]' : 'w-full'} bg-brand-brown1 text-white disabled:opacity-60`}
+              className={`${BUTTON_CLASS} ${cancelLabel ? 'w-[116px]' : 'w-full'} ${
+                confirmTone === 'kakao'
+                  ? 'gap-2 rounded-[12px] bg-[#FEE500] text-[rgba(0,0,0,0.85)]'
+                  : 'rounded-full bg-brand-brown1 text-white'
+              } disabled:opacity-60`}
               onClick={onConfirm}
             >
+              {confirmTone === 'kakao' && (
+                <img src={kakaoSymbol} alt="" className="size-[18px]" />
+              )}
               {confirmLabel}
             </button>
           </div>

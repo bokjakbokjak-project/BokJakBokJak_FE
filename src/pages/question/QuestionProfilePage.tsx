@@ -150,7 +150,8 @@ export default function QuestionProfilePage() {
 
   // QA 11, 15: sharing copies the link to the shared result and confirms it. With the Kakao key,
   // the confirmation also offers 카카오톡 보내기, which sends the profile card (requested
-  // 2026-11-13), so both ways stay available.
+  // 2026-11-13), so both ways stay available. That confirmation has the one yellow Kakao button
+  // and closes with the X at the top right (requested 2026-11-20).
   const shareProfile = async () => {
     const origin = window.location.origin
     const url = createShareUrl(
@@ -266,7 +267,11 @@ export default function QuestionProfilePage() {
             '링크를 공유하고 다른 룸메이트들과\n설문 결과를 비교해보세요'
           }
           {...(hasKakao
-            ? { cancelLabel: '확인', confirmLabel: '카카오톡 보내기' }
+            ? {
+                closeLabel: '닫기',
+                confirmLabel: '카카오톡 보내기',
+                confirmTone: 'kakao' as const,
+              }
             : { confirmLabel: '확인' })}
           triggerRef={shareButtonRef}
           onCancel={closeShare}
@@ -280,7 +285,11 @@ export default function QuestionProfilePage() {
           title="링크를 복사하지 못했어요"
           message={shareState.url}
           {...(hasKakao
-            ? { cancelLabel: '확인', confirmLabel: '카카오톡 보내기' }
+            ? {
+                closeLabel: '닫기',
+                confirmLabel: '카카오톡 보내기',
+                confirmTone: 'kakao' as const,
+              }
             : { confirmLabel: '확인' })}
           triggerRef={shareButtonRef}
           onCancel={closeShare}

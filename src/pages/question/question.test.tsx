@@ -351,6 +351,8 @@ describe('situational survey', () => {
   })
 
   it('copies the share link and confirms it (QA 11)', async () => {
+    // Without the Kakao key, whatever .env.local holds.
+    vi.stubEnv('VITE_KAKAO_JS_KEY', '')
     const writeText = vi.fn().mockResolvedValue(undefined)
     Object.defineProperty(navigator, 'clipboard', {
       value: { writeText },
@@ -372,6 +374,7 @@ describe('situational survey', () => {
     )
     fireEvent.click(within(dialog).getByRole('button', { name: '확인' }))
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    vi.unstubAllEnvs()
   })
   it('copies the link and offers 카카오톡 보내기 when the key is set', async () => {
     vi.stubEnv('VITE_KAKAO_JS_KEY', 'test-key')
@@ -395,11 +398,21 @@ describe('situational survey', () => {
     })
     expect(writeText).toHaveBeenCalledTimes(1)
     const dialog = screen.getByRole('dialog', { name: '링크 복사 완료!' })
-    expect(within(dialog).getByRole('button', { name: '확인' })).toBeVisible()
+    // One Kakao button at the bottom, and the X at the top right closes it (2026-11-20).
+    expect(
+      within(dialog).queryByRole('button', { name: '확인' }),
+    ).not.toBeInTheDocument()
+    fireEvent.click(within(dialog).getByRole('button', { name: '닫기' }))
+    expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
+    await act(async () => {
+      fireEvent.click(screen.getByRole('button', { name: '공유하기' }))
+    })
 
     await act(async () => {
       fireEvent.click(
-        within(dialog).getByRole('button', { name: '카카오톡 보내기' }),
+        within(
+          screen.getByRole('dialog', { name: '링크 복사 완료!' }),
+        ).getByRole('button', { name: '카카오톡 보내기' }),
       )
     })
     expect(sendDefault).toHaveBeenCalledTimes(1)
