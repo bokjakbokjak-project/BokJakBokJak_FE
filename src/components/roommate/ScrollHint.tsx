@@ -41,10 +41,12 @@ export default function ScrollHint({
 
   if (!canScroll || hasScrolled) return null
   return (
+    // Centered with `left` and a negative margin, so the bob animation's transform cannot add to
+    // the centering (it moved the arrow off center before, 2026-11-21).
     <div
       aria-hidden
       data-testid="scroll-hint"
-      className="pointer-events-none absolute bottom-full left-1/2 mb-1.5 flex size-9 -translate-x-1/2 items-center justify-center rounded-full border border-brand-cream3 bg-white/90 shadow-[0_2px_8px_rgba(97,71,53,0.15)] motion-safe:animate-scroll-hint"
+      className="pointer-events-none absolute bottom-full left-1/2 mb-1.5 -ml-[18px] flex size-9 items-center justify-center rounded-full border border-brand-cream3 bg-white/90 shadow-[0_2px_8px_rgba(97,71,53,0.15)] motion-safe:animate-scroll-hint"
     >
       <img src={chevronDown} alt="" className="size-6" />
     </div>
