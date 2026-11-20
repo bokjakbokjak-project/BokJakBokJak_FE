@@ -52,7 +52,7 @@ describe('KakaoTalk sharing', () => {
       content: {
         title: '수연님의 룸메이트 프로필',
         description: '수연님의 프로필을 확인해보세요!',
-        imageUrl: 'https://example.com/share/kakao-profile.png',
+        imageUrl: 'https://example.com/share/profile-card.png',
         imageWidth: 684,
         imageHeight: 428,
         link,
