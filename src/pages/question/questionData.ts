@@ -212,7 +212,7 @@ export const QUESTION_TOPICS: readonly QuestionTopic[] = [
     situationScene: { src: situationTemperature, tone: 'light' },
     layout: 'low',
     self: {
-      text: '평소 냉난방과 관련해 내\n경험과 가까운 것을 모두 골라주세요',
+      text: '평소 냉난방과 관련해 내\n경험과 가까운 것을 골라주세요',
       options: [
         '방에 있는 동안 계속 켜두는 편이다',
         '덥거나 추울 때 일정시간 이상 켜둔다',
@@ -221,7 +221,7 @@ export const QUESTION_TOPICS: readonly QuestionTopic[] = [
       ],
     },
     roommate: {
-      text: '룸메이트의 냉난방 습관 중, 함께 지내기\n힘들 것 같은 것을 모두 골라 주세요.',
+      text: '룸메이트의 냉난방 습관 중, 함께 지내기\n힘들 것 같은 것을 골라 주세요.',
       options: [
         '방에 있는 동안 계속 켜두어도 괜찮다',
         '덥거나 추울 때 일정시간 이상 켜두어도 괜찮다',

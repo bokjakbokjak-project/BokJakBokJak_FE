@@ -73,7 +73,7 @@ export default function ProfileCard({ profile }: { profile: ProfileCardData }) {
         </div>
       </div>
       <p className="absolute top-[176.25px] right-3 text-[12px] leading-[1.5] font-medium text-brand-cream3">
-        BOCKJAK
+        BOKJAK
       </p>
       <img
         src={cardDivider}
