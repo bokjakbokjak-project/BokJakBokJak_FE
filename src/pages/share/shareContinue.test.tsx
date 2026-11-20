@@ -172,7 +172,10 @@ describe('shared profile, 복작복작으로 이동', () => {
   it('goes on by itself after the login, and starts a new account from the onboarding', async () => {
     profileResponse = () => fail(409, 'SURVEY_REQUIRED', '설문이 필요해요')
     startSession({ accessToken: 'access-1', refreshToken: 'refresh-1' })
-    renderShared({ continueShared: true, nextStep: 'ONBOARDING' })
+    renderShared({
+      continueShared: true,
+      startRoute: ONBOARDING_ROUTES.school,
+    })
 
     // No arrival popup: the survey question comes right away.
     const dialog = await screen.findByRole('dialog', {

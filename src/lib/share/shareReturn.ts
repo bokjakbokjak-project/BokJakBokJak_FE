@@ -1,4 +1,3 @@
-import type { NextStep } from '../auth/authDto'
 import { SHARE_ROUTE } from './profileShare'
 
 /**
@@ -11,8 +10,8 @@ const KEY = 'bokjak-share-return'
 /** What the shared profile reads from the navigation state when the login brings it back. */
 export type SharedReturnState = {
   continueShared: true
-  /** The login's `next_step`, so a new user starts from the onboarding. */
-  nextStep: NextStep
+  /** Where the login would have gone (GET /api/me/status), so a new user starts from the onboarding. */
+  startRoute: string | null
 }
 
 export function rememberShareReturn(pathWithHash: string) {

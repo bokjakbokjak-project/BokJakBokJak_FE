@@ -70,7 +70,7 @@ export default function SharedProfilePage() {
     navigate(
       authStatus === 'disabled'
         ? ONBOARDING_ROUTES.login
-        : returned?.nextStep === 'ONBOARDING'
+        : returned?.startRoute === ONBOARDING_ROUTES.school
           ? ONBOARDING_ROUTES.school
           : QUESTION_ROUTES.survey,
     )

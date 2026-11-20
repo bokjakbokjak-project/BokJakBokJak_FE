@@ -1,4 +1,4 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import menuChevron from '../../assets/my/menu-chevron.svg'
 import pencil from '../../assets/my/pencil.svg'
@@ -12,7 +12,6 @@ import { useAuth } from '../../lib/auth/authState'
 import { DIAMOND_BACKGROUND } from '../../lib/diamondBackground'
 import { HOME_ROUTES } from '../../lib/home/routes'
 import { FROM_MY_STATE, MY_ROUTES } from '../../lib/my/routes'
-import { useOnboarding } from '../../lib/onboarding/onboardingState'
 import { useDisplayProfile } from '../../lib/profile/myProfile'
 import { ONBOARDING_ROUTES } from '../../lib/onboarding/routes'
 import { QUESTION_ROUTES } from '../question/questionData'
@@ -30,21 +29,49 @@ const MENU_ROW_CLASS =
  */
 export default function MyPage() {
   const navigate = useNavigate()
-  const { update } = useOnboarding()
-  const { startRetake } = useQuestion()
+  const { readForRetake, startRetake, isSaving } = useQuestion()
   const notice = usePendingNotice()
   const [isConfirming, setIsConfirming] = useState(false)
   const retakeButtonRef = useRef<HTMLButtonElement>(null)
   // Server mode: the saved nickname and the top three categories (GET /api/me/profile).
   const { name, priorities } = useDisplayProfile()
 
-  // Keeps the name, gender, birth year, school, and dormitory. Only the priorities and the survey
-  // start over; a retake lets the user straight into the priority step, and in server mode the
-  // new priorities are saved with the survey (PUT /api/me/survey).
-  const retakeSurvey = () => {
-    update({ priorities: [] })
-    startRetake()
+  // Keeps the name, gender, birth year, school, and dormitory. The retake opens the priority step
+  // with the saved priorities and then the survey with the saved answers, both prefilled to be
+  // changed (requested by the backend, 2026-11-20); in server mode the priorities are saved with
+  // the survey (PUT /api/me/survey).
+  // Server mode reads the saved survey first, so the priority step opens with it in place. The
+  // retake starts only if this press is still current when the read comes back: 취소 or leaving
+  // the page drops it, and nothing changes.
+  const [isStartingRetake, setIsStartingRetake] = useState(false)
+  const retakeAttemptRef = useRef(0)
+  // Set on every mount, since StrictMode runs the cleanup once in development.
+  const isMountedRef = useRef(false)
+  useEffect(() => {
+    isMountedRef.current = true
+    return () => {
+      isMountedRef.current = false
+    }
+  }, [])
+  const retakeSurvey = async () => {
+    if (isStartingRetake || isSaving) return
+    const attempt = (retakeAttemptRef.current += 1)
+    setIsStartingRetake(true)
+    let saved
+    try {
+      saved = await readForRetake()
+    } catch {
+      // Another account signed in meanwhile: that session's screens take over.
+      return
+    }
+    if (!isMountedRef.current || retakeAttemptRef.current !== attempt) return
+    startRetake(saved)
     navigate(ONBOARDING_ROUTES.priority)
+  }
+  const cancelRetake = () => {
+    retakeAttemptRef.current += 1
+    setIsStartingRetake(false)
+    setIsConfirming(false)
   }
 
   // Server mode only. Sample mode keeps the `아직 준비 중입니다.` notice (OPEN_QUESTIONS MY-1).
@@ -131,11 +158,18 @@ export default function MyPage() {
       <BottomNav active="my" notice={notice} />
       {isConfirming && (
         <ConfirmDialog
-          message={'우선순위와 설문 답변을\n처음부터 다시 설정하시겠어요?'}
+          message={'우선순위와 설문 답변을\n다시 설정하시겠어요?'}
+          // Saving a changed survey restarts the agenda talks of an ongoing chat, and the
+          // messages stay (Notion 설문 제출·수정, 재설문 연동).
+          detail={
+            '이전 답변이 미리 채워져 있어요.\n답변이나 우선순위를 바꿔 저장하면\n진행 중인 대화의 안건 조율이 처음부터\n다시 시작돼요. 대화 내용은 그대로 남아요.'
+          }
           confirmLabel="다시 하기"
           triggerRef={retakeButtonRef}
           onConfirm={retakeSurvey}
-          onCancel={() => setIsConfirming(false)}
+          // Also while a survey save is still out, so the retake reads what that save leaves.
+          confirmDisabled={isStartingRetake || isSaving}
+          onCancel={cancelRetake}
         />
       )}
     </div>

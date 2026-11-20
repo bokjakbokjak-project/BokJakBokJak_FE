@@ -31,6 +31,8 @@
   --animate-greet-eyes: greet-eyes 1.6s ease-in-out forwards;
   --animate-greet-nod: greet-nod 0.5s ease-in-out 1s 3;
   --animate-bubble-float: bubble-float 3s ease-in-out infinite;
+  /* The down arrow over the survey result's button (requested 2026-11-20). */
+  --animate-scroll-hint: scroll-hint 1.4s ease-in-out infinite;
   /* Full-page loading (requested 2026-11-20): the character bobs and three dots take turns. */
   --animate-loading-bob: loading-bob 1.6s ease-in-out infinite;
   --animate-loading-dot: loading-dot 1.2s ease-in-out infinite;
@@ -53,6 +55,16 @@
     }
     50% {
       transform: translateY(2.5%);
+    }
+  }
+
+  @keyframes scroll-hint {
+    0%,
+    100% {
+      transform: translate(-50%, 0);
+    }
+    50% {
+      transform: translate(-50%, 6px);
     }
   }
 

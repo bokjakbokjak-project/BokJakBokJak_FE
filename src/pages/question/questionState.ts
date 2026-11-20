@@ -17,6 +17,11 @@ export type SavedSurvey = {
    * screen never shows an unsaved retake. Empty before the first submit.
    */
   answers: QuestionAnswers
+  /**
+   * The answers to start editing from: the saved ones, or the old answers of a survey that must
+   * be answered again because questions were added (no answer for the new questions).
+   */
+  startAnswers: QuestionAnswers
   mapping: SurveyMapping
 }
 
@@ -25,6 +30,13 @@ export type SavedSnapshot = Pick<
   SavedSurvey,
   'revision' | 'priorities' | 'answers'
 >
+
+/** A reading taken for a retake, not yet committed (`saved` is null in sample mode). */
+export type RetakeRead = {
+  saved: SavedSurvey | null
+  /** How many saves had been recorded when the reading began. */
+  saveCount: number
+}
 
 export type SurveySync =
   | { status: 'idle' }
@@ -43,12 +55,15 @@ type QuestionContextValue = {
   /** Clears every answer and returns to the first question, for retaking the survey. */
   reset: () => void
   /**
-   * 마이페이지 「설문조사 다시 하기」: clears the answers like `reset` and marks a retake. A
-   * retake saves the new priorities with the survey (PUT /api/me/survey), not with the
-   * onboarding, and does not refill the answers from the server.
+   * 마이페이지 「설문조사 다시 하기」: marks a retake, starting from the saved priorities and
+   * answers (requested by the backend, 2026-11-20). A retake saves the priorities with the survey
+   * (PUT /api/me/survey), not with the onboarding.
    */
   isRetake: boolean
-  startRetake: () => void
+  /** Reads what the server holds now for a retake, changing nothing. */
+  readForRetake: () => Promise<RetakeRead>
+  /** Starts the retake from that reading (committing it): prefilled, at the priority step. */
+  startRetake: (read: RetakeRead) => void
   /**
    * The same priority-first path without clearing any answers: for a first survey whose saved
    * priorities could not be read (none on the server, none in this session). The chosen
@@ -66,6 +81,9 @@ type QuestionContextValue = {
   isSaving: boolean
   beginSave: () => boolean
   endSave: () => void
+  /** The "new questions were added" notice shows once per session. */
+  hasSeenUpdateNotice: boolean
+  markUpdateNoticeSeen: () => void
 }
 
 export const QuestionContext = createContext<QuestionContextValue | null>(null)

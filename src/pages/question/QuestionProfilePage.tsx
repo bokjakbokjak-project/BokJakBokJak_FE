@@ -26,6 +26,7 @@ import { useMyProfile } from '../../lib/profile/myProfile'
 import { useSavedSurvey } from '../../lib/survey/useSurvey'
 import { QUESTION_COUNT, QUESTION_ROUTES } from './questionData'
 import { useQuestion } from './questionState'
+import ScrollHint from '../../components/roommate/ScrollHint'
 import FullPageLoading from '../../components/LoadState/FullPageLoading'
 
 /**
@@ -67,6 +68,7 @@ export default function QuestionProfilePage() {
   const { answers: editingAnswers, sync } = useQuestion()
   const { data } = useOnboarding()
   const shareButtonRef = useRef<HTMLButtonElement>(null)
+  const scrollRef = useRef<HTMLDivElement>(null)
   // `copied` is Figma 1377:36531. `failed` is not in Figma: the link is shown to copy by hand.
   // `kakaoFailed` is not in Figma either: the link stays copied for pasting.
   const [shareState, setShareState] = useState<
@@ -147,7 +149,8 @@ export default function QuestionProfilePage() {
 
   // QA 11, 15: sharing copies the link to the shared result and confirms it. With the Kakao key,
   // the confirmation also offers 카카오톡 보내기, which sends the profile card (requested
-  // 2026-11-13), so both ways stay available.
+  // 2026-11-13), so both ways stay available. That confirmation has the one yellow Kakao button
+  // and closes with the X at the top right (requested 2026-11-20).
   const shareProfile = async () => {
     const origin = window.location.origin
     const url = createShareUrl(
@@ -183,6 +186,7 @@ export default function QuestionProfilePage() {
     <RoommatePage
       footer={
         <div className="relative z-20 shrink-0 bg-brand-cream1 pt-2.5 pb-[max(28px,env(safe-area-inset-bottom))]">
+          <ScrollHint scrollRef={scrollRef} />
           <div className="mx-auto w-full max-w-[390px] px-6">
             <button
               type="button"
@@ -224,6 +228,7 @@ export default function QuestionProfilePage() {
         }
       />
       <div
+        ref={scrollRef}
         data-testid="result-scroll"
         // The back card of ProfileHero is tilted 9px above the block, so the scroll area starts
         // 9px higher and pads it back, instead of cutting the card off at its top edge.
@@ -251,7 +256,11 @@ export default function QuestionProfilePage() {
             '링크를 공유하고 다른 룸메이트들과\n설문 결과를 비교해보세요'
           }
           {...(hasKakao
-            ? { cancelLabel: '확인', confirmLabel: '카카오톡 보내기' }
+            ? {
+                closeLabel: '닫기',
+                confirmLabel: '카카오톡 보내기',
+                confirmTone: 'kakao' as const,
+              }
             : { confirmLabel: '확인' })}
           triggerRef={shareButtonRef}
           onCancel={closeShare}
@@ -265,7 +274,11 @@ export default function QuestionProfilePage() {
           title="링크를 복사하지 못했어요"
           message={shareState.url}
           {...(hasKakao
-            ? { cancelLabel: '확인', confirmLabel: '카카오톡 보내기' }
+            ? {
+                closeLabel: '닫기',
+                confirmLabel: '카카오톡 보내기',
+                confirmTone: 'kakao' as const,
+              }
             : { confirmLabel: '확인' })}
           triggerRef={shareButtonRef}
           onCancel={closeShare}
