@@ -23,6 +23,13 @@ export type RequestOptions = {
   body?: unknown
   /** Sends the access token and refreshes it once on 401. Defaults to true. */
   auth?: boolean
+  /**
+   * What a 401 on the retry (after a successful refresh) means. `end-session` (default): the
+   * session is not valid, so it ends. `fail`: only this request fails and the session stays, for
+   * an optional API that a server may not have yet and could answer with 401 (GET /api/me/status
+   * before the backend deploys it). A refused refresh still ends the session either way.
+   */
+  retried401?: 'end-session' | 'fail'
   signal?: AbortSignal
 }
 
@@ -257,7 +264,12 @@ export async function apiRequest<T = unknown>(
   path: string,
   options: RequestOptions = {},
 ): Promise<T> {
-  const { method = 'GET', auth = true, signal } = options
+  const {
+    method = 'GET',
+    auth = true,
+    retried401 = 'end-session',
+    signal,
+  } = options
 
   if (!auth) {
     return (await send(path, {
@@ -303,7 +315,11 @@ export async function apiRequest<T = unknown>(
       signal,
     })) as T
   } catch (error) {
-    if (error instanceof ApiError && error.status === 401) {
+    if (
+      error instanceof ApiError &&
+      error.status === 401 &&
+      retried401 === 'end-session'
+    ) {
       endSessionOf(generation)
     }
     throw error
