@@ -402,16 +402,19 @@ describe('server survey: onboarding priorities after a new sign-in', () => {
 })
 
 describe('server survey: home', () => {
-  it('opens the my page from 내 설문 다시보기 and saves nothing', async () => {
+  it('starts the retake from 내 설문 다시보기 with the saved survey, and saves nothing', async () => {
     renderAt('/home')
-    await until(() => screen.getByRole('link', { name: '내 설문 다시보기 →' }))
+    await until(() =>
+      screen.getByRole('button', { name: '내 설문 다시보기 →' }),
+    )
 
-    fireEvent.click(screen.getByRole('link', { name: '내 설문 다시보기 →' }))
+    fireEvent.click(screen.getByRole('button', { name: '내 설문 다시보기 →' }))
 
-    expect(path()).toBe(MY_ROUTES.my)
-    expect(
-      screen.getByRole('button', { name: '설문조사 다시 하기' }),
-    ).toBeInTheDocument()
+    // The priority step of the retake, with the saved priorities chosen.
+    await until(() => expect(path()).toBe(ONBOARDING_ROUTES.priority))
+    await until(() =>
+      expect(screen.getAllByRole('button', { pressed: true })).toHaveLength(3),
+    )
     expect(puts()).toHaveLength(0)
   })
 })

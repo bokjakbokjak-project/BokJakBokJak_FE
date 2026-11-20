@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router'
 import menuChevron from '../../assets/my/menu-chevron.svg'
 import pencil from '../../assets/my/pencil.svg'
@@ -15,7 +15,7 @@ import { FROM_MY_STATE, MY_ROUTES } from '../../lib/my/routes'
 import { useDisplayProfile } from '../../lib/profile/myProfile'
 import { ONBOARDING_ROUTES } from '../../lib/onboarding/routes'
 import { QUESTION_ROUTES } from '../question/questionData'
-import { useQuestion } from '../question/questionState'
+import { useStartRetake } from '../question/useStartRetake'
 
 const MENU_ROW_CLASS =
   'flex w-full items-center justify-between bg-brand-cream1 px-4 py-[15px] text-left text-[16px] leading-[1.5] font-medium tracking-[-0.32px] text-brand-brown3'
@@ -29,48 +29,17 @@ const MENU_ROW_CLASS =
  */
 export default function MyPage() {
   const navigate = useNavigate()
-  const { readForRetake, startRetake, isSaving } = useQuestion()
   const notice = usePendingNotice()
   const [isConfirming, setIsConfirming] = useState(false)
   const retakeButtonRef = useRef<HTMLButtonElement>(null)
   // Server mode: the saved nickname and the top three categories (GET /api/me/profile).
   const { name, priorities } = useDisplayProfile()
 
-  // Keeps the name, gender, birth year, school, and dormitory. The retake opens the priority step
-  // with the saved priorities and then the survey with the saved answers, both prefilled to be
-  // changed (requested by the backend, 2026-11-20); in server mode the priorities are saved with
-  // the survey (PUT /api/me/survey).
-  // Server mode reads the saved survey first, so the priority step opens with it in place. The
-  // retake starts only if this press is still current when the read comes back: 취소 or leaving
-  // the page drops it, and nothing changes.
-  const [isStartingRetake, setIsStartingRetake] = useState(false)
-  const retakeAttemptRef = useRef(0)
-  // Set on every mount, since StrictMode runs the cleanup once in development.
-  const isMountedRef = useRef(false)
-  useEffect(() => {
-    isMountedRef.current = true
-    return () => {
-      isMountedRef.current = false
-    }
-  }, [])
-  const retakeSurvey = async () => {
-    if (isStartingRetake || isSaving) return
-    const attempt = (retakeAttemptRef.current += 1)
-    setIsStartingRetake(true)
-    let saved
-    try {
-      saved = await readForRetake()
-    } catch {
-      // Another account signed in meanwhile: that session's screens take over.
-      return
-    }
-    if (!isMountedRef.current || retakeAttemptRef.current !== attempt) return
-    startRetake(saved)
-    navigate(ONBOARDING_ROUTES.priority)
-  }
+  // Keeps the name, gender, birth year, school, and dormitory, and opens the priority step with
+  // the saved priorities and answers prefilled (useStartRetake).
+  const retake = useStartRetake()
   const cancelRetake = () => {
-    retakeAttemptRef.current += 1
-    setIsStartingRetake(false)
+    retake.cancel()
     setIsConfirming(false)
   }
 
@@ -166,9 +135,8 @@ export default function MyPage() {
           }
           confirmLabel="다시 하기"
           triggerRef={retakeButtonRef}
-          onConfirm={retakeSurvey}
-          // Also while a survey save is still out, so the retake reads what that save leaves.
-          confirmDisabled={isStartingRetake || isSaving}
+          onConfirm={retake.start}
+          confirmDisabled={retake.isBusy}
           onCancel={cancelRetake}
         />
       )}
