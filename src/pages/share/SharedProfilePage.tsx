@@ -75,7 +75,7 @@ export default function SharedProfilePage() {
         ? ONBOARDING_ROUTES.login
         : isUserTestEnabled()
           ? USER_TEST_ROUTES.start
-          : returned?.nextStep === 'ONBOARDING'
+          : returned?.startRoute === ONBOARDING_ROUTES.school
             ? ONBOARDING_ROUTES.school
             : QUESTION_ROUTES.survey,
     )
