@@ -23,10 +23,13 @@ import {
   QUESTION_ROUTES,
   QUESTION_TOPICS,
   SURVEY_IMAGES,
+  getQuestionIndex,
   getQuestionStep,
+  getStepOf,
   type QuestionTopic,
 } from './questionData'
 import { useQuestion } from './questionState'
+import { useQuestionOrder } from './useQuestionOrder'
 import SurveySkipButton, { ExperienceSkipButton } from './SurveySkipButton'
 import BrowseInsteadButton from '../../components/userTest/BrowseInsteadButton'
 import FullPageLoading from '../../components/LoadState/FullPageLoading'
@@ -290,22 +293,35 @@ function SituationScreen({
 }
 
 type QuestionStepProps = {
+  /** The step on screen (0-15), in the survey order. */
+  index: number
+  /** The question index (0-15) shown at this step, the key of its answer. */
+  questionIndex: number
   focusHeading: boolean
   onMove: (index: number) => void
 }
 
-/** Mounted once per question, so the STEP timer starts over on every topic. */
-function QuestionStep({ focusHeading, onMove }: QuestionStepProps) {
+/**
+ * Mounted once per question, so the STEP timer starts over on every topic. `index` is the step on
+ * screen, numbered in the priority order (STEP, Q and the progress follow it); `questionIndex` is
+ * the question asked there.
+ */
+function QuestionStep({
+  index,
+  questionIndex,
+  focusHeading,
+  onMove,
+}: QuestionStepProps) {
   const navigate = useNavigate()
-  const { answers, answer, index, sync } = useQuestion()
-  const { topic, isSelf, question } = getQuestionStep(index)
+  const { answers, answer, sync } = useQuestion()
+  const { topic, isSelf, question } = getQuestionStep(questionIndex)
   const topicIndex = Math.floor(index / 2)
-  const selected = answers[index]
+  const selected = answers[questionIndex]
   const layout = LAYOUT[topic.layout]
   // Server mode: this question's options do not match the server survey (BEDTIME_H while the
   // server sends seven options), so the survey cannot be saved yet. The user can still answer.
   const isBlocked =
-    sync.status === 'ready' && isQuestionBlocked(sync.mapping, index)
+    sync.status === 'ready' && isQuestionBlocked(sync.mapping, questionIndex)
 
   // Each topic opens on its STEP screen. An answered question has seen it already, so going
   // back skips it, but `상황 보기` can always bring it back.
@@ -454,11 +470,11 @@ function QuestionStep({ focusHeading, onMove }: QuestionStepProps) {
                 >
                   <input
                     type="radio"
-                    name={`question-${index}`}
+                    name={`question-${questionIndex}`}
                     value={option}
                     checked={isSelected}
                     className="sr-only"
-                    onChange={() => answer(index, option)}
+                    onChange={() => answer(questionIndex, option)}
                   />
                   <img
                     src={isSelected ? radioOn : radioOff}
@@ -504,10 +520,13 @@ function QuestionStep({ focusHeading, onMove }: QuestionStepProps) {
   )
 }
 
-/** The first question without an answer, or null when all are answered. */
-function firstUnanswered(answers: Readonly<Record<number, string>>) {
-  for (let index = 0; index < QUESTION_COUNT; index += 1) {
-    if (answers[index] === undefined) return index
+/** The first step, in the survey order, whose question has no answer, or null when all do. */
+function firstUnanswered(
+  answers: Readonly<Record<number, string>>,
+  order: readonly number[],
+) {
+  for (let step = 0; step < QUESTION_COUNT; step += 1) {
+    if (answers[getQuestionIndex(order, step)] === undefined) return step
   }
   return null
 }
@@ -526,10 +545,28 @@ function usePreloadSurveyImages() {
   }, [])
 }
 
+/**
+ * The step to show after the topic order changed (the priorities were changed on the priority
+ * step and the survey opened again): the question shown before, at its step in the new order, or
+ * an earlier step that still has no answer, so no question is skipped or asked twice.
+ */
+function moveToOrder(
+  answers: Readonly<Record<number, string>>,
+  step: number,
+  from: string,
+  order: readonly number[],
+) {
+  const previous = from.split(',').map(Number)
+  const same = getStepOf(order, getQuestionIndex(previous, step))
+  const unanswered = firstUnanswered(answers, order)
+  return unanswered === null ? same : Math.min(same, unanswered)
+}
+
 export default function QuestionPage() {
   usePreloadSurveyImages()
   const {
-    index,
+    index: savedIndex,
+    indexOrder,
     setIndex,
     sync,
     isRetake,
@@ -545,6 +582,12 @@ export default function QuestionPage() {
   const saved = useSavedSurvey()
   const navigate = useNavigate()
   const { data: onboarding } = useOnboarding()
+  const order = useQuestionOrder()
+  const orderKey = order.join()
+  const index =
+    indexOrder === null || indexOrder === orderKey
+      ? savedIndex
+      : moveToOrder(answers, savedIndex, indexOrder, order)
   // A first survey needs the onboarding priorities. They come from this session or, after a
   // new sign-in, from GET /api/me/survey. If neither has them, the user picks them before the
   // questions instead of finding out after answering all 16; they are saved with the survey.
@@ -562,8 +605,17 @@ export default function QuestionPage() {
 
   const move = (next: number) => {
     setHasMoved(true)
-    setIndex(next)
+    setIndex(next, orderKey)
   }
+
+  // Records the order the step is in, once the questions show (the saved priorities are read by
+  // then), so a later change of the priorities can move the step to the same question.
+  const isShowing = saved.status === 'ready' && !needsPriorities
+  useEffect(() => {
+    if (!isShowing) return
+    if (index !== savedIndex || indexOrder !== orderKey)
+      setIndex(index, orderKey)
+  }, [isShowing, index, savedIndex, indexOrder, orderKey, setIndex])
 
   // Answered before, but questions were added since (GET /api/me/status `survey_update_required`,
   // the same condition as here: submitted once, not completed now). The old answers are filled
@@ -575,7 +627,7 @@ export default function QuestionPage() {
     !isRetake
   const closeUpdateNotice = () => {
     markUpdateNoticeSeen()
-    const next = firstUnanswered(answers)
+    const next = firstUnanswered(answers, order)
     if (next !== null) move(next)
   }
 
@@ -598,7 +650,13 @@ export default function QuestionPage() {
 
   return (
     <>
-      <QuestionStep key={index} focusHeading={hasMoved} onMove={move} />
+      <QuestionStep
+        key={index}
+        index={index}
+        questionIndex={getQuestionIndex(order, index)}
+        focusHeading={hasMoved}
+        onMove={move}
+      />
       {/* Not in Figma: the one-button dialog of 「링크 복사 완료!」 (1377:36531). */}
       {needsUpdate && !hasSeenUpdateNotice && (
         <ChoiceDialog

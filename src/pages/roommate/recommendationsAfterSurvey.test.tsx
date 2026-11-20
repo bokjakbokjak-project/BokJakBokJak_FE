@@ -12,11 +12,8 @@ import {
   profileData,
   schemaData,
 } from '../../test/surveyFixture'
-import {
-  QUESTION_COUNT,
-  QUESTION_ROUTES,
-  getQuestionStep,
-} from '../question/questionData'
+import { shownQuestion } from '../../test/shownQuestion'
+import { QUESTION_COUNT, QUESTION_ROUTES } from '../question/questionData'
 
 /**
  * The recommendation list after a survey save, in server mode, against a stand-in backend that
@@ -248,7 +245,7 @@ async function retakeSurvey() {
     }
     fireEvent.click(
       screen.getByRole('radio', {
-        name: getQuestionStep(index).question.options[0],
+        name: shownQuestion().question.options[0],
       }),
     )
     fireEvent.click(screen.getByRole('button', { name: '다음으로' }))
@@ -593,7 +590,7 @@ describe('recommendations after a survey save', () => {
       }
       fireEvent.click(
         screen.getByRole('radio', {
-          name: getQuestionStep(index).question.options[0],
+          name: shownQuestion().question.options[0],
         }),
       )
       fireEvent.click(screen.getByRole('button', { name: '다음으로' }))

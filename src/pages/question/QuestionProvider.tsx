@@ -58,7 +58,16 @@ async function readSavedSurvey(): Promise<SavedSurvey> {
 export default function QuestionProvider() {
   const { data: onboarding, update: updateOnboarding } = useOnboarding()
   const [answers, setAnswers] = useState<QuestionAnswers>({})
-  const [index, setIndex] = useState(0)
+  // The step and the topic order it was taken in (null: valid in any order, such as step 0).
+  const [position, setPosition] = useState<{
+    index: number
+    order: string | null
+  }>({ index: 0, order: null })
+  const setIndex = useCallback(
+    (index: number, order: string | null = null) =>
+      setPosition({ index, order }),
+    [],
+  )
   const [isRetake, setIsRetake] = useState(false)
   const [sync, setSync] = useState<SurveySync>({ status: 'idle' })
   const savedRef = useRef<SavedSurvey | null>(null)
@@ -87,7 +96,7 @@ export default function QuestionProvider() {
   const reset = useCallback(() => {
     setAnswers({})
     setIndex(0)
-  }, [])
+  }, [setIndex])
   const choosePriorities = useCallback(() => {
     setIsRetake(true)
   }, [])
@@ -178,7 +187,7 @@ export default function QuestionProvider() {
         updateOnboarding({ priorities: saved.priorities })
       }
     },
-    [choosePriorities, updateOnboarding],
+    [choosePriorities, setIndex, updateOnboarding],
   )
 
   const recordSaved = useCallback((snapshot: SavedSnapshot) => {
@@ -211,7 +220,8 @@ export default function QuestionProvider() {
       answers,
       answer,
       replaceAnswers,
-      index,
+      index: position.index,
+      indexOrder: position.order,
       setIndex,
       reset,
       isRetake,
@@ -232,7 +242,8 @@ export default function QuestionProvider() {
       answers,
       answer,
       replaceAnswers,
-      index,
+      position,
+      setIndex,
       reset,
       isRetake,
       readForRetake,

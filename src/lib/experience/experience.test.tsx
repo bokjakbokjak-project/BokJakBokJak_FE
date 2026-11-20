@@ -2,7 +2,11 @@ import { act, fireEvent, render, screen } from '@testing-library/react'
 import { MemoryRouter, useLocation } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import AppRoutes from '../../app/AppRoutes'
-import { getQuestionStep } from '../../pages/question/questionData'
+import {
+  getQuestionIndex,
+  getQuestionStep,
+  getTopicOrder,
+} from '../../pages/question/questionData'
 import { finishSituation } from '../../test/questionFade'
 import { getApiMode } from '../api/config'
 import { clearTokens, getRefreshToken, startSession } from '../auth/tokenStore'
@@ -180,7 +184,13 @@ describe('예시 답변으로 건너뛰기', () => {
       if (index % 2 === 0) finishSituation()
       fireEvent.click(
         screen.getByRole('radio', {
-          name: getQuestionStep(index).question.options[0],
+          // The survey asks the topics in the priority order (getTopicOrder).
+          name: getQuestionStep(
+            getQuestionIndex(
+              getTopicOrder(['cleaning', 'smoking', 'sleep-habit']),
+              index,
+            ),
+          ).question.options[0],
         }),
       )
       expect(skip()).not.toBeInTheDocument()
