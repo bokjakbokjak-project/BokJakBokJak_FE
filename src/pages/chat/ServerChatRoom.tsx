@@ -120,7 +120,7 @@ function EntryView({ entry, actions }: { entry: Entry; actions?: ReactNode }) {
   switch (entry.kind) {
     case 'intro':
       return (
-        <AiCard title="안건 조율을 시작할께요!" actions={actions}>
+        <AiCard title="안건 조율을 시작할게요!" actions={actions}>
           {entry.agendas.length === 0 ? (
             // Not in Figma: the AI prepares the two agendas right after the request (spec 7.5).
             <p>AI가 두 분의 설문 결과로 조율할 안건을 준비하고 있어요.</p>

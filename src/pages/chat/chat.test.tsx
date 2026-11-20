@@ -305,7 +305,7 @@ describe('chat', () => {
   it('opens with the chatbot introduction and its agendas', async () => {
     renderAt('/chat/jeonhyeyun')
 
-    const intro = await screen.findByText('안건 조율을 시작할께요!')
+    const intro = await screen.findByText('안건 조율을 시작할게요!')
     const card = intro.parentElement!.parentElement!
     expect(within(card).getByText('[ 조율안건 ]')).toBeInTheDocument()
     expect(within(card).getAllByRole('listitem')).toHaveLength(2)
