@@ -18,6 +18,7 @@ import {
 import {
   QUESTION_COUNT,
   QUESTION_ROUTES,
+  QUESTION_TOPICS,
   getQuestionStep,
 } from './questionData'
 
@@ -69,6 +70,12 @@ let savedOnServer: {
   answers: { question_code: string; option_code: string }[]
   priorities: { category_code: string; rank: number }[]
 } | null
+
+/** Screen index of a topic's first (self) question; the roommate question follows it. */
+const topicStart = (id: string) =>
+  QUESTION_TOPICS.findIndex((topic) => topic.id === id) * 2
+const SMOKING_ROOMMATE = topicStart('smoking') + 1
+const TEMPERATURE_SELF = topicStart('temperature')
 
 const callsTo = (method: string, path: string) =>
   calls.filter((call) => call.method === method && call.path === path)
@@ -462,7 +469,7 @@ describe('server survey: saved answers', () => {
     expect(first).toBeChecked()
 
     await answerAllAndFinish((index) => {
-      if (index === 15) {
+      if (index === SMOKING_ROOMMATE) {
         fireEvent.click(
           screen.getByRole('radio', { name: '흡연자와는 같은 방이 어렵다' }),
         )
@@ -478,11 +485,14 @@ describe('server survey: saved answers', () => {
     expect(body.expected_revision).toBe(3)
     // Answers only: the saved priorities go back unchanged.
     expect(body.priorities).toEqual(SAVED_PRIORITIES)
-    expect(body.answers[15]).toEqual({
-      question_code: 'SMOKING_T',
-      option_code: 'NON_SMOKER_ONLY',
-    })
-    expect(body.answers.slice(0, 15)).toEqual(FIRST_OPTION_ANSWERS.slice(0, 15))
+    // Only the edited answer changed; the answers go in the backend's question order.
+    expect(body.answers).toEqual(
+      FIRST_OPTION_ANSWERS.map((saved, index) =>
+        index === SMOKING_ROOMMATE
+          ? { question_code: 'SMOKING_T', option_code: 'NON_SMOKER_ONLY' }
+          : saved,
+      ),
+    )
   })
 
   it('ignores the saved answers once another account has signed in', async () => {
@@ -625,7 +635,7 @@ describe('server survey: retake from the my page', () => {
   }
 
   const pickSmokingRoommateOnlyNonSmoker = (index: number) =>
-    index === 15
+    index === SMOKING_ROOMMATE
       ? fireEvent.click(
           screen.getByRole('radio', { name: '흡연자와는 같은 방이 어렵다' }),
         )
@@ -1023,18 +1033,19 @@ describe('server survey: new questions added (survey_update_required)', () => {
     expect(notice).toHaveTextContent('이전 답변은 그대로 남아 있어요.')
     click('확인')
 
-    // The temperature topic is STEP 7 on screen (Q13), the first question without an answer.
+    // 온도 is the last topic, STEP 8 (Q15), the first question without an answer.
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
-    expect(screen.getByLabelText('STEP 7 상황')).toBeInTheDocument()
+    expect(TEMPERATURE_SELF).toBe(14)
+    expect(screen.getByLabelText('STEP 8 상황')).toBeInTheDocument()
     finishSituation()
-    expect(screen.getByText('Q7-1')).toBeInTheDocument()
+    expect(screen.getByText('Q8-1')).toBeInTheDocument()
 
-    // Going back shows the old answers, already selected, and the notice does not come back.
+    // Going back shows the old answers (흡연, STEP 7), already selected, and no notice again.
     click('이전으로')
-    expect(screen.getByText('Q6-2')).toBeInTheDocument()
+    expect(screen.getByText('Q7-2')).toBeInTheDocument()
     expect(
       screen.getByRole('radio', {
-        name: getQuestionStep(11).question.options[0],
+        name: getQuestionStep(SMOKING_ROOMMATE).question.options[0],
       }),
     ).toBeChecked()
     expect(screen.queryByRole('dialog')).not.toBeInTheDocument()
@@ -1045,10 +1056,10 @@ describe('server survey: new questions added (survey_update_required)', () => {
     await until(() => screen.getByRole('dialog'))
     click('확인')
 
-    for (let index = 12; index < QUESTION_COUNT; index += 1) {
+    // Only the two new 온도 questions are left; everything before them holds the old answers.
+    for (let index = TEMPERATURE_SELF; index < QUESTION_COUNT; index += 1) {
       if (screen.queryByLabelText(/^STEP \d+ 상황$/)) finishSituation()
-      // The new temperature answers; the smoking answers after them are the old ones.
-      if (index < 14) pickFirst(index)
+      pickFirst(index)
       click('다음으로')
     }
     await act(async () => {

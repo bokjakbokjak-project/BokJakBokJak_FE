@@ -253,10 +253,10 @@ export const FIRST_OPTION_ANSWERS = [
   ['FOOD_WASTE_T', 'IMMEDIATELY_ONLY'],
   ['BELONGINGS_H', 'IMMEDIATELY'],
   ['BELONGINGS_T', 'IMMEDIATELY_ONLY'],
-  ['TEMPERATURE_H', 'ALWAYS_ON'],
-  ['TEMPERATURE_T', 'ALWAYS_ON_OK'],
   ['SMOKING_H', 'NON_SMOKER'],
   ['SMOKING_T', 'ANY_OK'],
+  ['TEMPERATURE_H', 'ALWAYS_ON'],
+  ['TEMPERATURE_T', 'ALWAYS_ON_OK'],
 ].map(([question_code, option_code]) => ({ question_code, option_code }))
 
 /** Raw `data` of GET /api/me/survey. */

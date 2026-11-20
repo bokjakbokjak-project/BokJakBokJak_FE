@@ -80,8 +80,8 @@ describe('my profile response', () => {
     expect(cleaning.items[0].question).toBe(
       '나는 방 바닥을 보통 얼마나\n자주 청소하나요?',
     )
-    // The server says `주 2~3회는 해야 한다`; the screens keep the Figma `주 2~3회 한다`.
-    expect(cleaning.items[0].wanted).toBe('주 2~3회 한다')
+    // The screens show the server's label as it is (FLOOR_CLEAN_T, since 2026-11-20).
+    expect(cleaning.items[0].wanted).toBe('주 2~3회는 해야 한다')
   })
 
   it('leaves the cards out, not the profile, when the answers are not in the agreed shape', () => {
