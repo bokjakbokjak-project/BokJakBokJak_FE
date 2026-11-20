@@ -31,10 +31,11 @@ import { useQuestionOrder } from './useQuestionOrder'
 import SurveySkipButton from './SurveySkipButton'
 import FullPageLoading from '../../components/LoadState/FullPageLoading'
 
-// Prototype in Figma 1377:49785: the STEP screen waits 2 seconds, then dissolves into the
-// question over 0.8 seconds with Figma's ease in and out. `상황 보기` and `질문 다시보기` use the same dissolve
-// (OPEN_QUESTIONS DE-6).
-const SITUATION_DURATION = 2000
+// Prototype in Figma 1377:49785: the STEP screen waits, then dissolves into the question over
+// 0.8 seconds with Figma's ease in and out. `상황 보기` and `질문 다시보기` use the same dissolve
+// (OPEN_QUESTIONS DE-6). The wait was 2 seconds in Figma; shortened to 1.2 seconds on request
+// (2026-11-20).
+const SITUATION_DURATION = 1200
 const DISSOLVE_CLASS =
   'transition-[opacity,visibility] duration-800 ease-[cubic-bezier(0.42,0,0.58,1)] motion-reduce:transition-none'
 
@@ -340,6 +341,17 @@ function QuestionStep({
     else onMove(index - 1)
   }
 
+  // Back on a topic's first question opens its STEP screen again (requested 2026-11-20). It stays,
+  // with 질문 다시보기, so back on it can still leave as before instead of racing the fade.
+  const backFromQuestion = () => {
+    if (!isSelf) {
+      goBack()
+      return
+    }
+    setFromQuestion(true)
+    leave('question')
+  }
+
   const goNext = () => {
     if (index === QUESTION_COUNT - 1) navigate(QUESTION_ROUTES.loading)
     else onMove(index + 1)
@@ -362,7 +374,7 @@ function QuestionStep({
         <div className="absolute inset-x-0 top-0 -z-10 h-[292px] bg-[linear-gradient(to_bottom,var(--color-question-surface)_67.842%,rgba(255,255,255,0)_96.918%)]" />
 
         <div className="pt-[max(0px,calc(47px-env(safe-area-inset-top)))]">
-          <SurveyHeader onBack={goBack}>
+          <SurveyHeader onBack={backFromQuestion}>
             <button
               ref={situationButtonRef}
               type="button"

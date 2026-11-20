@@ -58,7 +58,7 @@ describe('situational survey', () => {
     vi.useRealTimers()
   })
 
-  it('opens each topic on its STEP screen, then shows the question after 2 seconds', () => {
+  it('opens each topic on its STEP screen, then shows the question after 1.2 seconds', () => {
     renderAt('/question')
     const step = screen.getByLabelText('STEP 1 상황')
 
@@ -70,7 +70,7 @@ describe('situational survey', () => {
       within(step).queryByRole('button', { name: '질문 다시보기' }),
     ).not.toBeInTheDocument()
 
-    advance(1999)
+    advance(1199)
     expect(step).toHaveClass('visible')
     expectHidden(questionLayer())
 
@@ -87,6 +87,26 @@ describe('situational survey', () => {
     expect(
       screen.getByRole('heading', { name: /어느 정도 있는 편인가요/ }),
     ).toBeInTheDocument()
+  })
+
+  it('goes back from Q1-1 to the STEP 1 screen, and from there to the previous step', () => {
+    renderAt('/question')
+    finishSituation()
+    const step = screen.getByLabelText('STEP 1 상황')
+
+    fireEvent.click(
+      within(questionLayer()).getByRole('button', { name: '뒤로' }),
+    )
+    endFade(questionLayer())
+    expect(step).toHaveClass('visible')
+    // It stays, so back on it can still leave.
+    advance(5000)
+    expect(step).toHaveClass('visible')
+    expect(
+      within(step).getByRole('button', { name: '질문 다시보기' }),
+    ).toBeInTheDocument()
+    fireEvent.click(within(step).getByRole('button', { name: '뒤로' }))
+    expect(screen.queryByLabelText('STEP 1 상황')).not.toBeInTheDocument()
   })
 
   it('shows the situation again from the question and returns with 질문 다시보기', () => {
