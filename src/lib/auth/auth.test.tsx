@@ -11,6 +11,7 @@ import { MemoryRouter, useLocation, useNavigate } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import AppRoutes from '../../app/AppRoutes'
 import { apiRequest } from '../api/apiClient'
+import { rememberShareReturn, takeShareReturn } from '../share/shareReturn'
 import { resetGoogleIdentityForTests } from './googleIdentity'
 import { resetStartRouteForTests } from './startRoute'
 import { clearTokens, getAccessToken, getRefreshToken } from './tokenStore'
@@ -819,6 +820,7 @@ describe('server mode: 체험하기 (POST /api/auth/guest-login)', () => {
   })
 
   it('starts a guest session with the name and follows the status to the survey', async () => {
+    rememberShareReturn('#friend')
     serve((requestPath) => {
       if (requestPath === '/api/auth/guest-login')
         return ok(loginData('SURVEY'))
@@ -852,6 +854,7 @@ describe('server mode: 체험하기 (POST /api/auth/guest-login)', () => {
     expect(getAccessToken()).toBe('access-1')
     expect(sessionStorage.getItem(STORAGE_KEY)).toBe('refresh-1')
     expect(callsTo('/api/auth/guest-login')).toHaveLength(1)
+    expect(takeShareReturn()).toBe('/share#friend')
   })
 
   it('follows the login answer when the status cannot be read', async () => {
