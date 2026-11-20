@@ -271,8 +271,8 @@ describe('server mode: sign-in', () => {
       expect(bodyOf(call)).toEqual({ id_token: 'google-id-token' })
       expect(authOf(call)).toBeNull()
       expect(getAccessToken()).toBe('access-1')
-      expect(sessionStorage.getItem(STORAGE_KEY)).toBe('refresh-1')
-      expect(localStorage).toHaveLength(0)
+      expect(localStorage.getItem(STORAGE_KEY)).toBe('refresh-1')
+      expect(sessionStorage.getItem(STORAGE_KEY)).toBeNull()
     },
   )
 
@@ -369,7 +369,7 @@ describe('server mode: reload', () => {
       refresh_token: 'refresh-0',
     })
     expect(callsTo('/api/auth/refresh')).toHaveLength(1)
-    expect(sessionStorage.getItem(STORAGE_KEY)).toBe('refresh-1')
+    expect(localStorage.getItem(STORAGE_KEY)).toBe('refresh-1')
   })
 
   it('goes to the login screen when the stored token is refused', async () => {
@@ -388,7 +388,7 @@ describe('server mode: reload', () => {
 
     await waitFor(() => expect(path()).toBe('/'))
     expect(screen.queryByRole('heading', { name: /안녕하세요/ })).toBeNull()
-    expect(sessionStorage.getItem(STORAGE_KEY)).toBe('refresh-0')
+    expect(localStorage.getItem(STORAGE_KEY)).toBe('refresh-0')
   })
 
   it('refreshes once under StrictMode', async () => {
@@ -406,6 +406,52 @@ describe('server mode: reload', () => {
     await waitFor(() => expect(restoringStatus()).toBeNull())
     expect(path()).toBe('/home')
     expect(callsTo('/api/auth/refresh')).toHaveLength(1)
+  })
+
+  it('signs out when another tab removes the shared token', async () => {
+    localStorage.setItem(STORAGE_KEY, 'refresh-0')
+    serve(() => ok(tokens(1)))
+    renderAt('/home')
+    await waitFor(() => expect(restoringStatus()).toBeNull())
+    act(() => {
+      localStorage.removeItem(STORAGE_KEY)
+      window.dispatchEvent(
+        new StorageEvent('storage', {
+          key: STORAGE_KEY,
+          oldValue: 'refresh-1',
+          newValue: null,
+          storageArea: localStorage,
+        }),
+      )
+    })
+    await waitFor(() => expect(path()).toBe('/'))
+    expect(getAccessToken()).toBeNull()
+  })
+
+  it('restores the new account when another tab signs in', async () => {
+    localStorage.setItem(STORAGE_KEY, 'refresh-0')
+    serve(() => ok(tokens(1)))
+    renderAt('/home')
+    await waitFor(() => expect(restoringStatus()).toBeNull())
+
+    localStorage.setItem(STORAGE_KEY, 'refresh-new-account')
+    localStorage.setItem('bokjak-auth-session', 'new-account')
+    serve((requestPath) =>
+      requestPath === '/api/auth/refresh' ? ok(tokens(2)) : ok(null),
+    )
+    act(() => {
+      window.dispatchEvent(
+        new StorageEvent('storage', {
+          key: 'bokjak-auth-session',
+          newValue: 'new-account',
+          storageArea: localStorage,
+        }),
+      )
+    })
+    await waitFor(() => expect(getAccessToken()).toBe('access-2'))
+    expect(bodyOf(callsTo('/api/auth/refresh').at(-1)!)).toEqual({
+      refresh_token: 'refresh-new-account',
+    })
   })
 })
 
@@ -852,7 +898,7 @@ describe('server mode: 체험하기 (POST /api/auth/guest-login)', () => {
     expect(bodyOf(call)).toEqual({ nickname: '홍길동' })
     expect(authOf(call)).toBeNull()
     expect(getAccessToken()).toBe('access-1')
-    expect(sessionStorage.getItem(STORAGE_KEY)).toBe('refresh-1')
+    expect(localStorage.getItem(STORAGE_KEY)).toBe('refresh-1')
     expect(callsTo('/api/auth/guest-login')).toHaveLength(1)
     expect(takeShareReturn()).toBe('/share#friend')
   })

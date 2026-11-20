@@ -71,14 +71,22 @@ export function useSharedViewer(sharerId: number | undefined) {
     }
     const check = async () => {
       let nextStep
+      let surveyCompleted
       try {
-        nextStep = (await fetchMyStatus()).nextStep
+        ;({ nextStep, surveyCompleted } = await fetchMyStatus())
       } catch {
         settle({ kind: 'error' })
         return
       }
-      if (nextStep !== 'HOME') {
-        settle({ kind: 'needs-survey', route: routeForNextStep(nextStep) })
+      if (nextStep !== 'HOME' || !surveyCompleted) {
+        settle({
+          kind: 'needs-survey',
+          // HOME without a finished survey: the survey itself.
+          route:
+            nextStep === 'HOME'
+              ? QUESTION_ROUTES.survey
+              : routeForNextStep(nextStep),
+        })
         return
       }
       if (sharerId !== undefined) {
