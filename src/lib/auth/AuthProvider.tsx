@@ -13,7 +13,13 @@ import { loginAsGuest, loginWithGoogle, logout } from './authApi'
 import type { SignInResult } from './authDto'
 import { AuthContext, type AuthStatus } from './authState'
 import { disableGoogleAutoSelect } from './googleIdentity'
-import { hasSession } from './tokenStore'
+import {
+  clearTokens,
+  forgetLocalSession,
+  hasSession,
+  REFRESH_TOKEN_KEY,
+  SESSION_MARKER_KEY,
+} from './tokenStore'
 
 const signInPending = () =>
   new ApiError({
@@ -60,6 +66,28 @@ export default function AuthProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (status === 'disabled') return
     return onSessionEnd(finishSession)
+  }, [status, finishSession])
+
+  useEffect(() => {
+    if (status === 'disabled') return
+    const onStorage = (event: StorageEvent) => {
+      if (event.storageArea !== localStorage) return
+      if (event.key === SESSION_MARKER_KEY && event.newValue !== null) {
+        if (localStorage.getItem(SESSION_MARKER_KEY) !== event.newValue) return
+        forgetLocalSession()
+        setSessionId((id) => id + 1)
+        setStatus('restoring')
+        return
+      }
+      if (event.key !== REFRESH_TOKEN_KEY && event.key !== null) return
+      if (event.key === REFRESH_TOKEN_KEY && event.newValue !== null) return
+      // A newer sign-in may have happened before this queued event was delivered.
+      if (localStorage.getItem(REFRESH_TOKEN_KEY) !== null) return
+      clearTokens()
+      finishSession()
+    }
+    window.addEventListener('storage', onStorage)
+    return () => window.removeEventListener('storage', onStorage)
   }, [status, finishSession])
 
   // One sign-in at a time, whichever screen started it (Google on `/`, 체험하기 on `/guest`). It

@@ -219,13 +219,18 @@ async function runRefresh(generation: number) {
     })
   } catch (error) {
     // A network or server failure keeps the session: the token may still be valid.
-    if (isDefinitiveRefreshFailure(error)) endSessionOf(generation)
+    if (isDefinitiveRefreshFailure(error) && getRefreshToken() === refreshToken)
+      endSessionOf(generation)
     throw error
   }
 
   const tokens = parseTokenResponse(data)
   // Signed out or signed in again while this was out: leave the newer state alone.
-  if (getSessionGeneration() !== generation) throw noSession('SESSION_CHANGED')
+  if (
+    getSessionGeneration() !== generation ||
+    getRefreshToken() !== refreshToken
+  )
+    throw noSession('SESSION_CHANGED')
   saveTokens(tokens)
 }
 
@@ -236,7 +241,14 @@ async function runRefresh(generation: number) {
 export function refreshSession(): Promise<void> {
   const generation = getSessionGeneration()
   if (refreshInFlight?.generation !== generation) {
-    const promise = runRefresh(generation).finally(() => {
+    const run = () => {
+      if (getSessionGeneration() !== generation)
+        throw noSession('SESSION_CHANGED')
+      return runRefresh(generation)
+    }
+    const promise = (
+      navigator.locks ? navigator.locks.request('bokjak-refresh', run) : run()
+    ).finally(() => {
       if (refreshInFlight?.promise === promise) refreshInFlight = null
     })
     refreshInFlight = { generation, promise }
