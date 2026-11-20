@@ -4,6 +4,7 @@ import { MemoryRouter, useLocation, useNavigate } from 'react-router'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import AppRoutes from '../../app/AppRoutes'
 import { apiRequest } from '../api/apiClient'
+import { rememberShareReturn, takeShareReturn } from '../share/shareReturn'
 import { resetGoogleIdentityForTests } from './googleIdentity'
 import { clearTokens, getAccessToken, getRefreshToken } from './tokenStore'
 
@@ -256,6 +257,17 @@ describe('server mode: sign-in', () => {
       expect(localStorage).toHaveLength(0)
     },
   )
+
+  it('goes back to the shared profile that sent the visitor to the login', async () => {
+    rememberShareReturn('/share#abc')
+    serve(() => ok(loginData('HOME')))
+    renderAt('/')
+
+    await chooseGoogleAccount()
+
+    await waitFor(() => expect(path()).toBe('/share'))
+    expect(takeShareReturn()).toBeNull()
+  })
 
   it('shows the server message and stays signed out when the school is not supported', async () => {
     serve(() =>

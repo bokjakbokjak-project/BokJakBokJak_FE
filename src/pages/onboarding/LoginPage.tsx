@@ -14,6 +14,10 @@ import {
 } from '../../lib/auth/googleIdentity'
 import { routeForNextStep } from '../../lib/auth/nextStep'
 import { ONBOARDING_ROUTES } from '../../lib/onboarding/routes'
+import {
+  takeShareReturn,
+  type SharedReturnState,
+} from '../../lib/share/shareReturn'
 import { useStepNavigation } from '../../lib/onboarding/useStepNavigation'
 
 /** Google draws its button between 200px and 400px wide. */
@@ -72,6 +76,17 @@ function ServerLogin() {
       setError(null)
       try {
         const result = await signIn(credential)
+        // Came from `복작복작으로 이동` on a shared profile: back to it, to unlock it or to start
+        // the survey from there.
+        const sharedReturn = takeShareReturn()
+        if (sharedReturn) {
+          const state: SharedReturnState = {
+            continueShared: true,
+            nextStep: result.nextStep,
+          }
+          navigate(sharedReturn, { replace: true, state })
+          return
+        }
         navigate(routeForNextStep(result.nextStep), { replace: true })
       } catch (signInError) {
         if (!isCurrent) return

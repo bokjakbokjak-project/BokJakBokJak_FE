@@ -128,13 +128,14 @@ function subscribe(listener: () => void) {
 const snapshot = () => current().state
 
 /** Server mode: the profile, read when first needed. Sample mode: always `idle`, nothing is sent. */
-export function useMyProfile() {
+export function useMyProfile({ enabled = true }: { enabled?: boolean } = {}) {
   const state = useSyncExternalStore(subscribe, snapshot, snapshot)
   const isServer = isServerMode()
 
+  // `enabled: false` waits, such as on a shared profile until a signed-in visitor asks for it.
   useEffect(() => {
-    if (isServer) void loadMyProfile()
-  }, [isServer])
+    if (isServer && enabled) void loadMyProfile()
+  }, [isServer, enabled])
 
   const retry = useCallback(() => {
     void loadMyProfile()
