@@ -14,8 +14,8 @@ export type CategoryId = (typeof CATEGORY_IDS)[number]
 /**
  * Server `category_code` of each card, matched by name and display order to the categories of
  * GET /api/surveys/current in the Notion spec (잠버릇, 기상 알람, 청소 청결, 개인 청결, 흡연 유무).
- * `TEMPERATURE` is provisional: the backend has not published the temperature category yet
- * (2026-11-19), so a server without it stops the save instead of sending a wrong code.
+ * `TEMPERATURE` (온도, 6th) comes from the backend migration V11 (BE PR #73, 2026-11-20). A
+ * server that does not have it yet stops the save instead of sending a code it would refuse.
  */
 export const CATEGORY_SERVER_CODES: Record<CategoryId, string> = {
   'sleep-habit': 'SLEEP_HABITS',

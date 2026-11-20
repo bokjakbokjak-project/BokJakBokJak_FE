@@ -7,7 +7,7 @@ import {
 /**
  * Server category codes to the app's categories, from the same table the survey save uses
  * (`CATEGORY_SERVER_CODES`), so a profile or recommendation reads every code the survey sends,
- * including the provisional `TEMPERATURE`. Swagger has no enum for them (roommate
+ * including `TEMPERATURE` (backend migration V11). Swagger has no enum for them (roommate
  * OPEN_QUESTIONS RM-8). An unknown code is left out, so that rank falls back to the default
  * character part instead of a wrong one.
  */

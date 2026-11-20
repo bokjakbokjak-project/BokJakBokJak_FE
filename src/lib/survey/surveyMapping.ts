@@ -101,7 +101,7 @@ export function buildSurveyMapping(schema: SurveySchema): SurveyMapping {
   })
 
   // A priority is sent as its category code, so every card must exist on the server too
-  // (such as the provisional TEMPERATURE).
+  // (such as TEMPERATURE on a server from before migration V11).
   const serverCategories = new Set(schema.categoryCodes)
   for (const id of CATEGORY_IDS) {
     const code = CATEGORY_SERVER_CODES[id]

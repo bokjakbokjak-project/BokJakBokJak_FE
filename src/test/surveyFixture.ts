@@ -3,7 +3,7 @@
  * BEDTIME_H with the five Figma options), and helpers for the survey tests. Scenario and prompt
  * texts are shortened. The older Notion spec with seven BEDTIME_H options is kept as
  * `SPEC_BEDTIME_H_OPTIONS` for the blocked-save tests. The DISHES topic is replaced by the
- * provisional TEMPERATURE topic and category (2026-11-19). Not user data.
+ * TEMPERATURE topic and category as in the backend migration V11 (BE PR #73, 2026-11-20). Not user data.
  */
 
 type Option = [code: string, label: string]
@@ -161,45 +161,40 @@ function topics(bedtime: Option[]): TopicFixture[] {
       ],
     },
     {
-      // PROVISIONAL: the temperature topic that replaces DISHES (2026-11-19), with the
-      // placeholder codes of surveyCodes.ts. Replace with the server's codes once published.
-      topic: 'TEMPERATURE',
-      category: 'TEMPERATURE',
-      questions: [
-        q('TEMPERATURE_H', 13, [
-          ['ALWAYS_ON', '방에 있는 동안 계속 켜두는 편이다'],
-          ['LONG_WHEN_NEEDED', '덥거나 추울 때 일정시간 이상 켜둔다'],
-          ['SHORT_WHEN_NEEDED', '덥거나 추울 때 잠깐 켰다가 끈다'],
-          ['RARELY', '거의 사용하지 않는다'],
-        ]),
-        q('TEMPERATURE_T', 14, [
-          ['ALWAYS_ON_OK', '방에 있는 동안 계속 켜두어도 괜찮다'],
-          [
-            'LONG_WHEN_NEEDED_OK',
-            '덥거나 추울 때 일정시간 이상 켜두어도 괜찮다',
-          ],
-          [
-            'SHORT_WHEN_NEEDED_ONLY',
-            '덥거나 추울 때 잠깐 켰다가 꺼줬으면 한다',
-          ],
-          ['RARELY_ONLY', '거의 사용하지 않았으면 좋겠다'],
-        ]),
-      ],
-    },
-    {
+      // Server order since V11 (BE PR #73): smoking moved up to topic 7 (Q13·14).
       topic: 'SMOKING',
       category: 'SMOKING',
       questions: [
-        q('SMOKING_H', 15, [
+        q('SMOKING_H', 13, [
           ['NON_SMOKER', '비흡연자다'],
           ['QUIT_IN_DORM', '흡연자이지만 기숙사에서는 자제할 예정이다'],
           ['OUTDOOR_SMOKER', '흡연하며 지정된 실외 장소를 이용할 예정이다'],
         ]),
-        q('SMOKING_T', 16, [
+        q('SMOKING_T', 14, [
           ['ANY_OK', '흡연 여부는 상관없다'],
           ['OUTSIDE_LOW_ODOR', '실외에서만 하고 냄새가 거의 없으면 괜찮다'],
           ['PREFER_NON_SMOKER', '가능한 비흡연자였으면 좋겠다'],
           ['NON_SMOKER_ONLY', '흡연자와는 같은 방이 어렵다'],
+        ]),
+      ],
+    },
+    {
+      // The temperature topic that replaced DISHES, last on the server (topic 8, Q15·16), with
+      // the codes and labels of V11__replace_dishes_with_temperature.sql (BE PR #73).
+      topic: 'TEMPERATURE',
+      category: 'TEMPERATURE',
+      questions: [
+        q('TEMPERATURE_H', 15, [
+          ['ALWAYS_ON', '방에 있는 동안 계속 켜두는 편이다'],
+          ['LONG', '덥거나 추울 때 일정시간 이상 켜둔다'],
+          ['SHORT', '덥거나 추울 때 잠깐 켰다가 끈다'],
+          ['RARELY', '거의 사용하지 않는다'],
+        ]),
+        q('TEMPERATURE_T', 16, [
+          ['ALWAYS_ON_OK', '방에 있는 동안 계속 켜두어도 괜찮다'],
+          ['LONG_OK', '덥거나 추울 때 일정시간 이상 켜두어도 괜찮다'],
+          ['SHORT_ONLY', '덥거나 추울 때 잠깐 켰다가 꺼줬으면 한다'],
+          ['RARELY_ONLY', '거의 사용하지 않았으면 좋겠다'],
         ]),
       ],
     },

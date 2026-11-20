@@ -123,27 +123,18 @@ export const SURVEY_CODES: Readonly<Record<string, TopicCodes>> = {
       ],
     },
   },
-  // PROVISIONAL (2026-11-19): the backend has not published the temperature questions yet, so
-  // these codes are placeholders in the Figma option order (1377:49785). Until the server sends
-  // the same codes, the run-time check blocks the save instead of sending a wrong answer.
+  // Codes from the backend migration V11__replace_dishes_with_temperature.sql (BE dev, PR #73,
+  // merged 2026-11-20), in the Figma option order (1377:49785), which is also the server's
+  // display order; the labels match. On the server the topic comes last (Q15·16, after smoking);
+  // the screens keep it before smoking, which is fine because answers are tied by code.
   temperature: {
     self: {
       questionCode: 'TEMPERATURE_H',
-      optionCodes: [
-        'ALWAYS_ON',
-        'LONG_WHEN_NEEDED',
-        'SHORT_WHEN_NEEDED',
-        'RARELY',
-      ],
+      optionCodes: ['ALWAYS_ON', 'LONG', 'SHORT', 'RARELY'],
     },
     roommate: {
       questionCode: 'TEMPERATURE_T',
-      optionCodes: [
-        'ALWAYS_ON_OK',
-        'LONG_WHEN_NEEDED_OK',
-        'SHORT_WHEN_NEEDED_ONLY',
-        'RARELY_ONLY',
-      ],
+      optionCodes: ['ALWAYS_ON_OK', 'LONG_OK', 'SHORT_ONLY', 'RARELY_ONLY'],
     },
   },
   smoking: {
